@@ -49,7 +49,7 @@ class KtxEmptyState extends StatelessWidget {
                   label: actionLabel!,
                   onPressed: onAction!,
                   variant: KtxButtonVariant.outline,
-                  width: 180,
+                  width: 220,
                 ),
               ],
             ],

@@ -4,17 +4,14 @@ import 'package:firebase_storage/firebase_storage.dart';
 /// Dịch vụ quản lý tương tác với Firebase Cloud Storage
 /// Chuyên trách tải ảnh bằng chứng khiếu nại và biên bản sự cố
 class CloudStorageService {
-  final FirebaseStorage _storage;
+  FirebaseStorage? _storage;
 
-  CloudStorageService({FirebaseStorage? storage})
-      : _storage = storage ?? FirebaseStorage.instance;
+  CloudStorageService({FirebaseStorage? storage}) : _storage = storage;
+
+  FirebaseStorage get storage => _storage ??= FirebaseStorage.instance;
 
   /// Tải tệp ảnh bằng chứng lên Firebase Storage theo đường dẫn chuẩn:
   /// reports/{userId}/{timestamp}_{filename}.jpg
-  /// 
-  /// [imageFile]: File ảnh được chọn từ thư viện hoặc chụp từ camera
-  /// [userId]: Firebase UID của sinh viên gửi khiếu nại
-  /// [onProgress]: Callback theo dõi tiến trình upload từ 0.0 đến 1.0 (0% - 100%)
   Future<String> uploadEvidenceImage({
     required File imageFile,
     required String userId,
@@ -33,7 +30,7 @@ class CloudStorageService {
       final fileName = 'evidence_${timestamp}.$validExtension';
 
       // Đường dẫn theo đặc tả: reports/{userId}/...
-      final storageRef = _storage
+      final storageRef = storage
           .ref()
           .child('reports')
           .child(userId)
@@ -73,7 +70,7 @@ class CloudStorageService {
   /// Xóa ảnh bằng chứng nếu người dùng hủy bỏ trước khi gửi
   Future<void> deleteImageByUrl(String imageUrl) async {
     try {
-      final ref = _storage.refFromURL(imageUrl);
+      final ref = storage.refFromURL(imageUrl);
       await ref.delete();
     } catch (_) {
       // Bỏ qua lỗi xóa nếu file không tồn tại

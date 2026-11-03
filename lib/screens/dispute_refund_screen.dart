@@ -108,7 +108,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
         decoration: BoxDecoration(
           color: AppColors.surfaceVariant,
           borderRadius: AppRadius.roundedMd,
-          border: Border.parse('1px solid #E0E0E0'),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           children: [

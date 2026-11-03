@@ -67,9 +67,13 @@ class KtxButton extends StatelessWidget {
                 Icon(icon, size: 20, color: foregroundColor),
                 const SizedBox(width: 8),
               ],
-              Text(
-                label,
-                style: AppTypography.button.copyWith(color: foregroundColor),
+              Flexible(
+                child: Text(
+                  label,
+                  style: AppTypography.button.copyWith(color: foregroundColor),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           );
@@ -77,8 +81,12 @@ class KtxButton extends StatelessWidget {
     return Semantics(
       button: true,
       label: label,
-      child: SizedBox(
-        width: width ?? double.infinity,
+      child: Container(
+        constraints: BoxConstraints(
+          minWidth: 120,
+          maxWidth: width ?? double.infinity,
+          minHeight: 48,
+        ),
         height: 48, // Đảm bảo touch target >= 48dp theo WCAG
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
