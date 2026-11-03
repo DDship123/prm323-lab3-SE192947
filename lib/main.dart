@@ -201,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       'https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg',
                       width: 24,
                       height: 24,
-                      errorBuilder: (_, __, __) => const Icon(
+                      errorBuilder: (context, error, stackTrace) => const Icon(
                         Icons.account_circle,
                         color: Colors.red,
                       ),
