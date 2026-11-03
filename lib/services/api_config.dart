@@ -1,21 +1,11 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
-
 /// Cấu hình Endpoint kết nối tới Spring Boot Backend
 class ApiConfig {
   ApiConfig._();
 
-  /// Địa chỉ Base URL tự động nhận diện theo nền tảng
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8080/api/v1';
-    }
-    if (Platform.isAndroid) {
-      // Android Emulator ánh xạ localhost của máy host qua 10.0.2.2
-      return 'http://10.0.2.2:8080/api/v1';
-    }
-    return 'http://localhost:8080/api/v1';
-  }
+  /// Địa chỉ Base URL kết nối Backend
+  /// Khi cắm cáp USB với adb reverse tcp:8080 tcp:8080 hoặc chạy web/desktop,
+  /// 127.0.0.1:8080 tự động chuyển tiếp thẳng vào Backend Spring Boot trên máy tính
+  static String get baseUrl => 'http://127.0.0.1:8080/api/v1';
 
   // Endpoints
   static String get disputes => '$baseUrl/disputes';
