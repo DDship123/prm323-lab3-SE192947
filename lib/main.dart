@@ -1,7 +1,12 @@
-import 'package:firebase_auth/firebase_auth.dart';
+﻿import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
+import 'firebase/cloud_storage_service.dart';
+import 'services/dispute_service.dart';
+import 'theme/app_colors.dart';
+import 'viewmodels/dispute_vm.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,7 +15,25 @@ void main() async {
   // Khởi tạo GoogleSignIn theo chuẩn package google_sign_in phiên bản 7.x
   await GoogleSignIn.instance.initialize();
 
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        Provider<CloudStorageService>(
+          create: (_) => CloudStorageService(),
+        ),
+        Provider<DisputeService>(
+          create: (_) => DisputeService(),
+        ),
+        ChangeNotifierProvider<DisputeViewModel>(
+          create: (ctx) => DisputeViewModel(
+            cloudStorageService: ctx.read<CloudStorageService>(),
+            disputeService: ctx.read<DisputeService>(),
+          ),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -176,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       'https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg',
                       width: 24,
                       height: 24,
-                      errorBuilder: (_, __, ___) => const Icon(
+                      errorBuilder: (_, __, __) => const Icon(
                         Icons.account_circle,
                         color: Colors.red,
                       ),
