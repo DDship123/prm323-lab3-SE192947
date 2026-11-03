@@ -7,6 +7,8 @@ import 'firebase/cloud_storage_service.dart';
 import 'services/dispute_service.dart';
 import 'theme/app_colors.dart';
 import 'viewmodels/dispute_vm.dart';
+import 'screens/dispute_refund_screen.dart';
+import 'screens/dispute_history_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -306,6 +308,86 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
+                                    // Thẻ chức năng Bước 4: Tải file lên Đám mây & Khiếu nại
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLight.withOpacity(0.35),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.primary),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.cloud_upload_rounded, color: AppColors.primaryDark),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Tính năng Tải file lên Đám mây',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Báo cáo món ăn gặp sự cố tại KTX, tải ảnh bằng chứng lên Firebase Storage (reports/{uid}/) và gửi yêu cầu hoàn tiền.',
+                          style: TextStyle(fontSize: 13, color: Colors.black87),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const DisputeRefundScreen(),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.report_problem_rounded, size: 18),
+                                label: const Text('Báo sự cố'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.primaryDark,
+                                side: const BorderSide(color: AppColors.primary),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const DisputeHistoryScreen(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.history_rounded, size: 18),
+                              label: const Text('Lịch sử'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
