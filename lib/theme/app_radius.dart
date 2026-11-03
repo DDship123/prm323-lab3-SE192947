@@ -14,3 +14,4 @@ class AppRadius {
   static final BorderRadius roundedLg = BorderRadius.circular(lg);
   static final BorderRadius roundedFull = BorderRadius.circular(full);
 }
+

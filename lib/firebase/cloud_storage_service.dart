@@ -1,8 +1,8 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:firebase_storage/firebase_storage.dart';
 
 /// Dịch vụ quản lý tương tác với Firebase Cloud Storage
-/// Chuyên trách tải ảnh bằng chứng khiếu nại và biên bản sự cố
+/// Hỗ trợ đa nền tảng (Web, Android, iOS, Windows)
 class CloudStorageService {
   FirebaseStorage? _storage;
 
@@ -10,31 +10,28 @@ class CloudStorageService {
 
   FirebaseStorage get storage => _storage ??= FirebaseStorage.instance;
 
-  /// Tải tệp ảnh bằng chứng lên Firebase Storage theo đường dẫn chuẩn:
+  /// Tải dữ liệu ảnh bằng chứng lên Firebase Storage theo đường dẫn chuẩn:
   /// reports/{userId}/{timestamp}_{filename}.jpg
-  Future<String> uploadEvidenceImage({
-    required File imageFile,
+  Future<String> uploadEvidenceBytes({
+    required Uint8List imageBytes,
+    required String fileName,
     required String userId,
     void Function(double progress)? onProgress,
   }) async {
-    if (!await imageFile.exists()) {
-      throw Exception('Tệp ảnh không tồn tại trên thiết bị.');
-    }
-
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileExtension = imageFile.path.split('.').last.toLowerCase();
+      final fileExtension = fileName.split('.').last.toLowerCase();
       final validExtension = ['jpg', 'jpeg', 'png', 'webp'].contains(fileExtension)
           ? fileExtension
           : 'jpg';
-      final fileName = 'evidence_${timestamp}.$validExtension';
+      final storageFileName = 'evidence_${timestamp}.$validExtension';
 
       // Đường dẫn theo đặc tả: reports/{userId}/...
       final storageRef = storage
           .ref()
           .child('reports')
           .child(userId)
-          .child(fileName);
+          .child(storageFileName);
 
       final metadata = SettableMetadata(
         contentType: 'image/$validExtension',
@@ -45,7 +42,7 @@ class CloudStorageService {
         },
       );
 
-      final uploadTask = storageRef.putFile(imageFile, metadata);
+      final uploadTask = storageRef.putData(imageBytes, metadata);
 
       // Lắng nghe tiến trình upload phục vụ hiển thị thanh Progress Bar
       if (onProgress != null) {
@@ -72,8 +69,6 @@ class CloudStorageService {
     try {
       final ref = storage.refFromURL(imageUrl);
       await ref.delete();
-    } catch (_) {
-      // Bỏ qua lỗi xóa nếu file không tồn tại
-    }
+    } catch (_) {}
   }
 }

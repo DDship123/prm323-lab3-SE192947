@@ -37,3 +37,4 @@ class KtxLoadingState extends StatelessWidget {
     );
   }
 }
+

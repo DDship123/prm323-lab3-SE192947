@@ -32,3 +32,4 @@ class StateError<T> extends ScreenState<T> {
   final bool canRetry;
   const StateError(this.errorMessage, {this.canRetry = true});
 }
+

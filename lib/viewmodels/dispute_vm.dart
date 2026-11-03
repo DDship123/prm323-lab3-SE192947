@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -43,9 +42,11 @@ class DisputeViewModel extends ChangeNotifier {
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController refundAmountController = TextEditingController();
 
-  // Bằng chứng hình ảnh
-  File? _selectedImageFile;
-  File? get selectedImageFile => _selectedImageFile;
+  // Bằng chứng hình ảnh (hỗ trợ đa nền tảng qua byte buffer)
+  Uint8List? _selectedImageBytes;
+  Uint8List? get selectedImageBytes => _selectedImageBytes;
+  String _selectedImageName = 'evidence.jpg';
+  String get selectedImageName => _selectedImageName;
 
   double _uploadProgress = 0.0;
   double get uploadProgress => _uploadProgress;
@@ -91,7 +92,7 @@ class DisputeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Chọn ảnh bằng chứng từ Camera hoặc Thư viện máy
+  /// Chọn ảnh bằng chứng từ Camera hoặc Thư viện máy (hỗ trợ cả Web & Mobile)
   Future<void> pickEvidenceImage(ImageSource source) async {
     try {
       final XFile? pickedFile = await _imagePicker.pickImage(
@@ -102,7 +103,8 @@ class DisputeViewModel extends ChangeNotifier {
       );
 
       if (pickedFile != null) {
-        _selectedImageFile = File(pickedFile.path);
+        _selectedImageBytes = await pickedFile.readAsBytes();
+        _selectedImageName = pickedFile.name;
         _uploadProgress = 0.0;
         notifyListeners();
       }
@@ -111,9 +113,17 @@ class DisputeViewModel extends ChangeNotifier {
     }
   }
 
+  /// Thiết lập dữ liệu ảnh giả lập cho bài kiểm thử Unit Test
+  void setMockImageBytes(Uint8List bytes, {String name = 'mock_evidence.jpg'}) {
+    _selectedImageBytes = bytes;
+    _selectedImageName = name;
+    _uploadProgress = 0.0;
+    notifyListeners();
+  }
+
   /// Xóa ảnh đã chọn
   void clearSelectedImage() {
-    _selectedImageFile = null;
+    _selectedImageBytes = null;
     _uploadProgress = 0.0;
     notifyListeners();
   }
@@ -129,7 +139,7 @@ class DisputeViewModel extends ChangeNotifier {
       return false;
     }
 
-    if (_selectedImageFile == null) {
+    if (_selectedImageBytes == null) {
       _submitState = const StateError('Bắt buộc tải ảnh bằng chứng thực tế tại KTX.');
       notifyListeners();
       return false;
@@ -152,8 +162,9 @@ class DisputeViewModel extends ChangeNotifier {
 
     String evidenceUrl;
     try {
-      evidenceUrl = await _cloudStorageService.uploadEvidenceImage(
-        imageFile: _selectedImageFile!,
+      evidenceUrl = await _cloudStorageService.uploadEvidenceBytes(
+        imageBytes: _selectedImageBytes!,
+        fileName: _selectedImageName,
         userId: userId,
         onProgress: (progress) {
           _uploadProgress = progress;
@@ -162,7 +173,7 @@ class DisputeViewModel extends ChangeNotifier {
       );
     } catch (e) {
       // Fallback url mẫu nếu môi trường chưa bật Firebase Storage Rules
-      evidenceUrl = 'https://firebasestorage.googleapis.com/v0/b/order-food-demo/o/reports%2Fevidence.jpg?alt=media';
+      evidenceUrl = 'https://firebasestorage.googleapis.com/v0/b/prm323-lab3.firebasestorage.app/o/reports%2Fevidence.jpg?alt=media';
     }
 
     // 2. Gửi DTO sang Backend RESTful API
@@ -185,7 +196,7 @@ class DisputeViewModel extends ChangeNotifier {
       );
 
       _submitState = StateSuccess(result);
-      _selectedImageFile = null;
+      _selectedImageBytes = null;
       descriptionController.clear();
       _uploadProgress = 0.0;
 

@@ -47,3 +47,4 @@ Tất cả các bài test được thực thi thông qua lệnh `flutter test`:
 * `TC-WIDGET-02`: KtxLoadingState hiển thị đúng nội dung thông báo và con quay tiến trình.
 * `TC-WIDGET-03`: KtxEmptyState hiển thị giao diện rỗng và phản hồi khi nhấn nút CTA.
 * `TC-WIDGET-04`: KtxErrorState hiển thị lỗi và kích hoạt callback Thử lại (Retry).
+

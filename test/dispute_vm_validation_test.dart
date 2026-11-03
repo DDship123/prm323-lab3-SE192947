@@ -18,7 +18,7 @@ void main() {
     test('Trạng thái khởi tạo của ViewModel là StateInitial', () {
       expect(viewModel.submitState, isA<StateInitial>());
       expect(viewModel.historyState, isA<StateInitial>());
-      expect(viewModel.selectedImageFile, isNull);
+      expect(viewModel.selectedImageBytes, isNull);
       expect(viewModel.uploadProgress, 0.0);
     });
 
@@ -60,3 +60,4 @@ void main() {
     });
   });
 }
+

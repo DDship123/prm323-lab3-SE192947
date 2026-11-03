@@ -29,3 +29,4 @@ class AppColors {
   static const Color border = Color(0xFFE0E0E0);
   static const Color divider = Color(0xFFEEEEEE);
 }
+

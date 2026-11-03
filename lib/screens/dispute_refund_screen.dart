@@ -311,7 +311,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
             const SizedBox(height: AppSpacing.sm),
 
             // Khung hiển thị ảnh đã chọn hoặc nút bấm tải ảnh
-            if (vm.selectedImageFile != null) ...[
+            if (vm.selectedImageBytes != null) ...[
               Stack(
                 children: [
                   Container(
@@ -323,8 +323,8 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: AppRadius.roundedMd,
-                      child: Image.file(
-                        vm.selectedImageFile!,
+                      child: Image.memory(
+                        vm.selectedImageBytes!,
                         fit: BoxFit.cover,
                       ),
                     ),
