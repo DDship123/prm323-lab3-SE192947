@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -22,6 +23,7 @@ import 'screens/shipper_batch_pickup_screen.dart';
 import 'screens/student_register_screen.dart';
 import 'services/admin_api_service.dart';
 import 'services/auth_api_service.dart';
+import 'services/crashlytics_service.dart';
 import 'services/dispute_service.dart';
 import 'services/notification_service.dart';
 import 'services/order_service.dart';
@@ -52,6 +54,15 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Cấu hình bắt lỗi Fatal và chuyển tiếp tới Firebase Crashlytics
+  FlutterError.onError = (errorDetails) {
+    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
   await GoogleSignIn.instance.initialize(
     clientId: kIsWeb
         ? '119011257696-fhiv11ekbecn6gjvdi2emv6gthpm60bp.apps.googleusercontent.com'
@@ -80,6 +91,7 @@ class AppBootstrap extends StatelessWidget {
         Provider<OwnerApiService>(create: (_) => OwnerApiService()),
         Provider<ShipperApiService>(create: (_) => ShipperApiService()),
         Provider<AdminApiService>(create: (_) => AdminApiService()),
+        Provider<CrashlyticsService>(create: (_) => CrashlyticsService()),
         ChangeNotifierProvider<AuthViewModel>(
           create: (ctx) => AuthViewModel(
             authApiService: ctx.read<AuthApiService>(),
@@ -122,6 +134,7 @@ class AppBootstrap extends StatelessWidget {
         ChangeNotifierProvider<ProfileDemoViewModel>(
           create: (ctx) => ProfileDemoViewModel(
             notificationService: ctx.read<NotificationService>(),
+            crashlyticsService: ctx.read<CrashlyticsService>(),
           ),
         ),
         ChangeNotifierProvider<OwnerViewModel>(
