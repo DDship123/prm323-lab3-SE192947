@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 import '../models/notification_model.dart';
+import '../services/crashlytics_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/screen_state.dart';
 
 /// ViewModel quản lý Trung tâm Thông báo (S12) và Khu vực Firebase Lab 3 Demo (S13)
 class ProfileDemoViewModel extends ChangeNotifier {
   final NotificationService _notificationService;
+  final CrashlyticsService _crashlyticsService;
 
   ScreenState<List<NotificationModel>> _notificationsState =
       const StateLoading();
@@ -17,8 +19,11 @@ class ProfileDemoViewModel extends ChangeNotifier {
   String _lastCrashlyticsLog = 'Chưa có sự kiện lỗi nào được ghi nhận.';
   String _fcmStatusMessage = 'Đã đăng ký topic: ktx_group_orders';
 
-  ProfileDemoViewModel({required NotificationService notificationService})
-      : _notificationService = notificationService;
+  ProfileDemoViewModel({
+    required NotificationService notificationService,
+    CrashlyticsService? crashlyticsService,
+  })  : _notificationService = notificationService,
+        _crashlyticsService = crashlyticsService ?? CrashlyticsService();
 
   ScreenState<List<NotificationModel>> get notificationsState =>
       _notificationsState;
@@ -27,6 +32,7 @@ class ProfileDemoViewModel extends ChangeNotifier {
   int get remoteConfigMinGroupOrders => _remoteConfigMinGroupOrders;
   String get lastCrashlyticsLog => _lastCrashlyticsLog;
   String get fcmStatusMessage => _fcmStatusMessage;
+  CrashlyticsService get crashlyticsService => _crashlyticsService;
 
   /// API-019 & API-022: Tải danh sách thông báo và số lượng chưa đọc (S12)
   Future<void> loadNotifications() async {
@@ -69,12 +75,23 @@ class ProfileDemoViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Giả lập ghi nhận Non-Fatal Exception lên Firebase Crashlytics tại S13
-  void triggerCrashlyticsNonFatalTest() {
+  /// Ghi nhận Non-Fatal Exception lên Firebase Crashlytics tại S13
+  Future<void> triggerCrashlyticsNonFatalTest() async {
     final now = DateTime.now().toIso8601String();
+    await _crashlyticsService.recordNonFatalError(
+      exception: Exception('SimulatedKtxPaymentTimeoutException'),
+      reason: 'Người dùng nhấn kiểm thử Non-Fatal lỗi thanh toán tại S13',
+    );
     _lastCrashlyticsLog =
         '[$now] Đã ghi nhận Handled Exception: SimulatedKtxPaymentTimeoutException lên Crashlytics.';
     notifyListeners();
+  }
+
+  /// Kích hoạt Fatal Crash gây sập ứng dụng phục vụ kiểm thử theo yêu cầu của Thầy
+  void triggerFatalCrashTest() {
+    _crashlyticsService.forceCrashTest(
+      message: 'Demo Fatal Crash Lab 3 phục vụ chấm điểm giáo viên',
+    );
   }
 
   /// Giả lập nhận FCM Push Notification mới
