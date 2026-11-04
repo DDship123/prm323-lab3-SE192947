@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
 
 /// Menu thanh bên (Left Vertical Sidebar) chuẩn phong cách Quản trị Hiện đại Greenova / SaaS
+/// Hỗ trợ chế độ Mở rộng (Expanded 260px) và Thu gọn / Đóng mở (Collapsed 76px)
 class WebAdminSidebar extends StatelessWidget {
+  final bool isCollapsed;
+  final VoidCallback onToggleCollapse;
   final int selectedIndex;
   final ValueChanged<int> onTabSelected;
   final VoidCallback onSignOut;
@@ -10,6 +12,8 @@ class WebAdminSidebar extends StatelessWidget {
 
   const WebAdminSidebar({
     super.key,
+    required this.isCollapsed,
+    required this.onToggleCollapse,
     required this.selectedIndex,
     required this.onTabSelected,
     required this.onSignOut,
@@ -18,8 +22,10 @@ class WebAdminSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 260,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+      width: isCollapsed ? 76 : 260,
       decoration: const BoxDecoration(
         color: Color(0xFF0E1A16), // Dark Forest / Greenova deep slate
         boxShadow: [
@@ -33,100 +39,126 @@ class WebAdminSidebar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Logo & Thương hiệu
+          // ================= 1. HEADER & THƯƠNG HIỆU & NÚT ĐÓNG/MỞ =================
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF10B981), Color(0xFF059669)], // Greenova emerald
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.35),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.dashboard_customize_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'KTX ADMIN',
-                        style: TextStyle(
+            padding: EdgeInsets.symmetric(
+              horizontal: isCollapsed ? 16 : 20,
+              vertical: 20,
+            ),
+            child: isCollapsed
+                ? Center(
+                    child: InkWell(
+                      onTap: onToggleCollapse,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF10B981), Color(0xFF059669)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.menu_rounded,
                           color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.2,
+                          size: 22,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF10B981),
-                              shape: BoxShape.circle,
-                            ),
+                    ),
+                  )
+                : Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF10B981), Color(0xFF059669)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                          const SizedBox(width: 6),
-                          const Text(
-                            'Greenova Portal v2.0',
-                            style: TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.dashboard_customize_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'KTX ADMIN',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.1,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Greenova v2.0',
+                              style: TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Thu gọn menu',
+                        icon: const Icon(Icons.menu_open_rounded, color: Color(0xFF94A3B8), size: 20),
+                        onPressed: onToggleCollapse,
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
           ),
 
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 14),
             child: Divider(color: Color(0xFF1E293B), height: 1),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
-          // Danh sách các danh mục điều hướng
+          // ================= 2. DANH SÁCH MỤC ĐIỀU HƯỚNG =================
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 10 : 12),
               children: [
-                _buildSectionLabel('TỔNG QUAN'),
+                if (!isCollapsed) _buildSectionLabel('TỔNG QUAN'),
                 _buildMenuItem(
                   index: 0,
                   title: 'Bảng Điều Khiển',
-                  subtitle: 'KPI & Doanh thu gom ca',
+                  subtitle: 'KPI & Doanh thu',
                   icon: Icons.dashboard_rounded,
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: isCollapsed ? 12 : 16),
 
-                _buildSectionLabel('NGHIỆP VỤ QUẢN TRỊ'),
+                if (!isCollapsed) _buildSectionLabel('NGHIỆP VỤ QUẢN TRỊ'),
                 _buildMenuItem(
                   index: 1,
                   title: 'Trọng Tài Khiếu Nại',
@@ -144,42 +176,86 @@ class WebAdminSidebar extends StatelessWidget {
                   badgeText: 'Ca trưa',
                   badgeColor: const Color(0xFF10B981),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: isCollapsed ? 12 : 16),
 
-                _buildSectionLabel('HỆ THỐNG & KẾT NỐI'),
-                _buildStaticMenuItem(
-                  title: 'Máy Chủ VPS TP.HCM',
-                  subtitle: 'IP: 103.179.189.120',
-                  icon: Icons.dns_rounded,
-                  statusDot: const Color(0xFF10B981),
-                  statusText: 'Online',
-                ),
-                const SizedBox(height: 6),
-                _buildStaticMenuItem(
-                  title: 'Firebase Crashlytics',
-                  subtitle: 'Giám sát lỗi di động',
-                  icon: Icons.bug_report_rounded,
-                  statusDot: const Color(0xFF38BDF8),
-                  statusText: 'Active',
-                ),
+                if (!isCollapsed) ...[
+                  _buildSectionLabel('HỆ THỐNG & KẾT NỐI'),
+                  _buildStaticMenuItem(
+                    title: 'Máy Chủ VPS TP.HCM',
+                    subtitle: 'IP: 103.179.189.120',
+                    icon: Icons.dns_rounded,
+                    statusDot: const Color(0xFF10B981),
+                    statusText: 'Online',
+                  ),
+                  const SizedBox(height: 6),
+                  _buildStaticMenuItem(
+                    title: 'Firebase Crashlytics',
+                    subtitle: 'Giám sát lỗi di động',
+                    icon: Icons.bug_report_rounded,
+                    statusDot: const Color(0xFF38BDF8),
+                    statusText: 'Active',
+                  ),
+                ] else ...[
+                  Tooltip(
+                    message: 'VPS Online: 103.179.189.120',
+                    child: Center(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF13221C),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.dns_rounded, color: Color(0xFF10B981), size: 20),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
 
-          // Thẻ Profile Admin & Nút Đăng xuất ở chân Sidebar
-          Container(
-            padding: const EdgeInsets.all(16),
-            margin: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF152620), // Tối hơn một chút
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF233E35)),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Container(
+          // ================= 3. THẺ PROFILE ADMIN Ở CHÂN SIDEBAR =================
+          isCollapsed
+              ? Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  alignment: Alignment.center,
+                  child: PopupMenuButton<String>(
+                    tooltip: 'Ban Quản Lý KTX',
+                    offset: const Offset(60, -80),
+                    color: const Color(0xFF152620),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: Color(0xFF233E35)),
+                    ),
+                    itemBuilder: (ctx) => [
+                      if (onSwitchRole != null)
+                        const PopupMenuItem(
+                          value: 'role',
+                          child: Row(
+                            children: [
+                              Icon(Icons.swap_horiz_rounded, size: 16, color: Color(0xFF10B981)),
+                              SizedBox(width: 8),
+                              Text('Đổi vai trò', style: TextStyle(color: Colors.white, fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                      const PopupMenuItem(
+                        value: 'logout',
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout_rounded, size: 16, color: Color(0xFFEF4444)),
+                            SizedBox(width: 8),
+                            Text('Đăng xuất', style: TextStyle(color: Color(0xFFEF4444), fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onSelected: (val) {
+                      if (val == 'role') onSwitchRole?.call();
+                      if (val == 'logout') onSignOut();
+                    },
+                    child: Container(
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
@@ -191,90 +267,122 @@ class WebAdminSidebar extends StatelessWidget {
                       child: const Center(
                         child: Text(
                           'BQL',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                )
+              : Container(
+                  padding: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF152620),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFF233E35)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
                         children: [
-                          Text(
-                            'Ban Quản Lý KTX',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                              ),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            'admin.ktx@fpt.edu.vn',
-                            style: TextStyle(
-                              color: Color(0xFF94A3B8),
-                              fontSize: 11,
+                            child: const Center(
+                              child: Text(
+                                'BQL',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Divider(color: Color(0xFF233E35), height: 1),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    if (onSwitchRole != null)
-                      Expanded(
-                        child: InkWell(
-                          onTap: onSwitchRole,
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 6),
-                            alignment: Alignment.center,
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(Icons.swap_horiz_rounded, size: 14, color: Color(0xFF94A3B8)),
-                                SizedBox(width: 4),
                                 Text(
-                                  'Đổi vai trò',
-                                  style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11, fontWeight: FontWeight.w600),
+                                  'Ban Quản Lý KTX',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  'admin.ktx@fpt.edu.vn',
+                                  style: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 11,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    Expanded(
-                      child: InkWell(
-                        onTap: onSignOut,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          alignment: Alignment.center,
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.logout_rounded, size: 14, color: Color(0xFFEF4444)),
-                              SizedBox(width: 4),
-                              Text(
-                                'Đăng xuất',
-                                style: TextStyle(color: Color(0xFFEF4444), fontSize: 11, fontWeight: FontWeight.w600),
+                      const SizedBox(height: 10),
+                      const Divider(color: Color(0xFF233E35), height: 1),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          if (onSwitchRole != null)
+                            Expanded(
+                              child: InkWell(
+                                onTap: onSwitchRole,
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 6),
+                                  alignment: Alignment.center,
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.swap_horiz_rounded, size: 14, color: Color(0xFF94A3B8)),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Đổi vai trò',
+                                        style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11, fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ],
+                            ),
+                          if (onSwitchRole != null)
+                            Container(width: 1, height: 16, color: const Color(0xFF233E35)),
+                          Expanded(
+                            child: InkWell(
+                              onTap: onSignOut,
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                alignment: Alignment.center,
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.logout_rounded, size: 14, color: Color(0xFFEF4444)),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Đăng xuất',
+                                      style: TextStyle(color: Color(0xFFEF4444), fontSize: 11, fontWeight: FontWeight.w600),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -282,14 +390,14 @@ class WebAdminSidebar extends StatelessWidget {
 
   Widget _buildSectionLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(left: 12, bottom: 8),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
       child: Text(
         label,
         style: const TextStyle(
           color: Color(0xFF64748B),
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: FontWeight.w700,
-          letterSpacing: 1.1,
+          letterSpacing: 1.2,
         ),
       ),
     );
@@ -305,87 +413,130 @@ class WebAdminSidebar extends StatelessWidget {
   }) {
     final isSelected = selectedIndex == index;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => onTabSelected(index),
-        borderRadius: BorderRadius.circular(12),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF10B981).withValues(alpha: 0.15) : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: isSelected
-                ? Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.4), width: 1)
-                : Border.all(color: Colors.transparent),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF10B981) : const Color(0xFF1E2D27),
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          )
-                        ]
-                      : null,
-                ),
-                child: Icon(
+    if (isCollapsed) {
+      return Tooltip(
+        message: '$title - $subtitle',
+        preferBelow: false,
+        child: InkWell(
+          onTap: () => onTabSelected(index),
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFF10B981).withValues(alpha: 0.15) : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isSelected ? const Color(0xFF10B981) : Colors.transparent,
+                width: 1.2,
+              ),
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Icon(
                   icon,
-                  size: 18,
-                  color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                  color: isSelected ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+                  size: 22,
                 ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
-                        fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                if (badgeText != null)
+                  Positioned(
+                    top: -4,
+                    right: -4,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: badgeColor ?? const Color(0xFFEF4444),
+                        shape: BoxShape.circle,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        color: isSelected ? const Color(0xFF34D399) : const Color(0xFF64748B),
-                        fontSize: 10,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (badgeText != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: (badgeColor ?? AppColors.primary).withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: (badgeColor ?? AppColors.primary).withValues(alpha: 0.5)),
                   ),
-                  child: Text(
-                    badgeText,
-                    style: TextStyle(
-                      color: badgeColor ?? AppColors.primary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
+        ),
+      );
+    }
+
+    return InkWell(
+      onTap: () => onTabSelected(index),
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF10B981).withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF10B981).withValues(alpha: 0.8) : Colors.transparent,
+            width: 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF10B981) : const Color(0xFF13221C),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? Colors.white : const Color(0xFF94A3B8),
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: isSelected ? const Color(0xFF6EE7B7) : const Color(0xFF64748B),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (badgeText != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: badgeColor ?? const Color(0xFF10B981),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  badgeText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -399,49 +550,43 @@ class WebAdminSidebar extends StatelessWidget {
     required String statusText,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFF13201C),
+        color: const Color(0xFF13221C).withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF1E352B), width: 0.8),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF64748B)),
-          const SizedBox(width: 14),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E352B),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: const Color(0xFF94A3B8), size: 16),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Color(0xFFCBD5E1),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 10,
-                  ),
+                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
                 ),
               ],
             ),
           ),
           Row(
             children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(color: statusDot, shape: BoxShape.circle),
-              ),
+              Container(width: 6, height: 6, decoration: BoxDecoration(color: statusDot, shape: BoxShape.circle)),
               const SizedBox(width: 4),
-              Text(
-                statusText,
-                style: TextStyle(color: statusDot, fontSize: 10, fontWeight: FontWeight.bold),
-              ),
+              Text(statusText, style: TextStyle(color: statusDot, fontSize: 10, fontWeight: FontWeight.bold)),
             ],
           ),
         ],
@@ -449,4 +594,3 @@ class WebAdminSidebar extends StatelessWidget {
     );
   }
 }
-

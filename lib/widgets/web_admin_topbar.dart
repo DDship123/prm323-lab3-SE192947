@@ -3,14 +3,19 @@ import 'package:intl/intl.dart';
 import '../services/api_config.dart';
 
 /// Thanh Header trên cùng của Dashboard Admin (Web Top Bar) chuẩn SaaS hiện đại
+/// Tích hợp nút đóng mở / thu gọn menu bên trái, tìm kiếm nhanh và giám sát VPS
 class WebAdminTopbar extends StatelessWidget {
   final int activeTabIndex;
   final VoidCallback onRefresh;
+  final bool isSidebarCollapsed;
+  final VoidCallback? onToggleSidebar;
 
   const WebAdminTopbar({
     super.key,
     required this.activeTabIndex,
     required this.onRefresh,
+    this.isSidebarCollapsed = false,
+    this.onToggleSidebar,
   });
 
   @override
@@ -30,7 +35,7 @@ class WebAdminTopbar extends StatelessWidget {
 
     return Container(
       height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 28),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -39,6 +44,27 @@ class WebAdminTopbar extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Nút toggle đóng mở menu bên trái
+          if (onToggleSidebar != null) ...[
+            IconButton(
+              tooltip: isSidebarCollapsed ? 'Mở rộng menu bên trái' : 'Thu gọn menu bên trái',
+              icon: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  isSidebarCollapsed ? Icons.menu_rounded : Icons.menu_open_rounded,
+                  color: const Color(0xFF0F172A),
+                  size: 20,
+                ),
+              ),
+              onPressed: onToggleSidebar,
+            ),
+            const SizedBox(width: 16),
+          ],
+
           // Tiêu đề trang & Breadcrumb
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -220,4 +246,3 @@ class WebAdminTopbar extends StatelessWidget {
     );
   }
 }
-

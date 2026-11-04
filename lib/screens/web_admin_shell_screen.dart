@@ -10,6 +10,7 @@ import 'web_admin_dispute_screen.dart';
 import 'web_admin_orders_screen.dart';
 
 /// Khung giao diện Web tổng thể dành cho Ban Quản Lý KTX (Web Admin Portal) phong cách Greenova
+/// Menu nằm ở bên trái, hỗ trợ đóng mở / thu gọn (Collapsible Sidebar)
 class WebAdminShellScreen extends StatefulWidget {
   final VoidCallback onSignOut;
   final VoidCallback? onSwitchRole;
@@ -26,16 +27,25 @@ class WebAdminShellScreen extends StatefulWidget {
 
 class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
   int _currentTabIndex = 0;
+  bool _isSidebarCollapsed = false;
   final AdminDashboardStatsModel _stats = AdminDashboardStatsModel.mockData();
+
+  void _toggleSidebar() {
+    setState(() {
+      _isSidebarCollapsed = !_isSidebarCollapsed;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Nền xám nhạt hiện đại
+      backgroundColor: const Color(0xFFF8FAFC),
       body: Row(
         children: [
-          // 1. Menu thanh bên bên trái phong cách Greenova
+          // 1. Menu thanh bên bên trái phong cách Greenova (có thể đóng mở)
           WebAdminSidebar(
+            isCollapsed: _isSidebarCollapsed,
+            onToggleCollapse: _toggleSidebar,
             selectedIndex: _currentTabIndex,
             onTabSelected: (idx) => setState(() => _currentTabIndex = idx),
             onSignOut: widget.onSignOut,
@@ -48,6 +58,8 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
               children: [
                 WebAdminTopbar(
                   activeTabIndex: _currentTabIndex,
+                  isSidebarCollapsed: _isSidebarCollapsed,
+                  onToggleSidebar: _toggleSidebar,
                   onRefresh: () {
                     setState(() {});
                     ScaffoldMessenger.of(context).showSnackBar(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/dispute_model.dart';
 import '../services/dispute_service.dart';
+import '../theme/app_colors.dart';
 
 /// Màn hình Web Admin Trọng tài Khiếu nại Món hỏng - Phong cách Greenova SaaS Portal
 /// Phục vụ BQL KTX kiểm tra ảnh chụp món hỏng độ phân giải cao và quyết định hoàn tiền
@@ -285,7 +286,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                       child: Image.network(
                         imageUrl,
                         fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => Container(
+                        errorBuilder: (_, __, ___) => Container(
                           padding: const EdgeInsets.all(48),
                           color: const Color(0xFF1E293B),
                           child: const Text('Không thể tải ảnh bằng chứng', style: TextStyle(color: Colors.white)),
@@ -458,7 +459,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                         : ListView.separated(
                             padding: const EdgeInsets.all(12),
                             itemCount: _filteredDisputes.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 8),
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
                             itemBuilder: (context, index) {
                               final item = _filteredDisputes[index];
                               final isSelected = _selectedDispute?.id == item.id;
@@ -921,7 +922,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                         Image.network(
                           item.evidenceImageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const Center(
+                          errorBuilder: (_, __, ___) => const Center(
                             child: Text('Không thể tải ảnh bằng chứng', style: TextStyle(color: Colors.white)),
                           ),
                         ),
