@@ -10,6 +10,7 @@ import 'models/order_model.dart';
 import 'models/user_role_enum.dart';
 import 'screens/admin_dispute_management_screen.dart';
 import 'screens/dispute_refund_screen.dart';
+import 'screens/forgot_password_screen.dart';
 import 'screens/group_cart_checkout_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/live_order_tracking_screen.dart';
@@ -457,6 +458,24 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     );
                   },
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ForgotPasswordScreen(),
+                      ),
+                    );
+                  },
+                  child: Text(
+                    'Quên mật khẩu? Khôi phục mã OTP',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ],
             ),
