@@ -2,9 +2,17 @@
 class ApiConfig {
   ApiConfig._();
 
+  static String _dynamicBaseUrl = 'http://10.0.2.2:8080/api/v1';
+
   /// Địa chỉ Base URL kết nối Backend
-  /// 10.0.2.2:8080 tự động kết nối thẳng vào localhost:8080 của máy tính từ Android Emulator
-  static String get baseUrl => 'http://10.0.2.2:8080/api/v1';
+  static String get baseUrl => _dynamicBaseUrl;
+
+  /// Cập nhật địa chỉ Backend theo cấu hình động từ người dùng (VPS, Localhost, Tunnel)
+  static void setDynamicBaseUrl(String newUrl) {
+    if (newUrl.isNotEmpty) {
+      _dynamicBaseUrl = newUrl.endsWith('/') ? newUrl.substring(0, newUrl.length - 1) : newUrl;
+    }
+  }
 
   /// ID người dùng đồng bộ từ Backend (mặc định 1 nếu chưa sync)
   static int currentBackendUserId = 1;
