@@ -323,14 +323,33 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _quickLogin(UserAppRole role, String email, String name, String phone) {
+  Future<void> _quickLogin(UserAppRole role, String email, String name, String phone) async {
     widget.onRoleChanged(role);
-    context.read<AuthViewModel>().syncFirebaseUser(
-          uid: 'mock_${role.name}_uid',
-          email: email,
-          displayName: name,
-        );
-    widget.onRegisteredOrDemoSuccess();
+    setState(() => _isLoading = true);
+    try {
+      final authApi = context.read<AuthApiService>();
+      final user = await authApi.loginWithPassword(
+        emailOrPhone: email,
+        password: '123456',
+      );
+      if (mounted) {
+        context.read<AuthViewModel>().syncFirebaseUser(
+              uid: user.firebaseUid,
+              email: user.email,
+              displayName: user.displayName,
+              phone: user.phone,
+              ktxBuilding: user.ktxBuilding,
+              ktxRoom: user.ktxRoom,
+            );
+        widget.onRegisteredOrDemoSuccess();
+      }
+    } catch (_) {
+      if (mounted) {
+        widget.onRegisteredOrDemoSuccess();
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _handleDirectLogin() {
@@ -342,7 +361,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } else if (input.contains('admin')) {
       _quickLogin(UserAppRole.admin, 'admin.ktx@fpt.edu.vn', 'Ban Quản Lý KTX ĐHQG (Admin)', '0999000111');
     } else {
-      _quickLogin(UserAppRole.student, 'student@fpt.edu.vn', 'Ngô Trường Đạt (Sinh viên)', '0981234567');
+      _quickLogin(UserAppRole.student, input.isNotEmpty ? input : 'student@fpt.edu.vn', 'Ngô Trường Đạt (Sinh viên)', '0981234567');
     }
   }
 
