@@ -12,7 +12,12 @@ import '../widgets/ktx_button.dart';
 import '../widgets/ktx_empty_state.dart';
 import '../widgets/ktx_error_state.dart';
 import '../widgets/ktx_loading_state.dart';
-import '../widgets/screen_state.dart';
+import 'shipper_handover_confirm_screen.dart';
+import 'shipper_pickup_detail_screen.dart';
+import 'shipper_route_screen.dart';
+import 'shipper_shift_registration_screen.dart';
+import 'shipper_shift_summary_screen.dart';
+import 'shipper_wallet_screen.dart';
 
 class ShipperBatchPickupScreen extends StatefulWidget {
   final String shipperId;
@@ -44,6 +49,18 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
       appBar: KtxAppBar(
         title: 'Bảng giao nhận tại Cổng KTX',
         actions: [
+          IconButton(
+            tooltip: 'Ví Thu nhập & Đối soát',
+            icon: const Icon(Icons.account_balance_wallet_rounded),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ShipperWalletScreen(shipperId: widget.shipperId),
+                ),
+              );
+            },
+          ),
           IconButton(
             tooltip: 'Làm mới',
             icon: const Icon(Icons.refresh_rounded),
@@ -99,6 +116,50 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
           const SizedBox(height: 4),
           Text('Thù lao ước tính: ${currencyFormatter.format(batch.totalDeliveryEarnings)}',
               style: AppTypography.bodyMedium.copyWith(color: AppColors.primaryDark, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                ActionChip(
+                  avatar: const Icon(Icons.route, size: 16, color: AppColors.primary),
+                  label: const Text('Lộ trình gom hàng', style: TextStyle(fontSize: 12)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ShipperRouteScreen()),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                ActionChip(
+                  avatar: const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
+                  label: const Text('Đăng ký ca', style: TextStyle(fontSize: 12)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ShipperShiftRegistrationScreen(shipperId: widget.shipperId),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                ActionChip(
+                  avatar: const Icon(Icons.assessment, size: 16, color: AppColors.primary),
+                  label: const Text('Tổng kết ca', style: TextStyle(fontSize: 12)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ShipperShiftSummaryScreen(shipperId: widget.shipperId),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -151,21 +212,64 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                 Text(currencyFormatter.format(order.finalAmount),
                     style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
                 if (!isDelivering)
-                  KtxButton(
-                    label: 'Nhận đơn tại Quán',
-                    icon: Icons.check_circle_outline,
-                    onPressed: () async {
-                      await vm.confirmPickup(
-                        orderId: order.orderId,
-                        shipperId: widget.shipperId,
-                      );
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Đã nhận đơn tại quán! Bắt đầu giao KTX.')),
-                      );
-                    },
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        ),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ShipperPickupDetailScreen(
+                                order: order,
+                                onPickupConfirmed: () {
+                                  vm.confirmPickup(
+                                    orderId: order.orderId,
+                                    shipperId: widget.shipperId,
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text('Chi tiết quán', style: TextStyle(fontSize: 12)),
+                      ),
+                      const SizedBox(width: 8),
+                      KtxButton(
+                        label: 'Lấy hàng',
+                        icon: Icons.check_circle_outline,
+                        onPressed: () async {
+                          await vm.confirmPickup(
+                            orderId: order.orderId,
+                            shipperId: widget.shipperId,
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Đã nhận đơn tại quán! Bắt đầu giao KTX.')),
+                          );
+                        },
+                      ),
+                    ],
                   )
                 else
-                  Text('Đang giao tới trụ KTX', style: AppTypography.bodySmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                    icon: const Icon(Icons.qr_code_scanner, size: 16, color: Colors.white),
+                    label: const Text('Trao hàng & Thu tiền', style: TextStyle(color: Colors.white, fontSize: 12)),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ShipperHandoverConfirmScreen(
+                            order: order,
+                            shipperId: widget.shipperId,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
           ],
