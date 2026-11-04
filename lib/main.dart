@@ -336,7 +336,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleDirectLogin() {
     final input = _emailPhoneController.text.trim().toLowerCase();
     if (input.contains('owner') || input.contains('coba')) {
-      _quickLogin(UserAppRole.restaurantOwner, 'coba.owner@fpt.edu.vn', 'Cô Ba (Chủ Quán Cơm Tấm)', '0908888999');
+      _quickLogin(UserAppRole.storeOwner, 'coba.owner@fpt.edu.vn', 'Cô Ba (Chủ Quán Cơm Tấm)', '0908888999');
     } else if (input.contains('shipper') || input.contains('hung')) {
       _quickLogin(UserAppRole.shipper, 'shipper.hung@fpt.edu.vn', 'Nguyễn Hùng (Shipper Đội Gom)', '0918765432');
     } else if (input.contains('admin')) {
@@ -542,7 +542,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         icon: Icons.restaurant_rounded,
                         color: Colors.deepOrange,
                         onTap: () => _quickLogin(
-                          UserAppRole.restaurantOwner,
+                          UserAppRole.storeOwner,
                           'coba.owner@fpt.edu.vn',
                           'Cô Ba (Chủ Quán Cơm Tấm)',
                           '0908888999',
