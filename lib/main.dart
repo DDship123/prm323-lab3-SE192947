@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import 'firebase/cloud_storage_service.dart';
 import 'firebase_options.dart';
 import 'models/order_model.dart';
+import 'models/user_role_enum.dart';
+import 'screens/admin_dispute_management_screen.dart';
 import 'screens/dispute_refund_screen.dart';
 import 'screens/group_cart_checkout_screen.dart';
 import 'screens/home_screen.dart';
@@ -14,27 +16,36 @@ import 'screens/live_order_tracking_screen.dart';
 import 'screens/notification_board_screen.dart';
 import 'screens/order_history_screen.dart';
 import 'screens/profile_settings_screen.dart';
+import 'screens/restaurant_dashboard_screen.dart';
+import 'screens/shipper_batch_pickup_screen.dart';
 import 'screens/student_register_screen.dart';
+import 'services/admin_api_service.dart';
 import 'services/auth_api_service.dart';
 import 'services/dispute_service.dart';
 import 'services/notification_service.dart';
 import 'services/order_service.dart';
+import 'services/owner_api_service.dart';
 import 'services/payment_service.dart';
 import 'services/review_service.dart';
+import 'services/shipper_api_service.dart';
 import 'services/store_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_spacing.dart';
 import 'theme/app_typography.dart';
+import 'viewmodels/admin_vm.dart';
 import 'viewmodels/auth_vm.dart';
 import 'viewmodels/cart_checkout_vm.dart';
 import 'viewmodels/dispute_vm.dart';
 import 'viewmodels/home_vm.dart';
 import 'viewmodels/order_tracking_vm.dart';
+import 'viewmodels/owner_vm.dart';
 import 'viewmodels/profile_demo_vm.dart';
 import 'viewmodels/review_vm.dart';
+import 'viewmodels/shipper_vm.dart';
 import 'viewmodels/store_detail_vm.dart';
 import 'widgets/ktx_bottom_nav_bar.dart';
 import 'widgets/ktx_button.dart';
+import 'widgets/role_selection_sheet.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,6 +76,9 @@ class AppBootstrap extends StatelessWidget {
         Provider<NotificationService>(create: (_) => NotificationService()),
         Provider<CloudStorageService>(create: (_) => CloudStorageService()),
         Provider<DisputeService>(create: (_) => DisputeService()),
+        Provider<OwnerApiService>(create: (_) => OwnerApiService()),
+        Provider<ShipperApiService>(create: (_) => ShipperApiService()),
+        Provider<AdminApiService>(create: (_) => AdminApiService()),
         ChangeNotifierProvider<AuthViewModel>(
           create: (ctx) => AuthViewModel(
             authApiService: ctx.read<AuthApiService>(),
@@ -109,6 +123,21 @@ class AppBootstrap extends StatelessWidget {
             notificationService: ctx.read<NotificationService>(),
           ),
         ),
+        ChangeNotifierProvider<OwnerViewModel>(
+          create: (ctx) => OwnerViewModel(
+            apiService: ctx.read<OwnerApiService>(),
+          ),
+        ),
+        ChangeNotifierProvider<ShipperViewModel>(
+          create: (ctx) => ShipperViewModel(
+            apiService: ctx.read<ShipperApiService>(),
+          ),
+        ),
+        ChangeNotifierProvider<AdminViewModel>(
+          create: (ctx) => AdminViewModel(
+            apiService: ctx.read<AdminApiService>(),
+          ),
+        ),
       ],
       child: const MyApp(),
     );
@@ -133,7 +162,7 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Điều hướng tự động theo trạng thái đăng nhập (S0 -> S1..S13)
+/// Điều hướng tự động theo trạng thái đăng nhập và vai trò (STUDENT, STORE_OWNER, SHIPPER, ADMIN)
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
 
@@ -143,6 +172,14 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   bool _manualDemoSignedIn = false;
+  UserAppRole _activeRole = UserAppRole.student;
+
+  void _onRoleChanged(UserAppRole newRole) {
+    setState(() {
+      _activeRole = newRole;
+      _manualDemoSignedIn = true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,19 +194,78 @@ class _AuthGateState extends State<AuthGate> {
 
         final firebaseUser = snapshot.data;
         if (firebaseUser != null || _manualDemoSignedIn) {
-          return MainShellScreen(
-            firebaseUser: firebaseUser,
-            onSignOut: () async {
-              setState(() => _manualDemoSignedIn = false);
-              try {
-                await GoogleSignIn.instance.signOut();
-                await FirebaseAuth.instance.signOut();
-              } catch (_) {}
-            },
-          );
+          // Điều hướng màn hình giao diện theo đúng vai trò đang chọn
+          switch (_activeRole) {
+            case UserAppRole.storeOwner:
+              return Scaffold(
+                appBar: AppBar(
+                  title: const Text('Góc Chủ Quán KTX'),
+                  actions: [
+                    IconButton(
+                      tooltip: 'Đổi vai trò',
+                      icon: const Icon(Icons.swap_horiz_rounded),
+                      onPressed: () => _openRoleSwitcher(context),
+                    ),
+                    IconButton(
+                      tooltip: 'Đăng xuất',
+                      icon: const Icon(Icons.logout),
+                      onPressed: _signOut,
+                    ),
+                  ],
+                ),
+                body: const RestaurantDashboardScreen(ownerId: '2'),
+              );
+            case UserAppRole.shipper:
+              return Scaffold(
+                appBar: AppBar(
+                  title: const Text('Góc Tài Xế Gom KTX'),
+                  actions: [
+                    IconButton(
+                      tooltip: 'Đổi vai trò',
+                      icon: const Icon(Icons.swap_horiz_rounded),
+                      onPressed: () => _openRoleSwitcher(context),
+                    ),
+                    IconButton(
+                      tooltip: 'Đăng xuất',
+                      icon: const Icon(Icons.logout),
+                      onPressed: _signOut,
+                    ),
+                  ],
+                ),
+                body: const ShipperBatchPickupScreen(shipperId: '3'),
+              );
+            case UserAppRole.admin:
+              return Scaffold(
+                appBar: AppBar(
+                  title: const Text('Góc Ban Quản Lý (Admin)'),
+                  actions: [
+                    IconButton(
+                      tooltip: 'Đổi vai trò',
+                      icon: const Icon(Icons.swap_horiz_rounded),
+                      onPressed: () => _openRoleSwitcher(context),
+                    ),
+                    IconButton(
+                      tooltip: 'Đăng xuất',
+                      icon: const Icon(Icons.logout),
+                      onPressed: _signOut,
+                    ),
+                  ],
+                ),
+                body: const AdminDisputeManagementScreen(adminId: '4'),
+              );
+            case UserAppRole.student:
+              return MainShellScreen(
+                firebaseUser: firebaseUser,
+                currentRole: _activeRole,
+                onSwitchRole: () => _openRoleSwitcher(context),
+                onSignOut: _signOut,
+              );
+          }
         }
 
         return LoginScreen(
+          currentRole: _activeRole,
+          onRoleChanged: _onRoleChanged,
           onRegisteredOrDemoSuccess: () {
             setState(() => _manualDemoSignedIn = true);
           },
@@ -177,14 +273,36 @@ class _AuthGateState extends State<AuthGate> {
       },
     );
   }
+
+  void _openRoleSwitcher(BuildContext context) async {
+    final selected = await RoleSelectionBottomSheet.show(context, currentRole: _activeRole);
+    if (selected != null) {
+      _onRoleChanged(selected);
+    }
+  }
+
+  Future<void> _signOut() async {
+    setState(() {
+      _manualDemoSignedIn = false;
+      _activeRole = UserAppRole.student;
+    });
+    try {
+      await GoogleSignIn.instance.signOut();
+      await FirebaseAuth.instance.signOut();
+    } catch (_) {}
+  }
 }
 
 /// Màn hình S0: Đăng nhập Google Sign-In & Đăng ký tài khoản Sinh viên KTX
 class LoginScreen extends StatefulWidget {
+  final UserAppRole currentRole;
+  final ValueChanged<UserAppRole> onRoleChanged;
   final VoidCallback onRegisteredOrDemoSuccess;
 
   const LoginScreen({
     super.key,
+    required this.currentRole,
+    required this.onRoleChanged,
     required this.onRegisteredOrDemoSuccess,
   });
 
@@ -212,7 +330,6 @@ class _LoginScreenState extends State<LoginScreen> {
         user = userCred.user;
       } on GoogleSignInException catch (e) {
         if (e.code == GoogleSignInExceptionCode.canceled) return;
-        // Fallback cho máy ảo Android có Google Play Services < 24.x (bị lỗi GetSignInWithGoogleOption NPE)
         final provider = GoogleAuthProvider();
         provider.setCustomParameters({'prompt': 'select_account'});
         final userCred =
@@ -280,7 +397,46 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: AppTypography.bodySmall,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppSpacing.xl),
+                const SizedBox(height: AppSpacing.md),
+
+                // Nút chọn vai trò nhanh để demo
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.primary),
+                  ),
+                  child: InkWell(
+                    onTap: () async {
+                      final selected = await RoleSelectionBottomSheet.show(
+                        context,
+                        currentRole: widget.currentRole,
+                      );
+                      if (selected != null) {
+                        widget.onRoleChanged(selected);
+                      }
+                    },
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.person_pin_circle_outlined, size: 18, color: AppColors.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Vai trò: ${widget.currentRole.labelVi}',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.primaryDark,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_drop_down, color: AppColors.primary),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.lg),
                 KtxButton(
                   label: 'Đăng nhập bằng Google (S0)',
                   icon: Icons.login_rounded,
@@ -314,11 +470,15 @@ class _LoginScreenState extends State<LoginScreen> {
 /// Khung điều hướng chính 4 Tab (S1 Trang chủ, S12 Thông báo, S10 Đơn hàng, S13 Hồ sơ)
 class MainShellScreen extends StatefulWidget {
   final User? firebaseUser;
+  final UserAppRole currentRole;
+  final VoidCallback onSwitchRole;
   final VoidCallback onSignOut;
 
   const MainShellScreen({
     super.key,
     required this.firebaseUser,
+    required this.currentRole,
+    required this.onSwitchRole,
     required this.onSignOut,
   });
 
