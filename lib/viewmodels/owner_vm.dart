@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/owner_order_model.dart';
+import '../models/store_revenue_model.dart';
 import '../services/owner_api_service.dart';
 import '../widgets/screen_state.dart';
 
@@ -55,6 +56,29 @@ class OwnerViewModel extends ChangeNotifier {
       idToken: idToken,
       ownerId: ownerId,
     );
+    notifyListeners();
+  }
+
+  ScreenState<StoreRevenueModel> _revenueState = const StateInitial();
+  ScreenState<StoreRevenueModel> get revenueState => _revenueState;
+
+  Future<void> fetchRevenueReport({
+    required String ownerId,
+    String? idToken,
+    String? slotTime,
+  }) async {
+    _revenueState = const StateLoading();
+    notifyListeners();
+    try {
+      final report = await _apiService.fetchRevenueReport(
+        idToken: idToken,
+        ownerId: ownerId,
+        slotTime: slotTime ?? _currentSlot,
+      );
+      _revenueState = StateSuccess(report);
+    } catch (e) {
+      _revenueState = StateError('Lỗi tải báo cáo doanh thu: $e');
+    }
     notifyListeners();
   }
 }
