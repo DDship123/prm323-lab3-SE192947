@@ -199,15 +199,27 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final GoogleSignInAccount account =
-          await GoogleSignIn.instance.authenticate();
-      final GoogleSignInAuthentication googleAuth = account.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
-      final userCred =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-      final user = userCred.user;
+      User? user;
+      try {
+        final GoogleSignInAccount account =
+            await GoogleSignIn.instance.authenticate();
+        final GoogleSignInAuthentication googleAuth = account.authentication;
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          idToken: googleAuth.idToken,
+        );
+        final userCred =
+            await FirebaseAuth.instance.signInWithCredential(credential);
+        user = userCred.user;
+      } on GoogleSignInException catch (e) {
+        if (e.code == GoogleSignInExceptionCode.canceled) return;
+        // Fallback cho máy ảo Android có Google Play Services < 24.x (bị lỗi GetSignInWithGoogleOption NPE)
+        final provider = GoogleAuthProvider();
+        provider.setCustomParameters({'prompt': 'select_account'});
+        final userCred =
+            await FirebaseAuth.instance.signInWithProvider(provider);
+        user = userCred.user;
+      }
+
       if (user != null && mounted) {
         await context.read<AuthViewModel>().syncFirebaseUser(
               uid: user.uid,
@@ -215,17 +227,6 @@ class _LoginScreenState extends State<LoginScreen> {
               displayName: user.displayName ?? 'Sinh viên KTX',
               photoUrl: user.photoURL,
             );
-      }
-    } on GoogleSignInException catch (e) {
-      if (e.code == GoogleSignInExceptionCode.canceled) return;
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('Lỗi Google Sign-In: ${e.description ?? e.code.name}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
       }
     } catch (e) {
       if (mounted) {
