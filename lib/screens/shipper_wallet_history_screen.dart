@@ -24,8 +24,6 @@ class _ShipperWalletHistoryScreenState extends State<ShipperWalletHistoryScreen>
 
   @override
   Widget build(BuildContext context) {
-    final shipperVm = context.watch<ShipperViewModel>();
-    final state = shipperVm.walletState;
 
     final mockHistory = [
       WalletTransactionItem(
@@ -157,3 +155,4 @@ class _ShipperWalletHistoryScreenState extends State<ShipperWalletHistoryScreen>
     );
   }
 }
+

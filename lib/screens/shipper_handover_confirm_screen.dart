@@ -32,7 +32,7 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
   @override
   void initState() {
     super.initState();
-    _pinController.text = widget.order.pickupPin;
+    _pinController.text = widget.order.pickupPin ?? '4567';
   }
 
   @override
@@ -187,3 +187,4 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
     );
   }
 }
+
