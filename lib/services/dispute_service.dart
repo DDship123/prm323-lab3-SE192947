@@ -97,18 +97,20 @@ class DisputeService {
     required String userId,
   }) async {
     try {
-      final url = Uri.parse('${ApiConfig.orders}?status=DELIVERED');
-      final headers = {
-        'Content-Type': 'application/json',
-        'X-User-Id': userId,
-        if (idToken != null) 'Authorization': 'Bearer $idToken',
-      };
+      final url = Uri.parse(ApiConfig.orders);
+      final headers = ApiConfig.headers(idToken: idToken);
       final response = await _client.get(url, headers: headers).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
         final utf8Body = utf8.decode(response.bodyBytes);
         final jsonMap = jsonDecode(utf8Body) as Map<String, dynamic>;
         final rawList = (jsonMap['data'] as List?) ?? [];
-        return rawList.map((e) => OrderSummaryModel.fromJson(e as Map<String, dynamic>)).toList();
+        final delivered = rawList
+            .map((e) => OrderSummaryModel.fromJson(e as Map<String, dynamic>))
+            .where((o) => o.status == 'DELIVERED')
+            .toList();
+        if (delivered.isNotEmpty) {
+          return delivered;
+        }
       }
       return _getMockOrders();
     } catch (_) {
