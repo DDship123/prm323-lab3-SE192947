@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/shipper_batch_model.dart';
+import '../models/shipper_wallet_model.dart';
 import '../services/shipper_api_service.dart';
 import '../widgets/screen_state.dart';
 
@@ -51,6 +52,66 @@ class ShipperViewModel extends ChangeNotifier {
     );
     if (success) {
       await fetchBatch(shipperId: shipperId, idToken: idToken);
+    }
+    return success;
+  }
+
+  Future<bool> confirmDelivery({
+    required int orderId,
+    required String shipperId,
+    String? idToken,
+  }) async {
+    final success = await _apiService.confirmDeliveryAtGate(
+      orderId: orderId,
+      shipperId: shipperId,
+      idToken: idToken,
+    );
+    if (success) {
+      await fetchBatch(shipperId: shipperId, idToken: idToken);
+    }
+    return success;
+  }
+
+  ScreenState<ShipperWalletModel> _walletState = const StateInitial();
+  ScreenState<ShipperWalletModel> get walletState => _walletState;
+
+  Future<void> fetchWallet({
+    required String shipperId,
+    String? idToken,
+  }) async {
+    _walletState = const StateLoading();
+    notifyListeners();
+
+    try {
+      final wallet = await _apiService.fetchWallet(
+        idToken: idToken,
+        shipperId: shipperId,
+      );
+      _walletState = StateSuccess(wallet);
+    } catch (e) {
+      _walletState = StateError('Lỗi tải ví thu nhập: $e');
+    }
+    notifyListeners();
+  }
+
+  Future<bool> withdrawEarnings({
+    required double amount,
+    required String bankName,
+    required String bankAccountNumber,
+    required String accountHolderName,
+    required String shipperId,
+    String? idToken,
+  }) async {
+    final success = await _apiService.withdrawEarnings(
+      amount: amount,
+      bankName: bankName,
+      bankAccountNumber: bankAccountNumber,
+      accountHolderName: accountHolderName,
+      idToken: idToken,
+      shipperId: shipperId,
+    );
+    if (success) {
+      await fetchWallet(shipperId: shipperId, idToken: idToken);
     }
     return success;
   }
