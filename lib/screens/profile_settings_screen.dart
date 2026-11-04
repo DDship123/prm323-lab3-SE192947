@@ -19,6 +19,7 @@ class ProfileSettingsScreen extends StatelessWidget {
   final String uid;
   final String? photoUrl;
   final VoidCallback onSignOut;
+  final VoidCallback? onSwitchRole;
 
   const ProfileSettingsScreen({
     super.key,
@@ -27,6 +28,7 @@ class ProfileSettingsScreen extends StatelessWidget {
     required this.uid,
     this.photoUrl,
     required this.onSignOut,
+    this.onSwitchRole,
   });
 
   @override
@@ -94,7 +96,16 @@ class ProfileSettingsScreen extends StatelessWidget {
           _buildDisputeCard(context),
           const SizedBox(height: AppSpacing.md),
           _buildFirebaseDemoCard(context, demoVm),
-          const SizedBox(height: AppSpacing.lg),
+          if (onSwitchRole != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            KtxButton(
+              label: 'Đổi vai trò người dùng (Demo)',
+              variant: KtxButtonVariant.outline,
+              icon: Icons.swap_horiz_rounded,
+              onPressed: onSwitchRole,
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
           KtxButton(
             label: 'Đăng xuất tài khoản',
             variant: KtxButtonVariant.danger,

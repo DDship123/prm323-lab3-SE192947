@@ -232,42 +232,16 @@ class _AuthGateState extends State<AuthGate> {
           // Điều hướng màn hình giao diện theo đúng vai trò đang chọn
           switch (_activeRole) {
             case UserAppRole.storeOwner:
-              return Scaffold(
-                appBar: AppBar(
-                  title: const Text('Góc Chủ Quán KTX'),
-                  actions: [
-                    IconButton(
-                      tooltip: 'Đổi vai trò',
-                      icon: const Icon(Icons.swap_horiz_rounded),
-                      onPressed: () => _openRoleSwitcher(context),
-                    ),
-                    IconButton(
-                      tooltip: 'Đăng xuất',
-                      icon: const Icon(Icons.logout),
-                      onPressed: _signOut,
-                    ),
-                  ],
-                ),
-                body: const RestaurantDashboardScreen(ownerId: '2'),
+              return RestaurantDashboardScreen(
+                ownerId: '2',
+                onSwitchRole: () => _openRoleSwitcher(context),
+                onSignOut: _signOut,
               );
             case UserAppRole.shipper:
-              return Scaffold(
-                appBar: AppBar(
-                  title: const Text('Góc Tài Xế Gom KTX'),
-                  actions: [
-                    IconButton(
-                      tooltip: 'Đổi vai trò',
-                      icon: const Icon(Icons.swap_horiz_rounded),
-                      onPressed: () => _openRoleSwitcher(context),
-                    ),
-                    IconButton(
-                      tooltip: 'Đăng xuất',
-                      icon: const Icon(Icons.logout),
-                      onPressed: _signOut,
-                    ),
-                  ],
-                ),
-                body: const ShipperBatchPickupScreen(shipperId: '3'),
+              return ShipperBatchPickupScreen(
+                shipperId: '3',
+                onSwitchRole: () => _openRoleSwitcher(context),
+                onSignOut: _signOut,
               );
             case UserAppRole.admin:
               return WebAdminShellScreen(
@@ -298,7 +272,24 @@ class _AuthGateState extends State<AuthGate> {
   void _openRoleSwitcher(BuildContext context) async {
     final selected = await RoleSelectionBottomSheet.show(context, currentRole: _activeRole);
     if (selected != null) {
-      _onRoleChanged(selected);
+      setState(() {
+        _activeRole = selected;
+        _manualDemoSignedIn = true;
+        switch (selected) {
+          case UserAppRole.student:
+            ApiConfig.currentBackendUserId = 1;
+            break;
+          case UserAppRole.storeOwner:
+            ApiConfig.currentBackendUserId = 2;
+            break;
+          case UserAppRole.shipper:
+            ApiConfig.currentBackendUserId = 3;
+            break;
+          case UserAppRole.admin:
+            ApiConfig.currentBackendUserId = 4;
+            break;
+        }
+      });
     }
   }
 
@@ -333,8 +324,16 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
-  final _emailPhoneController = TextEditingController(text: 'student@fpt.edu.vn');
+  late UserAppRole _selectedRole;
+  final _emailPhoneController = TextEditingController();
   final _passwordController = TextEditingController(text: '123456');
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRole = widget.currentRole;
+    _emailPhoneController.text = _selectedRole.defaultEmail;
+  }
 
   @override
   void dispose() {
@@ -344,25 +343,34 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _quickLogin(UserAppRole role, String email, String name, String phone) async {
-    widget.onRoleChanged(role);
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _selectedRole = role;
+      _emailPhoneController.text = email;
+    });
     try {
       final authApi = context.read<AuthApiService>();
       final user = await authApi.loginWithPassword(
         emailOrPhone: email,
         password: '123456',
       );
+      ApiConfig.currentBackendUserId = user.id;
       if (mounted) {
-        context.read<AuthViewModel>().syncFirebaseUser(
+        await context.read<AuthViewModel>().syncFirebaseUser(
               uid: user.firebaseUid,
               email: user.email,
               displayName: user.displayName,
               photoUrl: user.avatarUrl,
             );
+        widget.onRoleChanged(role);
         widget.onRegisteredOrDemoSuccess();
       }
     } catch (_) {
+      ApiConfig.currentBackendUserId = role == UserAppRole.storeOwner
+          ? 2
+          : (role == UserAppRole.shipper ? 3 : (role == UserAppRole.admin ? 4 : 1));
       if (mounted) {
+        widget.onRoleChanged(role);
         widget.onRegisteredOrDemoSuccess();
       }
     } finally {
@@ -378,8 +386,10 @@ class _LoginScreenState extends State<LoginScreen> {
       _quickLogin(UserAppRole.shipper, 'shipper.hung@fpt.edu.vn', 'Nguyễn Hùng (Shipper Đội Gom)', '0918765432');
     } else if (input.contains('admin')) {
       _quickLogin(UserAppRole.admin, 'admin.ktx@fpt.edu.vn', 'Ban Quản Lý KTX ĐHQG (Admin)', '0999000111');
+    } else if (input.contains('student') || input.contains('dat')) {
+      _quickLogin(UserAppRole.student, 'student@fpt.edu.vn', 'Ngô Trường Đạt (Sinh viên)', '0981234567');
     } else {
-      _quickLogin(UserAppRole.student, input.isNotEmpty ? input : 'student@fpt.edu.vn', 'Ngô Trường Đạt (Sinh viên)', '0981234567');
+      _quickLogin(_selectedRole, input.isNotEmpty ? input : _selectedRole.defaultEmail, 'Người dùng KTX', '0981234567');
     }
   }
 
@@ -530,10 +540,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     onTap: () async {
                       final selected = await RoleSelectionBottomSheet.show(
                         context,
-                        currentRole: widget.currentRole,
+                        currentRole: _selectedRole,
                       );
                       if (selected != null) {
-                        widget.onRoleChanged(selected);
+                        setState(() {
+                          _selectedRole = selected;
+                          _emailPhoneController.text = selected.defaultEmail;
+                        });
                       }
                     },
                     child: Row(
@@ -542,7 +555,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const Icon(Icons.person_pin_circle_outlined, size: 18, color: AppColors.primary),
                         const SizedBox(width: 6),
                         Text(
-                          'Vai trò: ${widget.currentRole.labelVi}',
+                          'Vai trò: ${_selectedRole.labelVi}',
                           style: AppTypography.bodySmall.copyWith(
                             color: AppColors.primaryDark,
                             fontWeight: FontWeight.bold,
@@ -850,6 +863,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         onOpenNotifications: () => setState(() => _selectedIndex = 1),
         onOpenCheckout: _openCheckout,
         onOpenDispute: _openDispute,
+        onSwitchRole: widget.onSwitchRole,
       ),
       const NotificationBoardScreen(),
       const OrderHistoryScreen(),
@@ -858,6 +872,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
         email: email,
         uid: uid,
         photoUrl: user?.photoURL,
+        onSwitchRole: widget.onSwitchRole,
         onSignOut: widget.onSignOut,
       ),
     ];

@@ -20,8 +20,15 @@ import 'restaurant_store_settings_screen.dart';
 
 class RestaurantDashboardScreen extends StatefulWidget {
   final String ownerId;
+  final VoidCallback? onSwitchRole;
+  final VoidCallback? onSignOut;
 
-  const RestaurantDashboardScreen({super.key, this.ownerId = '2'});
+  const RestaurantDashboardScreen({
+    super.key,
+    this.ownerId = '2',
+    this.onSwitchRole,
+    this.onSignOut,
+  });
 
   @override
   State<RestaurantDashboardScreen> createState() => _RestaurantDashboardScreenState();
@@ -65,6 +72,18 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () => vm.fetchKitchenOrders(ownerId: widget.ownerId),
           ),
+          if (widget.onSwitchRole != null)
+            IconButton(
+              tooltip: 'Đổi vai trò',
+              icon: const Icon(Icons.swap_horiz_rounded),
+              onPressed: widget.onSwitchRole,
+            ),
+          if (widget.onSignOut != null)
+            IconButton(
+              tooltip: 'Đăng xuất',
+              icon: const Icon(Icons.logout),
+              onPressed: widget.onSignOut,
+            ),
         ],
       ),
       body: Column(

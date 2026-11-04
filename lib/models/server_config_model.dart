@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 enum ServerEnvironmentPreset {
   emulator('Máy ảo Android (10.0.2.2:8080)', 'http://10.0.2.2:8080/api/v1'),
   localhost('USB Cáp / Localhost (127.0.0.1:8080)', 'http://127.0.0.1:8080/api/v1'),
@@ -23,8 +25,12 @@ class ServerConfigModel {
 
   factory ServerConfigModel.defaultConfig() {
     return ServerConfigModel(
-      baseUrl: ServerEnvironmentPreset.emulator.defaultUrl,
-      preset: ServerEnvironmentPreset.emulator,
+      baseUrl: kIsWeb
+          ? ServerEnvironmentPreset.localhost.defaultUrl
+          : ServerEnvironmentPreset.emulator.defaultUrl,
+      preset: kIsWeb
+          ? ServerEnvironmentPreset.localhost
+          : ServerEnvironmentPreset.emulator,
       updatedAt: DateTime.now(),
     );
   }

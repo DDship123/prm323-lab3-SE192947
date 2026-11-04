@@ -22,8 +22,15 @@ import 'shipper_wallet_screen.dart';
 
 class ShipperBatchPickupScreen extends StatefulWidget {
   final String shipperId;
+  final VoidCallback? onSwitchRole;
+  final VoidCallback? onSignOut;
 
-  const ShipperBatchPickupScreen({super.key, this.shipperId = '3'});
+  const ShipperBatchPickupScreen({
+    super.key,
+    this.shipperId = '3',
+    this.onSwitchRole,
+    this.onSignOut,
+  });
 
   @override
   State<ShipperBatchPickupScreen> createState() => _ShipperBatchPickupScreenState();
@@ -67,6 +74,18 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () => vm.fetchBatch(shipperId: widget.shipperId),
           ),
+          if (widget.onSwitchRole != null)
+            IconButton(
+              tooltip: 'Đổi vai trò',
+              icon: const Icon(Icons.swap_horiz_rounded),
+              onPressed: widget.onSwitchRole,
+            ),
+          if (widget.onSignOut != null)
+            IconButton(
+              tooltip: 'Đăng xuất',
+              icon: const Icon(Icons.logout),
+              onPressed: widget.onSignOut,
+            ),
         ],
       ),
       body: switch (state) {
