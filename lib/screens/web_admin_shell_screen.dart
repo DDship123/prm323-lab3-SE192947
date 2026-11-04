@@ -10,8 +10,8 @@ import 'web_admin_dashboard_screen.dart';
 import 'web_admin_dispute_screen.dart';
 import 'web_admin_orders_screen.dart';
 
-/// Khung giao diện Web tổng thể dành cho Ban Quản Lý KTX (Web Admin Portal) phong cách Greenova
-/// Menu nằm ở bên trái, hỗ trợ đóng mở / thu gọn (Collapsible Sidebar)
+/// Khung giao diện Web tổng thể dành cho Ban Quản Lý KTX (Web Admin Portal)
+/// Menu nằm ở bên trái với 1 nút đóng mở duy nhất, tối ưu 60fps mượt mà
 class WebAdminShellScreen extends StatefulWidget {
   final VoidCallback onSignOut;
   final VoidCallback? onSwitchRole;
@@ -43,7 +43,7 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
       backgroundColor: AppColors.background,
       body: Row(
         children: [
-          // 1. Menu thanh bên bên trái phong cách Greenova (có thể đóng mở)
+          // 1. Menu thanh bên trái (chứa duy nhất 1 nút toggle đóng/mở)
           WebAdminSidebar(
             isCollapsed: _isSidebarCollapsed,
             onToggleCollapse: _toggleSidebar,
@@ -53,43 +53,49 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
             onSwitchRole: widget.onSwitchRole,
           ),
 
-          // 2. Khu vực nội dung chính bên phải kèm Topbar
+          // 2. Khu vực nội dung chính bên phải (được cô lập RepaintBoundary để giữ FPS mượt mà)
           Expanded(
-            child: Column(
-              children: [
-                WebAdminTopbar(
-                  activeTabIndex: _currentTabIndex,
-                  isSidebarCollapsed: _isSidebarCollapsed,
-                  onToggleSidebar: _toggleSidebar,
-                  onRefresh: () {
-                    setState(() {});
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Đã cập nhật dữ liệu mới nhất từ hệ thống'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                ),
-                Expanded(
-                  child: IndexedStack(
-                    index: _currentTabIndex,
-                    children: [
-                      WebAdminDashboardScreen(
-                        stats: _stats,
-                        onNavigateDisputes: () => setState(() => _currentTabIndex = 1),
-                        onNavigateOrders: () => setState(() => _currentTabIndex = 2),
-                      ),
-                      WebAdminDisputeScreen(
-                        disputeService: context.read<DisputeService>(),
-                      ),
-                      WebAdminOrdersScreen(
-                        orderService: context.read<OrderService>(),
-                      ),
-                    ],
+            child: RepaintBoundary(
+              child: Column(
+                children: [
+                  WebAdminTopbar(
+                    activeTabIndex: _currentTabIndex,
+                    onRefresh: () {
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Đã cập nhật dữ liệu mới nhất từ hệ thống'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: IndexedStack(
+                      index: _currentTabIndex,
+                      children: [
+                        RepaintBoundary(
+                          child: WebAdminDashboardScreen(
+                            stats: _stats,
+                            onNavigateDisputes: () => setState(() => _currentTabIndex = 1),
+                            onNavigateOrders: () => setState(() => _currentTabIndex = 2),
+                          ),
+                        ),
+                        RepaintBoundary(
+                          child: WebAdminDisputeScreen(
+                            disputeService: context.read<DisputeService>(),
+                          ),
+                        ),
+                        RepaintBoundary(
+                          child: WebAdminOrdersScreen(
+                            orderService: context.read<OrderService>(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

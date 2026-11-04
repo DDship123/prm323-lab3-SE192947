@@ -6,19 +6,15 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 
 /// Thanh Header trên cùng của Dashboard Admin (Web Top Bar) chuẩn Design System KTX Food
-/// Tích hợp nút đóng mở menu bên trái, tìm kiếm nhanh và giám sát máy chủ VPS
+/// Tích hợp tìm kiếm nhanh, hiển thị ngày an toàn và trạng thái VPS
 class WebAdminTopbar extends StatelessWidget {
   final int activeTabIndex;
   final VoidCallback onRefresh;
-  final bool isSidebarCollapsed;
-  final VoidCallback? onToggleSidebar;
 
   const WebAdminTopbar({
     super.key,
     required this.activeTabIndex,
     required this.onRefresh,
-    this.isSidebarCollapsed = false,
-    this.onToggleSidebar,
   });
 
   String _formatDate(DateTime dt) {
@@ -64,28 +60,7 @@ class WebAdminTopbar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Nút toggle đóng mở menu bên trái
-          if (onToggleSidebar != null) ...[
-            IconButton(
-              tooltip: isSidebarCollapsed ? 'Mở rộng menu bên trái' : 'Thu gọn menu bên trái',
-              icon: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: AppRadius.roundedSm,
-                ),
-                child: Icon(
-                  isSidebarCollapsed ? Icons.menu_rounded : Icons.menu_open_rounded,
-                  color: AppColors.textPrimary,
-                  size: 18,
-                ),
-              ),
-              onPressed: onToggleSidebar,
-            ),
-            const SizedBox(width: AppSpacing.sm),
-          ],
-
-          // Tiêu đề trang & Breadcrumb
+          // Tiêu đề trang & Breadcrumb (Không còn nút trùng lặp)
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,7 +168,7 @@ class WebAdminTopbar extends StatelessWidget {
 
           const SizedBox(width: AppSpacing.sm),
 
-          // Ngày hiện tại
+          // Ngày hiện tại (An toàn, không bị LocaleDataException)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(

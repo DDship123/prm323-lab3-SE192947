@@ -251,8 +251,9 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
                                 scrollDirection: Axis.vertical,
                                 child: SizedBox(
                                   width: double.infinity,
-                                  child: DataTable(
-                                    headingRowColor: WidgetStateProperty.all(AppColors.surfaceVariant),
+                                  child: RepaintBoundary(
+                                    child: DataTable(
+                                      headingRowColor: WidgetStateProperty.all(AppColors.surfaceVariant),
                                     headingTextStyle: AppTypography.caption.copyWith(
                                       color: AppColors.textPrimary,
                                       fontWeight: FontWeight.bold,
@@ -362,6 +363,7 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
                                         DataCell(_buildOrderStatusBadge(order.status)),
                                       ]);
                                     }).toList(),
+                                    ),
                                   ),
                                 ),
                               ),

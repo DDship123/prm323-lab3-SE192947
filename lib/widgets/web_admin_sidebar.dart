@@ -26,19 +26,20 @@ class WebAdminSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
-      width: isCollapsed ? 76 : 260,
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(
-          right: BorderSide(color: AppColors.border, width: 1),
+    return RepaintBoundary(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.fastOutSlowIn,
+        width: isCollapsed ? 76 : 260,
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(
+            right: BorderSide(color: AppColors.border, width: 1),
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           // ================= 1. HEADER THƯƠNG HIỆU KTX FOOD =================
           Container(
             padding: EdgeInsets.symmetric(
@@ -386,6 +387,7 @@ class WebAdminSidebar extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 

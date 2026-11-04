@@ -289,45 +289,43 @@ class WebAdminDashboardScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: stats.recentActivities.length,
-                        separatorBuilder: (context, index) => const Divider(height: 16, color: AppColors.border),
-                        itemBuilder: (context, index) {
-                          final act = stats.recentActivities[index];
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildActivityIcon(act.type),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      act.title,
-                                      style: AppTypography.bodySmall.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary,
+                      Column(
+                        children: [
+                          for (int i = 0; i < stats.recentActivities.length; i++) ...[
+                            if (i > 0) const Divider(height: 16, color: AppColors.border),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildActivityIcon(stats.recentActivities[i].type),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        stats.recentActivities[i].title,
+                                        style: AppTypography.bodySmall.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.textPrimary,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      act.description,
-                                      style: AppTypography.caption,
-                                    ),
-                                  ],
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        stats.recentActivities[i].description,
+                                        style: AppTypography.caption,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: AppSpacing.xs),
-                              Text(
-                                act.timeAgo,
-                                style: const TextStyle(fontSize: 10, color: AppColors.textHint),
-                              ),
-                            ],
-                          );
-                        },
+                                const SizedBox(width: AppSpacing.xs),
+                                Text(
+                                  stats.recentActivities[i].timeAgo,
+                                  style: const TextStyle(fontSize: 10, color: AppColors.textHint),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ),
