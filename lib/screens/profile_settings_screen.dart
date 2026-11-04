@@ -6,6 +6,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../viewmodels/auth_vm.dart';
 import '../viewmodels/profile_demo_vm.dart';
+import '../widgets/crash_confirm_dialog.dart';
 import '../widgets/ktx_app_bar.dart';
 import '../widgets/ktx_button.dart';
 import 'dispute_history_screen.dart';
@@ -233,7 +234,7 @@ class ProfileSettingsScreen extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             leading: const Icon(
               Icons.bug_report_outlined,
-              color: AppColors.error,
+              color: AppColors.warning,
             ),
             title: const Text('Firebase Crashlytics Non-Fatal Log'),
             subtitle: Text(demoVm.lastCrashlyticsLog),
@@ -247,6 +248,48 @@ class ProfileSettingsScreen extends StatelessWidget {
                 );
               },
               child: const Text('Ghi Log'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.flash_on_rounded, color: AppColors.error),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        'Demo Crashlytics Fatal Crash',
+                        style: AppTypography.heading4.copyWith(color: AppColors.error),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Nhấn nút để gây sập ứng dụng tức thì. Sau đó mở lại app để Crashlytics đồng bộ báo cáo lỗi lên Firebase Console.',
+                  style: AppTypography.bodySmall,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                KtxButton(
+                  label: '💥 Gây Crash App (Test Crashlytics)',
+                  backgroundColor: AppColors.error,
+                  onPressed: () {
+                    CrashConfirmDialog.show(
+                      context,
+                      onConfirm: () => demoVm.triggerFatalCrashTest(),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ],
