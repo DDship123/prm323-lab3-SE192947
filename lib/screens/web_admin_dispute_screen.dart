@@ -63,23 +63,23 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
       DisputeModel(
         id: 101,
         orderId: 1,
-        userId: 1,
+        storeName: 'Cơm Tấm Cô Ba KTX',
         reason: 'Hộp cơm bị vỡ nát khi nhận',
         description: 'Món cơm sườn bị bung nắp, nước mắm đổ lênh láng ra túi đựng khi shipper giao tới sảnh KTX BA1.',
         evidenceImageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
+        requestedRefundAmount: 45000,
         status: DisputeStatus.pending,
-        refundAmount: 45000,
         createdAt: DateTime.now().subtract(const Duration(minutes: 45)),
       ),
       DisputeModel(
         id: 102,
         orderId: 2,
-        userId: 1,
+        storeName: 'Bún Bò Huế O Phượng',
         reason: 'Giao nhầm món ăn',
         description: 'Đặt Bún bò gân giòn nhưng nhận được Bún chả cua, không đúng khẩu phần đặt.',
         evidenceImageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600',
+        requestedRefundAmount: 50000,
         status: DisputeStatus.pending,
-        refundAmount: 50000,
         createdAt: DateTime.now().subtract(const Duration(hours: 2)),
       ),
     ];
@@ -87,7 +87,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
 
   List<DisputeModel> get _filteredDisputes {
     if (_statusFilter == 'ALL') return _disputes;
-    return _disputes.where((d) => d.status.name.toUpperCase() == _statusFilter).toList();
+    return _disputes.where((d) => d.status.code.toUpperCase() == _statusFilter).toList();
   }
 
   Future<void> _resolveDispute(bool approved) async {
@@ -100,7 +100,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
         title: Text(approved ? 'Duyệt hoàn tiền cho Sinh viên?' : 'Từ chối khiếu nại?'),
         content: Text(
           approved
-              ? 'Số tiền ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(_selectedDispute!.refundAmount)} sẽ được hoàn vào ví của Sinh viên KTX.'
+              ? 'Số tiền ${NumberFormat.currency(locale: 'vi_VN', symbol: 'đ').format(_selectedDispute!.requestedRefundAmount)} sẽ được hoàn vào ví của Sinh viên KTX.'
               : 'Khiếu nại sẽ bị đóng với lý do bằng chứng chưa đủ xác thực.',
         ),
         actions: [
@@ -300,7 +300,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                                   children: [
                                     Text('Chi Tiết Trọng Tài #DIS-${_selectedDispute!.id}', style: AppTypography.heading2),
                                     const SizedBox(height: 4),
-                                    Text('Đơn hàng: #${_selectedDispute!.orderId} • Người gửi: Sinh viên KTX', style: AppTypography.bodySmall),
+                                    Text('Đơn hàng: #${_selectedDispute!.orderId} • Cửa hàng: ${_selectedDispute!.storeName ?? 'Quán KTX'}', style: AppTypography.bodySmall),
                                   ],
                                 ),
                                 _buildStatusBadge(_selectedDispute!.status, isLarge: true),
@@ -324,7 +324,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                                     children: [
                                       Text('Lý do: ${_selectedDispute!.reason}', style: AppTypography.heading3.copyWith(fontSize: 16)),
                                       Text(
-                                        'Yêu cầu hoàn: ${currencyFormatter.format(_selectedDispute!.refundAmount)}',
+                                        'Yêu cầu hoàn: ${currencyFormatter.format(_selectedDispute!.requestedRefundAmount)}',
                                         style: AppTypography.heading3.copyWith(color: AppColors.error, fontSize: 16),
                                       ),
                                     ],
@@ -339,9 +339,9 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                                     style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(height: 8),
-                                  if (_selectedDispute!.evidenceImageUrl != null && _selectedDispute!.evidenceImageUrl!.isNotEmpty)
+                                  if (_selectedDispute!.evidenceImageUrl.isNotEmpty)
                                     InkWell(
-                                      onTap: () => _showZoomImage(_selectedDispute!.evidenceImageUrl!),
+                                      onTap: () => _showZoomImage(_selectedDispute!.evidenceImageUrl),
                                       child: Container(
                                         height: 240,
                                         width: double.infinity,
@@ -355,7 +355,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                                           fit: StackFit.expand,
                                           children: [
                                             Image.network(
-                                              _selectedDispute!.evidenceImageUrl!,
+                                              _selectedDispute!.evidenceImageUrl,
                                               fit: BoxFit.cover,
                                               errorBuilder: (_, __, ___) => const Center(child: Text('Không thể tải ảnh')),
                                             ),
@@ -466,9 +466,9 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
         bg = Colors.red.shade100;
         fg = Colors.red.shade900;
         break;
-      case DisputeStatus.cancelled:
-        bg = Colors.grey.shade200;
-        fg = Colors.grey.shade700;
+      case DisputeStatus.refunded:
+        bg = Colors.blue.shade100;
+        fg = Colors.blue.shade900;
         break;
     }
 

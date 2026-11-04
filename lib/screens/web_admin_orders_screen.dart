@@ -21,7 +21,7 @@ class WebAdminOrdersScreen extends StatefulWidget {
 
 class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
   bool _isLoading = true;
-  List<OrderModel> _orders = [];
+  List<OrderDetailModel> _orders = [];
   String _selectedFilter = 'ALL';
 
   @override
@@ -33,7 +33,7 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
   Future<void> _loadOrders() async {
     setState(() => _isLoading = true);
     try {
-      final list = await widget.orderService.fetchOrderHistory();
+      final list = await widget.orderService.fetchMyOrders();
       if (mounted) {
         setState(() {
           _orders = list.isNotEmpty ? list : _mockOrders();
@@ -50,64 +50,72 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
     }
   }
 
-  List<OrderModel> _mockOrders() {
+  List<OrderDetailModel> _mockOrders() {
     return [
-      OrderModel(
+      OrderDetailModel(
         id: 1,
         orderCode: 'KTX-ORD-1001',
+        userId: 1,
         storeId: 1,
         storeName: 'Cơm Tấm Cô Ba KTX',
         slotTime: 'Ca trưa 11:30 - 12:30',
         pickupLocation: 'Sảnh Tòa BA1 - KTX Khu B',
         pickupPin: '4829',
-        status: OrderStatus.delivering,
-        paymentStatus: PaymentStatus.paid,
+        pickupQrCode: 'QR_1001',
+        status: 'DELIVERING',
+        paymentMethod: 'VIETQR',
+        paymentStatus: 'PAID',
         subtotalAmount: 90000,
         groupDiscountAmount: 10000,
         deliveryFee: 5000,
         finalAmount: 85000,
         createdAt: DateTime.now().subtract(const Duration(minutes: 25)),
-        items: [
-          const OrderItemModel(
+        items: const [
+          OrderItemModel(
+            id: 1,
             menuItemId: 1,
-            name: 'Cơm sườn bì chả đặc biệt',
+            itemName: 'Cơm sườn bì chả đặc biệt',
             quantity: 2,
             unitPrice: 45000,
-            totalPrice: 90000,
+            itemTotalAmount: 90000,
           ),
         ],
       ),
-      OrderModel(
+      OrderDetailModel(
         id: 2,
         orderCode: 'KTX-ORD-1002',
+        userId: 1,
         storeId: 2,
         storeName: 'Bún Bò Huế O Phượng',
         slotTime: 'Ca trưa 11:30 - 12:30',
         pickupLocation: 'Sảnh Tòa BA2 - KTX Khu B',
         pickupPin: '1934',
-        status: OrderStatus.completed,
-        paymentStatus: PaymentStatus.paid,
+        pickupQrCode: 'QR_1002',
+        status: 'DELIVERED',
+        paymentMethod: 'COD',
+        paymentStatus: 'PAID',
         subtotalAmount: 50000,
         groupDiscountAmount: 5000,
         deliveryFee: 5000,
         finalAmount: 50000,
         createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-        items: [
-          const OrderItemModel(
+        items: const [
+          OrderItemModel(
+            id: 2,
             menuItemId: 4,
-            name: 'Bún bò tái nạm gầu',
+            itemName: 'Bún bò tái nạm gầu',
             quantity: 1,
             unitPrice: 50000,
-            totalPrice: 50000,
+            itemTotalAmount: 50000,
           ),
         ],
       ),
     ];
   }
 
-  List<OrderModel> get _filteredOrders {
+  List<OrderDetailModel> get _filteredOrders {
     if (_selectedFilter == 'ALL') return _orders;
-    return _orders.where((o) => o.status.name.toUpperCase() == _selectedFilter).toList();
+    return _orders.where((o) => o.status.toUpperCase() == _selectedFilter).toList();
   }
 
   @override
@@ -149,7 +157,7 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
                 const SizedBox(width: 8),
                 _buildFilterChip('DELIVERING', 'Đang giao'),
                 const SizedBox(width: 8),
-                _buildFilterChip('COMPLETED', 'Đã nhận'),
+                _buildFilterChip('DELIVERED', 'Đã nhận'),
                 const SizedBox(width: 8),
                 _buildFilterChip('PENDING', 'Chờ xác nhận'),
               ],
@@ -227,32 +235,37 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
     );
   }
 
-  Widget _buildOrderStatusBadge(OrderStatus status) {
+  Widget _buildOrderStatusBadge(String status) {
     Color bg;
     Color fg;
-    switch (status) {
-      case OrderStatus.delivering:
+    String label;
+    switch (status.toUpperCase()) {
+      case 'DELIVERING':
         bg = Colors.blue.shade100;
         fg = Colors.blue.shade900;
+        label = 'Đang giao';
         break;
-      case OrderStatus.completed:
+      case 'DELIVERED':
         bg = Colors.green.shade100;
         fg = Colors.green.shade900;
+        label = 'Đã nhận';
         break;
-      case OrderStatus.cancelled:
+      case 'CANCELLED':
         bg = Colors.red.shade100;
         fg = Colors.red.shade900;
+        label = 'Đã hủy';
         break;
       default:
         bg = Colors.amber.shade100;
         fg = Colors.amber.shade900;
+        label = 'Chờ xử lý';
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
       child: Text(
-        status.label,
+        label,
         style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.bold),
       ),
     );

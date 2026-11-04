@@ -268,7 +268,7 @@ class ProfileSettingsScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'Demo Crashlytics Fatal Crash',
-                        style: AppTypography.heading4.copyWith(color: AppColors.error),
+                        style: AppTypography.heading3.copyWith(color: AppColors.error, fontSize: 14),
                       ),
                     ),
                   ],
@@ -281,7 +281,7 @@ class ProfileSettingsScreen extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 KtxButton(
                   label: '💥 Gây Crash App (Test Crashlytics)',
-                  backgroundColor: AppColors.error,
+                  variant: KtxButtonVariant.danger,
                   onPressed: () {
                     CrashConfirmDialog.show(
                       context,
