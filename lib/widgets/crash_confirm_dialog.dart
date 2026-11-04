@@ -63,7 +63,7 @@ class CrashConfirmDialog extends StatelessWidget {
                 Expanded(
                   child: KtxButton(
                     label: 'Gây Crash',
-                    backgroundColor: AppColors.error,
+                    variant: KtxButtonVariant.danger,
                     icon: Icons.flash_on_rounded,
                     onPressed: () {
                       Navigator.of(context).pop(true);

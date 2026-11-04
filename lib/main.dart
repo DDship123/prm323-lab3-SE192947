@@ -49,10 +49,17 @@ import 'viewmodels/store_detail_vm.dart';
 import 'widgets/ktx_bottom_nav_bar.dart';
 import 'widgets/ktx_button.dart';
 import 'widgets/role_selection_sheet.dart';
+import 'services/server_config_service.dart';
+import 'widgets/server_config_dialog.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Tự động tải địa chỉ máy chủ lưu trước đó (hoặc mặc định VPS/Emulator)
+  try {
+    await ServerConfigService().loadConfig();
+  } catch (_) {}
 
   // Cấu hình bắt lỗi Fatal và chuyển tiếp tới Firebase Crashlytics
   FlutterError.onError = (errorDetails) {
@@ -424,17 +431,66 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _openServerConfigDialog() async {
+    final serverService = ServerConfigService();
+    final current = await serverService.loadConfig();
+    if (!mounted) return;
+    await ServerConfigDialog.show(
+      context,
+      currentConfig: current,
+      onSaved: (newConfig) async {
+        await serverService.saveConfig(newConfig);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã cập nhật máy chủ Backend: ${newConfig.baseUrl}'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+        child: Stack(
+          children: [
+            Positioned(
+              top: 8,
+              right: 12,
+              child: IconButton(
+                tooltip: 'Cài đặt IP Máy chủ / VPS',
+                icon: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 4,
+                      )
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.settings_ethernet_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                onPressed: _openServerConfigDialog,
+              ),
+            ),
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                 Container(
                   width: 88,
                   height: 88,
@@ -659,8 +715,10 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);
   }
 
   Widget _buildRoleCard({

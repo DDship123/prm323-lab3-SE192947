@@ -120,7 +120,6 @@ class _ServerConfigDialogState extends State<ServerConfigDialog> {
             ),
             const SizedBox(height: AppSpacing.md),
             ...ServerEnvironmentPreset.values.map((preset) {
-              final isSelected = _selectedPreset == preset;
               return RadioListTile<ServerEnvironmentPreset>(
                 contentPadding: EdgeInsets.zero,
                 dense: true,
