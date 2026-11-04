@@ -337,9 +337,7 @@ class _LoginScreenState extends State<LoginScreen> {
               uid: user.firebaseUid,
               email: user.email,
               displayName: user.displayName,
-              phone: user.phone,
-              ktxBuilding: user.ktxBuilding,
-              ktxRoom: user.ktxRoom,
+              photoUrl: user.avatarUrl,
             );
         widget.onRegisteredOrDemoSuccess();
       }
