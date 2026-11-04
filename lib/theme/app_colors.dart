@@ -21,8 +21,11 @@ class AppColors {
 
   // Màu trạng thái (Feedback Colors)
   static const Color success = Color(0xFF2E7D32);
+  static const Color successLight = Color(0xFFE8F5E9);
   static const Color warning = Color(0xFFF57C00);
+  static const Color warningLight = Color(0xFFFFF3E0);
   static const Color error = Color(0xFFD32F2F);
+  static const Color errorLight = Color(0xFFFFEBEE);
   static const Color info = Color(0xFF1976D2);
 
   // Màu viền và ngăn cách
