@@ -267,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildStoreList(HomeViewModel homeVm) {
     final state = homeVm.storesState;
     return switch (state) {
-      StateLoading() => const KtxLoadingState(itemCount: 3),
+      StateInitial() || StateLoading() => const KtxLoadingState(itemCount: 3),
       StateError(:final errorMessage) => KtxErrorState(
           message: errorMessage,
           onRetry: homeVm.loadHomeData,
