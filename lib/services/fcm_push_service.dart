@@ -59,3 +59,4 @@ class FcmPushService {
     return 'fcm_ktx_dev_token_${now.toRadixString(16)}';
   }
 }
+

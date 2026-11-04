@@ -108,3 +108,4 @@ class InAppNotificationBanner extends StatelessWidget {
     );
   }
 }
+

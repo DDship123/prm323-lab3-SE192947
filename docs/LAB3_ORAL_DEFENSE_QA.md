@@ -119,3 +119,4 @@
     * **Sinh viên, Shipper, Quán ăn**: Cần tính cơ động, sử dụng điện thoại di động mọi lúc mọi nơi để đặt món, nhận thông báo đẩy và giao hàng tại sảnh KTX.
     * **Ban Quản Lý KTX (Admin)**: Ngồi tại phòng trực ban quản lý, sử dụng màn hình máy tính lớn (Desktop/Laptop Web) để xem bảng biểu số liệu tổng quan KPI, đối soát doanh thu gom đơn, và đặc biệt là xem ảnh bằng chứng phóng to để phân xử khiếu nại công bằng.
   * Ứng dụng sử dụng cờ `kIsWeb` của Flutter: khi mở trên trình duyệt Web máy tính, hệ thống tự động khóa và chuyển hướng thẳng vào **Web Admin Portal**.
+

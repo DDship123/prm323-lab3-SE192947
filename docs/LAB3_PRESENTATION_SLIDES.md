@@ -145,3 +145,4 @@ sequenceDiagram
 2. **Quy trình gom đơn & thông báo đẩy (FCM)**: Đơn hàng cập nhật trạng thái từ lúc xác nhận đến khi shipper giao đến sảnh KTX.
 3. **Quy trình giải quyết khiếu nại**: Sinh viên chụp ảnh upload -> Admin xem trên Web phóng to kiểm tra -> Duyệt hoàn tiền thành công.
 4. **Bộ mã nguồn**: Đầy đủ commit rõ ràng, tuân thủ Clean Architecture, đạt chuẩn 100% yêu cầu Lab 3.
+
