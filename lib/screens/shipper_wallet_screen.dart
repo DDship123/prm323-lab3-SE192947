@@ -62,12 +62,12 @@ class _ShipperWalletScreenState extends State<ShipperWalletScreen> {
       ),
       body: switch (state) {
         StateInitial() || StateLoading() => const KtxLoadingState(message: 'Đang tải thông tin ví...'),
-        StateError(:final message) => KtxErrorState(
-            message: message,
+        StateError(errorMessage: final msg) => KtxErrorState(
+            errorMessage: msg,
             onRetry: () => shipperVm.fetchWallet(shipperId: widget.shipperId),
           ),
-        StateEmpty(:final message) => KtxEmptyState(title: 'Ví trống', subtitle: message),
-        StateSuccess(:final data) => _buildWalletContent(data),
+        StateEmpty(message: final msg) => KtxEmptyState(title: 'Ví trống', message: msg),
+        StateSuccess(data: final data) => _buildWalletContent(data),
       },
     );
   }
@@ -212,3 +212,4 @@ class _ShipperWalletScreenState extends State<ShipperWalletScreen> {
     );
   }
 }
+

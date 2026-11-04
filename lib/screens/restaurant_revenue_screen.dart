@@ -60,15 +60,15 @@ class _RestaurantRevenueScreenState extends State<RestaurantRevenueScreen> {
           Expanded(
             child: switch (state) {
               StateInitial() || StateLoading() => const KtxLoadingState(message: 'Đang kết xuất báo cáo doanh thu...'),
-              StateError(:final message) => KtxErrorState(
-                  message: message,
+              StateError(errorMessage: final msg) => KtxErrorState(
+                  errorMessage: msg,
                   onRetry: () => ownerVm.fetchRevenueReport(
                     ownerId: widget.ownerId,
                     slotTime: _selectedSlot,
                   ),
                 ),
-              StateEmpty(:final message) => KtxEmptyState(title: 'Chưa có đối soát', subtitle: message),
-              StateSuccess(:final data) => _buildRevenueContent(data),
+              StateEmpty(message: final msg) => KtxEmptyState(title: 'Chưa có đối soát', message: msg),
+              StateSuccess(data: final data) => _buildRevenueContent(data),
             },
           ),
         ],
@@ -267,3 +267,4 @@ class _RestaurantRevenueScreenState extends State<RestaurantRevenueScreen> {
     );
   }
 }
+
