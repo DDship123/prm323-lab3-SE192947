@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/admin_dashboard_model.dart';
 import '../services/dispute_service.dart';
 import '../services/order_service.dart';
+import '../theme/app_colors.dart';
 import '../widgets/web_admin_sidebar.dart';
 import '../widgets/web_admin_topbar.dart';
 import 'web_admin_dashboard_screen.dart';
@@ -39,7 +40,7 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       body: Row(
         children: [
           // 1. Menu thanh bên bên trái phong cách Greenova (có thể đóng mở)

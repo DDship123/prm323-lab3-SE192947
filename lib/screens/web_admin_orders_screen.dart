@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/order_model.dart';
 import '../services/order_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 
-/// Màn hình Web Admin Giám sát Đơn hàng KTX phong cách Greenova / Full-width Table
+/// Màn hình Web Admin Giám sát Đơn hàng KTX - Chuẩn Design System KTX Food (Figma Lab 2 & 3)
+/// Đồng bộ 100% với màu Cam KTX (#FF5722), Typography và Token thiết kế
 class WebAdminOrdersScreen extends StatefulWidget {
   final OrderService orderService;
 
@@ -90,7 +95,7 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
         pickupPin: '1934',
         pickupQrCode: 'QR_1002',
         status: 'DELIVERED',
-        paymentMethod: 'COD',
+        paymentMethod: 'TIỀN MẶT',
         paymentStatus: 'PAID',
         subtotalAmount: 50000,
         groupDiscountAmount: 5000,
@@ -100,8 +105,8 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
         items: const [
           OrderItemModel(
             id: 2,
-            menuItemId: 4,
-            itemName: 'Bún bò tái nạm gầu',
+            menuItemId: 2,
+            itemName: 'Bún bò tái nạm chả',
             quantity: 1,
             unitPrice: 50000,
             itemTotalAmount: 50000,
@@ -115,8 +120,8 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
         storeId: 1,
         storeName: 'Cơm Tấm Cô Ba KTX',
         slotTime: 'Ca chiều 17:30 - 18:30',
-        pickupLocation: 'Cổng 1 KTX Khu A (Bàn 2)',
-        pickupPin: '7392',
+        pickupLocation: 'Trụ A1-A2 - KTX Khu A',
+        pickupPin: '6521',
         pickupQrCode: 'QR_1003',
         status: 'PENDING',
         paymentMethod: 'VIETQR',
@@ -156,8 +161,8 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
     final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
     return Container(
-      color: const Color(0xFFF8FAFC),
-      padding: const EdgeInsets.all(32),
+      color: AppColors.background,
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -165,14 +170,14 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                color: AppColors.surface,
+                borderRadius: AppRadius.roundedMd,
+                border: Border.all(color: AppColors.border),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x06000000),
-                    blurRadius: 20,
-                    offset: Offset(0, 4),
+                    blurRadius: 10,
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
@@ -180,19 +185,19 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
                 children: [
                   // Header của Bảng: Tìm kiếm & Bộ lọc Tab
                   Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Bộ lọc Tab phong cách Greenova
+                        // Bộ lọc Tab chuẩn phong cách KTX Food
                         Row(
                           children: [
-                            _buildFilterPill('ALL', 'Tất cả đơn (${_orders.length})'),
-                            const SizedBox(width: 8),
+                            _buildFilterPill('ALL', 'Tất cả (${_orders.length})'),
+                            const SizedBox(width: AppSpacing.xs),
                             _buildFilterPill('DELIVERING', 'Đang giao'),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.xs),
                             _buildFilterPill('DELIVERED', 'Đã nhận'),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.xs),
                             _buildFilterPill('PENDING', 'Chờ xử lý'),
                           ],
                         ),
@@ -201,28 +206,28 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
                         Row(
                           children: [
                             Container(
-                              width: 260,
-                              height: 38,
+                              width: 240,
+                              height: 36,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                color: AppColors.surfaceVariant,
+                                borderRadius: AppRadius.roundedSm,
+                                border: Border.all(color: AppColors.border),
                               ),
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
                               child: TextField(
                                 onChanged: (val) => setState(() => _searchQuery = val),
-                                decoration: const InputDecoration(
-                                  icon: Icon(Icons.search, size: 16, color: Color(0xFF94A3B8)),
+                                decoration: InputDecoration(
+                                  icon: const Icon(Icons.search, size: 16, color: AppColors.textHint),
                                   hintText: 'Lọc nhanh bảng...',
-                                  hintStyle: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                                  hintStyle: AppTypography.caption.copyWith(color: AppColors.textHint),
                                   border: InputBorder.none,
                                   isDense: true,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.sm),
                             IconButton(
-                              icon: const Icon(Icons.refresh_rounded, size: 20, color: Color(0xFF64748B)),
+                              icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.textSecondary),
                               onPressed: _loadOrders,
                               tooltip: 'Làm mới bảng',
                             ),
@@ -232,31 +237,31 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
                     ),
                   ),
 
-                  const Divider(color: Color(0xFFF1F5F9), height: 1),
+                  const Divider(color: AppColors.border, height: 1),
 
                   // Bảng dữ liệu chiếm trọn 100% chiều ngang
                   Expanded(
                     child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
+                        ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
                         : _filteredOrders.isEmpty
-                            ? const Center(
-                                child: Text('Không tìm thấy đơn hàng nào phù hợp', style: TextStyle(color: Color(0xFF94A3B8))),
+                            ? Center(
+                                child: Text('Không tìm thấy đơn hàng nào phù hợp', style: AppTypography.caption),
                               )
                             : SingleChildScrollView(
                                 scrollDirection: Axis.vertical,
                                 child: SizedBox(
                                   width: double.infinity,
                                   child: DataTable(
-                                    headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
-                                    headingTextStyle: const TextStyle(
-                                      color: Color(0xFF475569),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
+                                    headingRowColor: WidgetStateProperty.all(AppColors.surfaceVariant),
+                                    headingTextStyle: AppTypography.caption.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
                                       letterSpacing: 0.5,
                                     ),
-                                    dataRowMaxHeight: 64,
-                                    horizontalMargin: 24,
-                                    columnSpacing: 28,
+                                    dataRowMaxHeight: 60,
+                                    horizontalMargin: 20,
+                                    columnSpacing: 24,
                                     columns: const [
                                       DataColumn(label: Text('MÃ ĐƠN')),
                                       DataColumn(label: Text('CỬA HÀNG')),
@@ -272,20 +277,19 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
                                           Row(
                                             children: [
                                               Container(
-                                                padding: const EdgeInsets.all(6),
+                                                padding: const EdgeInsets.all(5),
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFFF1F5F9),
-                                                  borderRadius: BorderRadius.circular(6),
+                                                  color: AppColors.surfaceVariant,
+                                                  borderRadius: AppRadius.roundedSm,
                                                 ),
-                                                child: const Icon(Icons.receipt_rounded, size: 16, color: Color(0xFF64748B)),
+                                                child: const Icon(Icons.receipt_rounded, size: 15, color: AppColors.textSecondary),
                                               ),
-                                              const SizedBox(width: 10),
+                                              const SizedBox(width: 8),
                                               Text(
                                                 order.orderCode,
-                                                style: const TextStyle(
-                                                  color: Color(0xFF0F172A),
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 13,
+                                                style: AppTypography.bodySmall.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppColors.textPrimary,
                                                 ),
                                               ),
                                             ],
@@ -294,7 +298,7 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
                                         DataCell(
                                           Text(
                                             order.storeName,
-                                            style: const TextStyle(color: Color(0xFF334155), fontWeight: FontWeight.w600, fontSize: 13),
+                                            style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.w600),
                                           ),
                                         ),
                                         DataCell(
@@ -304,32 +308,35 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
                                             children: [
                                               Text(
                                                 order.slotTime,
-                                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                                                style: AppTypography.bodySmall.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppColors.textPrimary,
+                                                ),
                                               ),
                                               const SizedBox(height: 2),
                                               Text(
                                                 order.pickupLocation,
-                                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                                style: AppTypography.caption.copyWith(fontSize: 11),
                                               ),
                                             ],
                                           ),
                                         ),
                                         DataCell(
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF1F5F9),
-                                              borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: const Color(0xFFCBD5E1)),
+                                              color: AppColors.surfaceVariant,
+                                              borderRadius: AppRadius.roundedSm,
+                                              border: Border.all(color: AppColors.border),
                                             ),
                                             child: Text(
                                               order.pickupPin,
                                               style: const TextStyle(
                                                 fontFamily: 'monospace',
-                                                fontWeight: FontWeight.w800,
-                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
                                                 letterSpacing: 2,
-                                                color: Color(0xFF0F172A),
+                                                color: AppColors.primary,
                                               ),
                                             ),
                                           ),
@@ -337,17 +344,19 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
                                         DataCell(
                                           Text(
                                             currencyFormatter.format(order.finalAmount),
-                                            style: const TextStyle(
-                                              color: Color(0xFF0F172A),
-                                              fontWeight: FontWeight.w800,
-                                              fontSize: 13,
+                                            style: AppTypography.bodySmall.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.textPrimary,
                                             ),
                                           ),
                                         ),
                                         DataCell(
                                           Text(
                                             order.paymentMethod,
-                                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600),
+                                            style: AppTypography.caption.copyWith(
+                                              color: AppColors.textSecondary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
                                         ),
                                         DataCell(_buildOrderStatusBadge(order.status)),
@@ -371,18 +380,18 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
 
     return InkWell(
       onTap: () => setState(() => _selectedFilter = key),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: AppRadius.roundedFull,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF10B981) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(20),
+          color: isSelected ? AppColors.primary : AppColors.surfaceVariant,
+          borderRadius: AppRadius.roundedFull,
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.3),
-                    blurRadius: 8,
+                    color: AppColors.primary.withValues(alpha: 0.25),
+                    blurRadius: 6,
                     offset: const Offset(0, 2),
                   )
                 ]
@@ -391,9 +400,9 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : const Color(0xFF475569),
+            color: isSelected ? Colors.white : AppColors.textSecondary,
             fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           ),
         ),
       ),
@@ -407,44 +416,44 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
 
     switch (status.toUpperCase()) {
       case 'DELIVERING':
-        bg = const Color(0xFFEFF6FF);
-        fg = const Color(0xFF2563EB);
+        bg = AppColors.info.withValues(alpha: 0.12);
+        fg = AppColors.info;
         label = 'Đang giao';
         break;
       case 'DELIVERED':
-        bg = const Color(0xFFECFDF5);
-        fg = const Color(0xFF059669);
+        bg = AppColors.successLight;
+        fg = AppColors.success;
         label = 'Đã nhận';
         break;
       case 'CANCELLED':
-        bg = const Color(0xFFFEF2F2);
-        fg = const Color(0xFFDC2626);
+        bg = AppColors.errorLight;
+        fg = AppColors.error;
         label = 'Đã hủy';
         break;
       default:
-        bg = const Color(0xFFFFFBEB);
-        fg = const Color(0xFFD97706);
+        bg = AppColors.warningLight;
+        fg = AppColors.warning;
         label = 'Chờ xử lý';
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppRadius.roundedFull,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 6,
-            height: 6,
+            width: 5,
+            height: 5,
             decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
           Text(
             label,
-            style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w700),
+            style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.bold),
           ),
         ],
       ),

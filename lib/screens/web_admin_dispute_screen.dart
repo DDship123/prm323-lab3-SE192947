@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/dispute_model.dart';
 import '../services/dispute_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+import '../widgets/ktx_button.dart';
 
-/// Màn hình Web Admin Xử lý Khiếu nại Món hỏng - Phong cách Greenova SaaS Portal
+/// Màn hình Web Admin Xử lý Khiếu nại Món hỏng - Chuẩn Design System KTX Food (Figma Lab 2 & 3)
 /// Phục vụ BQL KTX kiểm tra ảnh chụp món hỏng độ phân giải cao và quyết định hoàn tiền
 class WebAdminDisputeScreen extends StatefulWidget {
   final DisputeService disputeService;
@@ -153,17 +158,17 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedMd),
         title: Row(
           children: [
             Icon(
               approved ? Icons.verified_rounded : Icons.warning_amber_rounded,
-              color: approved ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+              color: approved ? AppColors.success : AppColors.error,
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Text(
               approved ? 'Xác nhận Duyệt hoàn tiền' : 'Xác nhận Từ chối khiếu nại',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: AppTypography.heading3,
             ),
           ],
         ),
@@ -175,18 +180,18 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
               approved
                   ? 'Bạn đang duyệt hoàn ${currencyFormatter.format(item.requestedRefundAmount)} cho đơn hàng #${item.orderId}. Số tiền sẽ được cộng trực tiếp vào ví KTX Pay của Sinh viên.'
                   : 'Khiếu nại cho đơn #${item.orderId} sẽ bị từ chối và gửi thông báo giải trình tới Sinh viên.',
-              style: const TextStyle(fontSize: 14, color: Color(0xFF475569)),
+              style: AppTypography.bodyMedium,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.surfaceVariant,
+                borderRadius: AppRadius.roundedSm,
               ),
               child: Text(
                 'Ghi chú xử lý: $note',
-                style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
+                style: AppTypography.caption.copyWith(fontStyle: FontStyle.italic),
               ),
             ),
           ],
@@ -194,13 +199,13 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy bỏ', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text('Hủy bỏ', style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: approved ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+              backgroundColor: approved ? AppColors.primary : AppColors.error,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedSm),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(approved ? 'Duyệt Hoàn Tiền' : 'Từ Chối'),
@@ -232,13 +237,13 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
             content: Row(
               children: [
                 const Icon(Icons.check_circle_rounded, color: Colors.white),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 Text(approved ? 'Đã duyệt hoàn tiền thành công!' : 'Đã từ chối khiếu nại.'),
               ],
             ),
-            backgroundColor: approved ? const Color(0xFF10B981) : const Color(0xFF334155),
+            backgroundColor: approved ? AppColors.success : AppColors.textPrimary,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedSm),
           ),
         );
       }
@@ -247,7 +252,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lỗi cập nhật: $e'),
-            backgroundColor: const Color(0xFFEF4444),
+            backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -262,23 +267,23 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
       context: context,
       builder: (ctx) => Dialog(
         backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(24),
+        insetPadding: const EdgeInsets.all(AppSpacing.lg),
         child: Stack(
           alignment: Alignment.topRight,
           children: [
             Container(
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: AppRadius.roundedLg,
               ),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.verified_user_rounded, color: Color(0xFF10B981), size: 18),
-                      const SizedBox(width: 8),
+                      const Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 18),
+                      const SizedBox(width: AppSpacing.sm),
                       const Text(
                         'Ảnh bằng chứng độ phân giải cao (Cloud Storage Verified)',
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
@@ -294,13 +299,13 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm),
                   InteractiveViewer(
                     panEnabled: true,
                     minScale: 0.5,
                     maxScale: 4.0,
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.roundedMd,
                       child: Image.network(
                         imageUrl,
                         fit: BoxFit.contain,
@@ -312,9 +317,9 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.sm),
                   const Text(
-                    'Dùng cuộn chuột hoặc thao tác kéo để phóng to / thu nhỏ kiểm tra chi tiết bằng chứng sự cố',
+                    'Dùng cuộn chuột hoặc thao tác kéo để phóng to / thu nhỏ kiểm tra chi tiết bằng chứng',
                     style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
                   ),
                 ],
@@ -330,28 +335,28 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
   Widget build(BuildContext context) {
     if (_isLoading && _disputes.isEmpty) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF10B981)),
+        child: CircularProgressIndicator(color: AppColors.primary),
       );
     }
 
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ==================== CỘT TRÁI: MASTER LIST KHIẾU NẠI ====================
           SizedBox(
-            width: 390,
+            width: 380,
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                color: AppColors.surface,
+                borderRadius: AppRadius.roundedMd,
+                border: Border.all(color: AppColors.border),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x06000000),
-                    blurRadius: 16,
-                    offset: Offset(0, 4),
+                    blurRadius: 10,
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
@@ -360,7 +365,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                 children: [
                   // Header danh sách
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -369,41 +374,37 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFECFDF5),
-                                borderRadius: BorderRadius.circular(10),
+                                color: AppColors.primaryLight.withValues(alpha: 0.4),
+                                borderRadius: AppRadius.roundedSm,
                               ),
                               child: const Icon(
                                 Icons.assignment_late_rounded,
-                                color: Color(0xFF10B981),
+                                color: AppColors.primary,
                                 size: 20,
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
                                     children: [
-                                      const Text(
+                                      Text(
                                         'Xử Lý Khiếu Nại',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF0F172A),
-                                        ),
+                                        style: AppTypography.heading3.copyWith(fontSize: 16),
                                       ),
-                                      const SizedBox(width: 8),
+                                      const SizedBox(width: AppSpacing.xs),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFEF4444).withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: AppColors.errorLight,
+                                          borderRadius: AppRadius.roundedFull,
                                         ),
                                         child: Text(
                                           '${_disputes.where((d) => d.status == DisputeStatus.pending).length} chờ',
                                           style: const TextStyle(
-                                            color: Color(0xFFEF4444),
+                                            color: AppColors.error,
                                             fontSize: 11,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -412,27 +413,27 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 2),
-                                  const Text(
-                                    'Xử lý bồi hoàn & món hỏng KTX',
-                                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                  Text(
+                                    'Xử lý bồi hoàn & sự cố món KTX',
+                                    style: AppTypography.caption,
                                   ),
                                 ],
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.refresh_rounded, size: 20, color: Color(0xFF64748B)),
+                              icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.textSecondary),
                               tooltip: 'Tải lại danh sách',
                               onPressed: _loadDisputes,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
-                        // Thanh lọc trạng thái phong cách Greenova
+                        const SizedBox(height: AppSpacing.sm),
+                        // Thanh lọc trạng thái phong cách KTX Food
                         Container(
                           padding: const EdgeInsets.all(3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(10),
+                            color: AppColors.surfaceVariant,
+                            borderRadius: AppRadius.roundedSm,
                           ),
                           child: Row(
                             children: [
@@ -453,31 +454,31 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                       ],
                     ),
                   ),
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  const Divider(height: 1, color: AppColors.border),
 
                   // Danh sách thẻ khiếu nại
                   Expanded(
                     child: _filteredDisputes.isEmpty
                         ? Center(
                             child: Padding(
-                              padding: const EdgeInsets.all(32),
+                              padding: const EdgeInsets.all(AppSpacing.lg),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade400),
-                                  const SizedBox(height: 12),
-                                  const Text(
+                                  const Icon(Icons.inbox_outlined, size: 44, color: AppColors.textHint),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Text(
                                     'Không có khiếu nại nào theo bộ lọc',
-                                    style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                                    style: AppTypography.caption,
                                   ),
                                 ],
                               ),
                             ),
                           )
                         : ListView.separated(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(AppSpacing.sm),
                             itemCount: _filteredDisputes.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 8),
+                            separatorBuilder: (context, index) => const SizedBox(height: 6),
                             itemBuilder: (context, index) {
                               final item = _filteredDisputes[index];
                               final isSelected = _selectedDispute?.id == item.id;
@@ -491,7 +492,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
             ),
           ),
 
-          const SizedBox(width: 20),
+          const SizedBox(width: AppSpacing.lg),
 
           // ==================== CỘT PHẢI: CHI TIẾT & BẰNG CHỨNG HÌNH ẢNH ====================
           Expanded(
@@ -509,12 +510,12 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
     return Expanded(
       child: InkWell(
         onTap: () => setState(() => _statusFilter = key),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppRadius.roundedSm,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
+            color: isSelected ? AppColors.surface : Colors.transparent,
+            borderRadius: AppRadius.roundedSm,
             boxShadow: isSelected
                 ? [
                     const BoxShadow(
@@ -533,22 +534,22 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? const Color(0xFF10B981) : const Color(0xFF64748B),
+                  color: isSelected ? AppColors.primary : AppColors.textSecondary,
                 ),
               ),
               const SizedBox(width: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF10B981).withValues(alpha: 0.15) : const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: isSelected ? AppColors.primaryLight : AppColors.border,
+                  borderRadius: AppRadius.roundedFull,
                 ),
                 child: Text(
                   '$count',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? const Color(0xFF10B981) : const Color(0xFF475569),
+                    color: isSelected ? AppColors.primaryDark : AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -570,26 +571,16 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
           _noteController.clear();
         });
       },
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.all(14),
+      borderRadius: AppRadius.roundedSm,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFF0FDF4) : Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : AppColors.surface,
+          borderRadius: AppRadius.roundedSm,
           border: Border.all(
-            color: isSelected ? const Color(0xFF10B981) : const Color(0xFFE2E8F0),
+            color: isSelected ? AppColors.primary : AppColors.border,
             width: isSelected ? 1.5 : 1,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF10B981).withValues(alpha: 0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -597,57 +588,53 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.06),
-                    borderRadius: BorderRadius.circular(6),
+                    color: AppColors.surfaceVariant,
+                    borderRadius: AppRadius.roundedSm,
                   ),
                   child: Text(
                     '#DIS-${item.id}',
                     style: const TextStyle(
                       fontFamily: 'monospace',
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      color: Color(0xFF0F172A),
+                      fontSize: 11,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.xs),
                 Text(
                   'Đơn #${item.orderId}',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  style: AppTypography.caption,
                 ),
                 const Spacer(),
                 _buildStatusPill(item.status),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               item.reason,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Color(0xFF1E293B),
-              ),
+              style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Row(
               children: [
-                const Icon(Icons.storefront_rounded, size: 14, color: Color(0xFF94A3B8)),
+                const Icon(Icons.storefront_rounded, size: 13, color: AppColors.textHint),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     item.storeName ?? 'Quán KTX',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    style: AppTypography.caption.copyWith(fontSize: 11),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -655,13 +642,13 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                   currencyFormatter.format(item.requestedRefundAmount),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                    color: Color(0xFFEF4444),
+                    fontSize: 12,
+                    color: AppColors.error,
                   ),
                 ),
                 Text(
                   timeStr,
-                  style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                  style: const TextStyle(fontSize: 10, color: AppColors.textHint),
                 ),
               ],
             ),
@@ -677,38 +664,38 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
     IconData icon;
     switch (status) {
       case DisputeStatus.pending:
-        bg = const Color(0xFFFEF3C7);
-        fg = const Color(0xFF92400E);
+        bg = AppColors.warningLight;
+        fg = AppColors.warning;
         icon = Icons.schedule_rounded;
         break;
       case DisputeStatus.approved:
-        bg = const Color(0xFFD1FAE5);
-        fg = const Color(0xFF065F46);
+        bg = AppColors.successLight;
+        fg = AppColors.success;
         icon = Icons.check_circle_rounded;
         break;
       case DisputeStatus.rejected:
-        bg = const Color(0xFFFEE2E2);
-        fg = const Color(0xFF991B1B);
+        bg = AppColors.errorLight;
+        fg = AppColors.error;
         icon = Icons.cancel_rounded;
         break;
       case DisputeStatus.refunded:
-        bg = const Color(0xFFDBEAFE);
-        fg = const Color(0xFF1E40AF);
+        bg = AppColors.primaryLight;
+        fg = AppColors.primaryDark;
         icon = Icons.account_balance_wallet_rounded;
         break;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(color: bg, borderRadius: AppRadius.roundedFull),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: fg),
-          const SizedBox(width: 4),
+          Icon(icon, size: 11, color: fg),
+          const SizedBox(width: 3),
           Text(
             status.label,
-            style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.bold),
+            style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -718,24 +705,24 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
   Widget _buildEmptyDetailState() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: AppColors.surface,
+        borderRadius: AppRadius.roundedMd,
+        border: Border.all(color: AppColors.border),
       ),
-      child: const Center(
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.shield_outlined, size: 64, color: Color(0xFF94A3B8)),
-            SizedBox(height: 16),
+            const Icon(Icons.shield_outlined, size: 56, color: AppColors.textHint),
+            const SizedBox(height: AppSpacing.md),
             Text(
               'Chọn khiếu nại để tiến hành xử lý',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF334155)),
+              style: AppTypography.heading3.copyWith(fontSize: 16),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
-              'Xem ảnh chụp bằng chứng từ Sinh viên và ra phán quyết hoàn tiền.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              'Xem ảnh chụp bằng chứng từ Sinh viên và ra quyết định hoàn tiền.',
+              style: AppTypography.caption,
             ),
           ],
         ),
@@ -749,21 +736,21 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: AppColors.surface,
+        borderRadius: AppRadius.roundedMd,
+        border: Border.all(color: AppColors.border),
         boxShadow: const [
           BoxShadow(
             color: Color(0x06000000),
-            blurRadius: 16,
-            offset: Offset(0, 4),
+            blurRadius: 10,
+            offset: Offset(0, 2),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppRadius.roundedMd,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(28),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -772,14 +759,14 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      color: AppColors.primaryLight.withValues(alpha: 0.4),
+                      borderRadius: AppRadius.roundedSm,
                     ),
-                    child: const Icon(Icons.fact_check_rounded, color: Color(0xFF10B981), size: 28),
+                    child: const Icon(Icons.fact_check_rounded, color: AppColors.primary, size: 24),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -788,20 +775,16 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                           children: [
                             Text(
                               'Hồ Sơ Xử Lý Khiếu Nại #DIS-${item.id}',
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
-                              ),
+                              style: AppTypography.heading2.copyWith(fontSize: 20),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: AppSpacing.sm),
                             _buildStatusPill(item.status),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Mã đơn hàng: #${item.orderId} • Cửa hàng: ${item.storeName ?? "Quán KTX"} • $formattedDate',
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                          style: AppTypography.caption,
                         ),
                       ],
                     ),
@@ -809,9 +792,9 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                 ],
               ),
 
-              const SizedBox(height: 24),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.lg),
+              const Divider(height: 1, color: AppColors.border),
+              const SizedBox(height: AppSpacing.lg),
 
               // ================= 3 THẺ TỔNG HỢP NHANH =================
               Row(
@@ -821,64 +804,64 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                       title: 'Số tiền yêu cầu hoàn',
                       value: currencyFormatter.format(item.requestedRefundAmount),
                       icon: Icons.monetization_on_rounded,
-                      color: const Color(0xFFEF4444),
+                      color: AppColors.error,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: _buildMetricMiniCard(
                       title: 'Lý do khiếu nại',
                       value: item.reason,
                       icon: Icons.report_problem_rounded,
-                      color: const Color(0xFFF59E0B),
+                      color: AppColors.warning,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: _buildMetricMiniCard(
                       title: 'Kênh hoàn tiền',
                       value: 'Ví KTX Pay',
                       icon: Icons.account_balance_wallet_rounded,
-                      color: const Color(0xFF10B981),
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.lg),
 
               // ================= MÔ TẢ TỪ SINH VIÊN =================
-              const Text(
+              Text(
                 'Nội dung phản ánh từ Sinh viên KTX',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                style: AppTypography.heading3.copyWith(fontSize: 14),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.sm),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  color: AppColors.surfaceVariant,
+                  borderRadius: AppRadius.roundedSm,
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.format_quote_rounded, color: Color(0xFF94A3B8), size: 24),
-                    const SizedBox(width: 12),
+                    const Icon(Icons.format_quote_rounded, color: AppColors.textHint, size: 22),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         item.description.isNotEmpty
                             ? item.description
                             : 'Sinh viên không nhập thêm mô tả chi tiết.',
-                        style: const TextStyle(fontSize: 14, color: Color(0xFF334155), height: 1.5),
+                        style: AppTypography.bodyMedium.copyWith(height: 1.5),
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: AppSpacing.lg),
 
               // ================= KHU VỰC ẢNH BẰNG CHỨNG CLOUDINARY =================
               Row(
@@ -886,24 +869,24 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                 children: [
                   Row(
                     children: [
-                      const Text(
+                      Text(
                         'Ảnh Bằng Chứng Món Hỏng',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        style: AppTypography.heading3.copyWith(fontSize: 14),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
+                          color: AppColors.successLight,
+                          borderRadius: AppRadius.roundedSm,
                         ),
                         child: const Row(
                           children: [
-                            Icon(Icons.cloud_done_rounded, color: Color(0xFF10B981), size: 12),
+                            Icon(Icons.cloud_done_rounded, color: AppColors.success, size: 12),
                             SizedBox(width: 4),
                             Text(
                               'Cloudinary CDN Verified',
-                              style: TextStyle(color: Color(0xFF10B981), fontSize: 11, fontWeight: FontWeight.bold),
+                              style: TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -913,25 +896,25 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                   if (item.evidenceImageUrl.isNotEmpty)
                     TextButton.icon(
                       onPressed: () => _showZoomImage(item.evidenceImageUrl),
-                      icon: const Icon(Icons.zoom_in_rounded, size: 18),
-                      label: const Text('Phóng to toàn màn hình', style: TextStyle(fontSize: 13)),
-                      style: TextButton.styleFrom(foregroundColor: const Color(0xFF10B981)),
+                      icon: const Icon(Icons.zoom_in_rounded, size: 16),
+                      label: const Text('Phóng to toàn màn hình', style: TextStyle(fontSize: 12)),
+                      style: TextButton.styleFrom(foregroundColor: AppColors.primary),
                     ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
 
               if (item.evidenceImageUrl.isNotEmpty)
                 InkWell(
                   onTap: () => _showZoomImage(item.evidenceImageUrl),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: AppRadius.roundedMd,
                   child: Container(
-                    height: 360,
+                    height: 320,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                      color: Colors.black87,
+                      borderRadius: AppRadius.roundedMd,
+                      border: Border.all(color: AppColors.border),
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: Stack(
@@ -944,13 +927,12 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                             child: Text('Không thể tải ảnh bằng chứng', style: TextStyle(color: Colors.white)),
                           ),
                         ),
-                        // Overlay thanh thông tin ảnh
                         Positioned(
                           bottom: 0,
                           left: 0,
                           right: 0,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 10),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.bottomCenter,
@@ -963,25 +945,25 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.camera_alt_outlined, color: Colors.white70, size: 16),
-                                const SizedBox(width: 8),
+                                const Icon(Icons.camera_alt_outlined, color: Colors.white70, size: 15),
+                                const SizedBox(width: 6),
                                 const Text(
                                   'Chụp thực tế lúc nhận đơn tại Sảnh KTX',
                                   style: TextStyle(color: Colors.white, fontSize: 12),
                                 ),
                                 const Spacer(),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.25),
-                                    borderRadius: BorderRadius.circular(20),
+                                    borderRadius: AppRadius.roundedFull,
                                   ),
                                   child: const Row(
                                     children: [
-                                      Icon(Icons.zoom_in, color: Colors.white, size: 14),
+                                      Icon(Icons.zoom_in, color: Colors.white, size: 13),
                                       SizedBox(width: 4),
                                       Text(
-                                        'Nhấn để phóng to kiểm tra',
+                                        'Nhấn để phóng to',
                                         style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                                       ),
                                     ],
@@ -997,26 +979,25 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                 )
               else
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.surfaceVariant,
+                    borderRadius: AppRadius.roundedSm,
                   ),
                   child: const Center(
                     child: Text('Sinh viên không gửi kèm hình ảnh bằng chứng.'),
                   ),
                 ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: AppSpacing.lg),
 
               // ================= KHU VỰC PHÁN QUYẾT XỬ LÝ =================
               if (item.status == DisputeStatus.pending) ...[
-                const Text(
+                Text(
                   'Quyết Định Xử Lý Khiếu Nại (Ban Quản Lý KTX)',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  style: AppTypography.heading3.copyWith(fontSize: 14),
                 ),
-                const SizedBox(height: 10),
-                // Gợi ý ghi chú nhanh
+                const SizedBox(height: AppSpacing.sm),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -1026,61 +1007,47 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                     _buildQuickNoteChip('Bằng chứng mờ không đủ căn cứ xử lý'),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.sm),
                 TextField(
                   controller: _noteController,
                   decoration: InputDecoration(
                     hintText: 'Nhập lý do xử lý hoặc chọn ghi chú nhanh bên trên...',
-                    hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                    hintStyle: AppTypography.caption.copyWith(color: AppColors.textHint),
                     filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
+                    fillColor: AppColors.surfaceVariant,
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      borderRadius: AppRadius.roundedSm,
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                      borderRadius: AppRadius.roundedSm,
+                      borderSide: const BorderSide(color: AppColors.border),
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Color(0xFF10B981), width: 1.5),
+                      borderRadius: AppRadius.roundedSm,
+                      borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
                     ),
                   ),
                   maxLines: 2,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.cancel_outlined, size: 20),
-                        label: const Text('Từ chối khiếu nại', style: TextStyle(fontWeight: FontWeight.bold)),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFEF4444),
-                          side: const BorderSide(color: Color(0xFFEF4444)),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
+                      child: KtxButton(
+                        label: 'Từ chối khiếu nại',
+                        variant: KtxButtonVariant.danger,
+                        icon: Icons.cancel_outlined,
                         onPressed: () => _resolveDispute(false),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       flex: 2,
-                      child: ElevatedButton.icon(
-                        icon: const Icon(Icons.check_circle_rounded, size: 20),
-                        label: Text(
-                          'Duyệt hoàn tiền ${currencyFormatter.format(item.requestedRefundAmount)}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF10B981),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
+                      child: KtxButton(
+                        label: 'Duyệt hoàn tiền ${currencyFormatter.format(item.requestedRefundAmount)}',
+                        variant: KtxButtonVariant.primary,
+                        icon: Icons.check_circle_rounded,
                         onPressed: () => _resolveDispute(true),
                       ),
                     ),
@@ -1089,26 +1056,26 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
               ] else ...[
                 // Banner thông báo kết quả đã xử lý
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: item.status == DisputeStatus.approved
-                        ? const Color(0xFFECFDF5)
-                        : const Color(0xFFFEF2F2),
-                    borderRadius: BorderRadius.circular(12),
+                        ? AppColors.successLight
+                        : AppColors.errorLight,
+                    borderRadius: AppRadius.roundedSm,
                     border: Border.all(
                       color: item.status == DisputeStatus.approved
-                          ? const Color(0xFF10B981).withValues(alpha: 0.3)
-                          : const Color(0xFFEF4444).withValues(alpha: 0.3),
+                          ? AppColors.success.withValues(alpha: 0.3)
+                          : AppColors.error.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: item.status == DisputeStatus.approved
-                              ? const Color(0xFF10B981)
-                              : const Color(0xFFEF4444),
+                              ? AppColors.success
+                              : AppColors.error,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -1116,10 +1083,10 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                               ? Icons.verified_rounded
                               : Icons.cancel_rounded,
                           color: Colors.white,
-                          size: 24,
+                          size: 20,
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1129,24 +1096,24 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                                   ? 'Đã duyệt bồi hoàn thành công vào Ví KTX Pay'
                                   : 'Đã từ chối khiếu nại',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 color: item.status == DisputeStatus.approved
-                                    ? const Color(0xFF065F46)
-                                    : const Color(0xFF991B1B),
+                                    ? AppColors.success
+                                    : AppColors.error,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             Text(
                               item.adminNote ??
                                   (item.status == DisputeStatus.approved
                                       ? 'Số tiền ${currencyFormatter.format(item.requestedRefundAmount)} đã được ghi có vào tài khoản sinh viên.'
                                       : 'Khiếu nại không hợp lệ theo quy chế gom đơn KTX.'),
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 color: item.status == DisputeStatus.approved
-                                    ? const Color(0xFF047857)
-                                    : const Color(0xFFB91C1C),
+                                    ? AppColors.success
+                                    : AppColors.error,
                               ),
                             ),
                           ],
@@ -1170,35 +1137,34 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: AppColors.surfaceVariant,
+        borderRadius: AppRadius.roundedSm,
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: AppRadius.roundedSm,
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: color, size: 18),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                Text(title, style: AppTypography.caption.copyWith(fontSize: 11)),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 14,
+                  style: AppTypography.bodySmall.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.textPrimary,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1214,8 +1180,8 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
   Widget _buildQuickNoteChip(String note) {
     return ActionChip(
       label: Text(note, style: const TextStyle(fontSize: 11)),
-      backgroundColor: const Color(0xFFF1F5F9),
-      side: const BorderSide(color: Color(0xFFE2E8F0)),
+      backgroundColor: AppColors.surfaceVariant,
+      side: const BorderSide(color: AppColors.border),
       onPressed: () {
         setState(() {
           _noteController.text = note;
