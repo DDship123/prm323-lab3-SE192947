@@ -313,6 +313,38 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
+  final _emailPhoneController = TextEditingController(text: 'student@fpt.edu.vn');
+  final _passwordController = TextEditingController(text: '123456');
+
+  @override
+  void dispose() {
+    _emailPhoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _quickLogin(UserAppRole role, String email, String name, String phone) {
+    widget.onRoleChanged(role);
+    context.read<AuthViewModel>().syncFirebaseUser(
+          uid: 'mock_${role.name}_uid',
+          email: email,
+          displayName: name,
+        );
+    widget.onRegisteredOrDemoSuccess();
+  }
+
+  void _handleDirectLogin() {
+    final input = _emailPhoneController.text.trim().toLowerCase();
+    if (input.contains('owner') || input.contains('coba')) {
+      _quickLogin(UserAppRole.restaurantOwner, 'coba.owner@fpt.edu.vn', 'Cô Ba (Chủ Quán Cơm Tấm)', '0908888999');
+    } else if (input.contains('shipper') || input.contains('hung')) {
+      _quickLogin(UserAppRole.shipper, 'shipper.hung@fpt.edu.vn', 'Nguyễn Hùng (Shipper Đội Gom)', '0918765432');
+    } else if (input.contains('admin')) {
+      _quickLogin(UserAppRole.admin, 'admin.ktx@fpt.edu.vn', 'Ban Quản Lý KTX ĐHQG (Admin)', '0999000111');
+    } else {
+      _quickLogin(UserAppRole.student, 'student@fpt.edu.vn', 'Ngô Trường Đạt (Sinh viên)', '0981234567');
+    }
+  }
 
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
@@ -437,49 +469,215 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Đăng nhập tài khoản', style: AppTypography.heading3),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _emailPhoneController,
+                        decoration: const InputDecoration(
+                          labelText: 'Email hoặc Số điện thoại',
+                          prefixIcon: Icon(Icons.person_outline, size: 20),
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Mật khẩu',
+                          prefixIcon: Icon(Icons.lock_outline, size: 20),
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      KtxButton(
+                        label: 'Đăng nhập ngay',
+                        icon: Icons.login_rounded,
+                        onPressed: _handleDirectLogin,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text('HOẶC VÀO NHANH 1-CHẠM THEO VAI TRÒ',
+                    style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildRoleCard(
+                        title: 'Sinh viên',
+                        account: 'student@fpt.edu.vn',
+                        icon: Icons.school_rounded,
+                        color: AppColors.primary,
+                        onTap: () => _quickLogin(
+                          UserAppRole.student,
+                          'student@fpt.edu.vn',
+                          'Ngô Trường Đạt (Sinh viên)',
+                          '0981234567',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildRoleCard(
+                        title: 'Chủ quán',
+                        account: 'coba.owner@fpt.edu.vn',
+                        icon: Icons.restaurant_rounded,
+                        color: Colors.deepOrange,
+                        onTap: () => _quickLogin(
+                          UserAppRole.restaurantOwner,
+                          'coba.owner@fpt.edu.vn',
+                          'Cô Ba (Chủ Quán Cơm Tấm)',
+                          '0908888999',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildRoleCard(
+                        title: 'Shipper KTX',
+                        account: 'shipper.hung@fpt.edu.vn',
+                        icon: Icons.two_wheeler_rounded,
+                        color: Colors.teal,
+                        onTap: () => _quickLogin(
+                          UserAppRole.shipper,
+                          'shipper.hung@fpt.edu.vn',
+                          'Nguyễn Hùng (Shipper Đội Gom)',
+                          '0918765432',
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildRoleCard(
+                        title: 'Quản trị (Admin)',
+                        account: 'admin.ktx@fpt.edu.vn',
+                        icon: Icons.admin_panel_settings_rounded,
+                        color: Colors.indigo,
+                        onTap: () => _quickLogin(
+                          UserAppRole.admin,
+                          'admin.ktx@fpt.edu.vn',
+                          'Ban Quản Lý KTX ĐHQG (Admin)',
+                          '0999000111',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
                 KtxButton(
                   label: 'Đăng nhập bằng Google (S0)',
                   icon: Icons.login_rounded,
+                  variant: KtxButtonVariant.outline,
                   isLoading: _isLoading,
                   onPressed: _signInWithGoogle,
                 ),
-                const SizedBox(height: AppSpacing.sm + 4),
-                KtxButton(
-                  label: 'Đăng ký SĐT & Phòng KTX (S0_Reg / OTP)',
-                  variant: KtxButtonVariant.outline,
-                  icon: Icons.person_add_alt_1_rounded,
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => StudentRegisterScreen(
-                          onRegisterCompleted: widget.onRegisteredOrDemoSuccess,
-                        ),
-                      ),
-                    );
-                  },
-                ),
                 const SizedBox(height: AppSpacing.sm),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const ForgotPasswordScreen(),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    'Quên mật khẩu? Khôi phục mã OTP',
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => StudentRegisterScreen(
+                              onRegisterCompleted: widget.onRegisteredOrDemoSuccess,
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Đăng ký tài khoản mới', style: TextStyle(fontSize: 12)),
                     ),
-                  ),
+                    const Text('•', style: TextStyle(color: Colors.grey)),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ForgotPasswordScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Quên mật khẩu?',
+                        style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoleCard({
+    required String title,
+    required String account,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.4)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18, color: color),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              account,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 10),
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'MK: 123456 • Chạm để vào',
+              style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
       ),
     );
