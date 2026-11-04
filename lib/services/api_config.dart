@@ -3,9 +3,8 @@ class ApiConfig {
   ApiConfig._();
 
   /// Địa chỉ Base URL kết nối Backend
-  /// Khi cắm cáp USB với adb reverse tcp:8080 tcp:8080 hoặc chạy web/desktop,
-  /// 127.0.0.1:8080 tự động chuyển tiếp thẳng vào Backend Spring Boot trên máy tính
-  static String get baseUrl => 'http://127.0.0.1:8080/api/v1';
+  /// 10.0.2.2:8080 tự động kết nối thẳng vào localhost:8080 của máy tính từ Android Emulator
+  static String get baseUrl => 'http://10.0.2.2:8080/api/v1';
 
   /// ID người dùng đồng bộ từ Backend (mặc định 1 nếu chưa sync)
   static int currentBackendUserId = 1;
