@@ -12,7 +12,11 @@ import '../widgets/ktx_empty_state.dart';
 import '../widgets/ktx_error_state.dart';
 import '../widgets/ktx_loading_state.dart';
 import '../widgets/screen_state.dart';
+import 'restaurant_disputes_screen.dart';
 import 'restaurant_menu_management_screen.dart';
+import 'restaurant_promotion_screen.dart';
+import 'restaurant_revenue_screen.dart';
+import 'restaurant_store_settings_screen.dart';
 
 class RestaurantDashboardScreen extends StatefulWidget {
   final String ownerId;
@@ -128,6 +132,65 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
               const SizedBox(width: 8),
               _buildSlotChip(vm, 'Ca Chiều 18:00', 'CA_CHIEU_18H00'),
             ],
+          ),
+          const SizedBox(height: 12),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                ActionChip(
+                  avatar: const Icon(Icons.bar_chart, size: 16, color: AppColors.primary),
+                  label: const Text('Báo cáo & Đối soát COD', style: TextStyle(fontSize: 12)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RestaurantRevenueScreen(ownerId: widget.ownerId),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                ActionChip(
+                  avatar: const Icon(Icons.local_offer, size: 16, color: AppColors.primary),
+                  label: const Text('Khuyến mãi', style: TextStyle(fontSize: 12)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RestaurantPromotionScreen(ownerId: widget.ownerId),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                ActionChip(
+                  avatar: const Icon(Icons.rate_review, size: 16, color: AppColors.primary),
+                  label: const Text('Đánh giá & Khiếu nại', style: TextStyle(fontSize: 12)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RestaurantDisputesScreen(ownerId: widget.ownerId),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                ActionChip(
+                  avatar: const Icon(Icons.settings, size: 16, color: AppColors.primary),
+                  label: const Text('Thiết lập quán', style: TextStyle(fontSize: 12)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => RestaurantStoreSettingsScreen(ownerId: widget.ownerId),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
