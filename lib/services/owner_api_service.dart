@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/api_response.dart';
 import '../models/menu_item_model.dart';
 import '../models/owner_order_model.dart';
+import '../models/store_revenue_model.dart';
 import 'api_config.dart';
 
 class OwnerApiService {
@@ -61,6 +62,45 @@ class OwnerApiService {
     } catch (_) {
       return true; // Fallback demo
     }
+  }
+
+  Future<StoreRevenueModel> fetchRevenueReport({
+    required String? idToken,
+    required String ownerId,
+    String slotTime = 'CA_TRUA_11H30',
+  }) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}/owner/revenue?slotTime=$slotTime');
+    final headers = {
+      'Content-Type': 'application/json',
+      'X-User-Id': ownerId,
+      'X-User-Role': 'STORE_OWNER',
+      if (idToken != null) 'Authorization': 'Bearer $idToken',
+    };
+
+    try {
+      final response = await _client.get(url, headers: headers).timeout(const Duration(seconds: 4));
+      if (response.statusCode == 200) {
+        final utf8Body = utf8.decode(response.bodyBytes);
+        final jsonMap = jsonDecode(utf8Body) as Map<String, dynamic>;
+        final data = jsonMap['data'] as Map<String, dynamic>;
+        return StoreRevenueModel.fromJson(data);
+      }
+      return _getMockRevenue();
+    } catch (_) {
+      return _getMockRevenue();
+    }
+  }
+
+  StoreRevenueModel _getMockRevenue() {
+    return StoreRevenueModel(
+      totalRevenue: 2850000,
+      codAmount: 850000,
+      onlineAmount: 2000000,
+      totalOrders: 65,
+      completedOrders: 62,
+      shiftName: 'CA_TRUA_11H30',
+      orderDetails: _getMockKitchenOrders(),
+    );
   }
 
   List<OwnerOrderSummaryModel> _getMockKitchenOrders() {
