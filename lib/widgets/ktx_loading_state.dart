@@ -5,10 +5,12 @@ import '../theme/app_typography.dart';
 /// Hiển thị trạng thái đang tải C07
 class KtxLoadingState extends StatelessWidget {
   final String message;
+  final int? itemCount;
 
   const KtxLoadingState({
     super.key,
     this.message = 'Đang xử lý dữ liệu...',
+    this.itemCount,
   });
 
   @override
@@ -27,7 +29,8 @@ class KtxLoadingState extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 message,
-                style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                style: AppTypography.bodyMedium
+                    .copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -37,4 +40,3 @@ class KtxLoadingState extends StatelessWidget {
     );
   }
 }
-

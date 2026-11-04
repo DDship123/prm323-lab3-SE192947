@@ -11,8 +11,9 @@ class KtxTextField extends StatelessWidget {
   final String? errorText;
   final int maxLines;
   final bool readOnly;
-  final Widget? prefixIcon;
+  final Object? prefixIcon;
   final Widget? suffixIcon;
+  final TextInputType? keyboardType;
   final ValueChanged<String>? onChanged;
 
   const KtxTextField({
@@ -25,8 +26,18 @@ class KtxTextField extends StatelessWidget {
     this.readOnly = false,
     this.prefixIcon,
     this.suffixIcon,
+    this.keyboardType,
     this.onChanged,
   });
+
+  Widget? _resolvePrefixIcon() {
+    if (prefixIcon == null) return null;
+    if (prefixIcon is Widget) return prefixIcon as Widget;
+    if (prefixIcon is IconData) {
+      return Icon(prefixIcon as IconData, color: AppColors.textSecondary);
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,17 +61,20 @@ class KtxTextField extends StatelessWidget {
             controller: controller,
             maxLines: maxLines,
             readOnly: readOnly,
+            keyboardType: keyboardType,
             onChanged: onChanged,
             style: AppTypography.bodyMedium,
             decoration: InputDecoration(
               hintText: hintText,
-              hintStyle: AppTypography.bodyMedium.copyWith(color: AppColors.textHint),
+              hintStyle:
+                  AppTypography.bodyMedium.copyWith(color: AppColors.textHint),
               errorText: errorText,
-              prefixIcon: prefixIcon,
+              prefixIcon: _resolvePrefixIcon(),
               suffixIcon: suffixIcon,
               filled: true,
               fillColor: readOnly ? AppColors.surfaceVariant : Colors.white,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               border: OutlineInputBorder(
                 borderRadius: AppRadius.roundedMd,
                 borderSide: const BorderSide(color: AppColors.border),
@@ -71,7 +85,8 @@ class KtxTextField extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: AppRadius.roundedMd,
-                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                borderSide:
+                    const BorderSide(color: AppColors.primary, width: 2),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: AppRadius.roundedMd,
@@ -84,4 +99,3 @@ class KtxTextField extends StatelessWidget {
     );
   }
 }
-
