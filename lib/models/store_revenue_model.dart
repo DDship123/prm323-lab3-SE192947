@@ -1,4 +1,4 @@
-import 'owner_order_summary_model.dart';
+import 'owner_order_model.dart';
 
 class StoreRevenueModel {
   final double totalRevenue;
@@ -34,3 +34,4 @@ class StoreRevenueModel {
     );
   }
 }
+
