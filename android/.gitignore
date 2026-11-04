@@ -12,3 +12,6 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+!**/shared-debug.keystore
+!**/my-release-key.jks
