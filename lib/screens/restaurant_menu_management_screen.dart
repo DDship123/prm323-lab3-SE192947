@@ -35,7 +35,7 @@ class _RestaurantMenuManagementScreenState extends State<RestaurantMenuManagemen
   Future<void> _loadMenu() async {
     setState(() => _isLoading = true);
     try {
-      final items = await _storeService.fetchMenuItems(storeId: 1);
+      final items = await _storeService.fetchMenuItems(1);
       setState(() {
         _menuItems = items;
         _isLoading = false;
@@ -118,7 +118,7 @@ class _RestaurantMenuManagementScreenState extends State<RestaurantMenuManagemen
                                 basePrice: item.basePrice,
                                 category: item.category,
                                 isAvailable: val,
-                                customizationGroups: item.customizationGroups,
+                                customizationOptions: item.customizationOptions,
                               );
                             });
                             await ownerVm.toggleAvailability(
