@@ -21,6 +21,7 @@ import 'screens/profile_settings_screen.dart';
 import 'screens/restaurant_dashboard_screen.dart';
 import 'screens/shipper_batch_pickup_screen.dart';
 import 'screens/student_register_screen.dart';
+import 'screens/web_admin_shell_screen.dart';
 import 'services/admin_api_service.dart';
 import 'services/auth_api_service.dart';
 import 'services/crashlytics_service.dart';
@@ -195,6 +196,16 @@ class _AuthGateState extends State<AuthGate> {
   bool _manualDemoSignedIn = false;
   UserAppRole _activeRole = UserAppRole.student;
 
+  @override
+  void initState() {
+    super.initState();
+    // Yêu cầu Lab 3: Web chỉ phục vụ cho Admin; khi mở trên trình duyệt Web lập tức vào Web Admin Portal
+    if (kIsWeb) {
+      _activeRole = UserAppRole.admin;
+      _manualDemoSignedIn = true;
+    }
+  }
+
   void _onRoleChanged(UserAppRole newRole) {
     setState(() {
       _activeRole = newRole;
@@ -256,23 +267,9 @@ class _AuthGateState extends State<AuthGate> {
                 body: const ShipperBatchPickupScreen(shipperId: '3'),
               );
             case UserAppRole.admin:
-              return Scaffold(
-                appBar: AppBar(
-                  title: const Text('Góc Ban Quản Lý (Admin)'),
-                  actions: [
-                    IconButton(
-                      tooltip: 'Đổi vai trò',
-                      icon: const Icon(Icons.swap_horiz_rounded),
-                      onPressed: () => _openRoleSwitcher(context),
-                    ),
-                    IconButton(
-                      tooltip: 'Đăng xuất',
-                      icon: const Icon(Icons.logout),
-                      onPressed: _signOut,
-                    ),
-                  ],
-                ),
-                body: const AdminDisputeManagementScreen(adminId: '4'),
+              return WebAdminShellScreen(
+                onSignOut: _signOut,
+                onSwitchRole: () => _openRoleSwitcher(context),
               );
             case UserAppRole.student:
               return MainShellScreen(
