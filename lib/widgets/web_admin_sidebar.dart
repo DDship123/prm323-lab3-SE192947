@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Menu thanh bên (Left Vertical Sidebar) chuẩn phong cách Quản trị Hiện đại Greenova / SaaS
-/// Hỗ trợ chế độ Mở rộng (Expanded 260px) và Thu gọn / Đóng mở (Collapsed 76px)
+/// Hỗ trợ chế độ Mở rộng (Expanded 280px) và Thu gọn / Đóng mở (Collapsed 76px)
 class WebAdminSidebar extends StatelessWidget {
   final bool isCollapsed;
   final VoidCallback onToggleCollapse;
@@ -25,7 +25,7 @@ class WebAdminSidebar extends StatelessWidget {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
-      width: isCollapsed ? 76 : 260,
+      width: isCollapsed ? 76 : 280,
       decoration: const BoxDecoration(
         color: Color(0xFF0E1A16), // Dark Forest / Greenova deep slate
         boxShadow: [
@@ -112,14 +112,14 @@ class WebAdminSidebar extends StatelessWidget {
                               'KTX ADMIN',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 15,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 1.1,
                               ),
                             ),
                             SizedBox(height: 2),
                             Text(
-                              'Greenova v2.0',
+                              'Greenova Portal v2.0',
                               style: TextStyle(
                                 color: Color(0xFF94A3B8),
                                 fontSize: 11,
@@ -130,7 +130,7 @@ class WebAdminSidebar extends StatelessWidget {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Thu gọn menu',
+                        tooltip: 'Thu gọn menu bên trái',
                         icon: const Icon(Icons.menu_open_rounded, color: Color(0xFF94A3B8), size: 20),
                         onPressed: onToggleCollapse,
                       ),
@@ -139,7 +139,7 @@ class WebAdminSidebar extends StatelessWidget {
           ),
 
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 14),
+            padding: EdgeInsets.symmetric(horizontal: 16),
             child: Divider(color: Color(0xFF1E293B), height: 1),
           ),
           const SizedBox(height: 12),
@@ -147,42 +147,39 @@ class WebAdminSidebar extends StatelessWidget {
           // ================= 2. DANH SÁCH MỤC ĐIỀU HƯỚNG =================
           Expanded(
             child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 10 : 12),
+              padding: EdgeInsets.symmetric(horizontal: isCollapsed ? 10 : 14),
               children: [
                 if (!isCollapsed) _buildSectionLabel('TỔNG QUAN'),
                 _buildMenuItem(
                   index: 0,
                   title: 'Bảng Điều Khiển',
-                  subtitle: 'KPI & Doanh thu',
                   icon: Icons.dashboard_rounded,
                 ),
-                SizedBox(height: isCollapsed ? 12 : 16),
+                SizedBox(height: isCollapsed ? 10 : 16),
 
                 if (!isCollapsed) _buildSectionLabel('NGHIỆP VỤ QUẢN TRỊ'),
                 _buildMenuItem(
                   index: 1,
-                  title: 'Trọng Tài Khiếu Nại',
-                  subtitle: 'Xem ảnh món hỏng',
-                  icon: Icons.gavel_rounded,
-                  badgeText: '3',
+                  title: 'Xử Lý Khiếu Nại',
+                  icon: Icons.assignment_late_rounded,
+                  badgeText: '3 chờ',
                   badgeColor: const Color(0xFFEF4444),
                 ),
                 const SizedBox(height: 6),
                 _buildMenuItem(
                   index: 2,
                   title: 'Giám Sát Đơn Hàng',
-                  subtitle: 'Tiến độ gom ca KTX',
                   icon: Icons.receipt_long_rounded,
                   badgeText: 'Ca trưa',
                   badgeColor: const Color(0xFF10B981),
                 ),
-                SizedBox(height: isCollapsed ? 12 : 16),
+                SizedBox(height: isCollapsed ? 10 : 16),
 
                 if (!isCollapsed) ...[
                   _buildSectionLabel('HỆ THỐNG & KẾT NỐI'),
                   _buildStaticMenuItem(
                     title: 'Máy Chủ VPS TP.HCM',
-                    subtitle: 'IP: 103.179.189.120',
+                    subtitle: '103.179.189.120',
                     icon: Icons.dns_rounded,
                     statusDot: const Color(0xFF10B981),
                     statusText: 'Online',
@@ -275,7 +272,7 @@ class WebAdminSidebar extends StatelessWidget {
                 )
               : Container(
                   padding: const EdgeInsets.all(14),
-                  margin: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: const Color(0xFF152620),
                     borderRadius: BorderRadius.circular(14),
@@ -406,7 +403,6 @@ class WebAdminSidebar extends StatelessWidget {
   Widget _buildMenuItem({
     required int index,
     required String title,
-    required String subtitle,
     required IconData icon,
     String? badgeText,
     Color? badgeColor,
@@ -415,7 +411,7 @@ class WebAdminSidebar extends StatelessWidget {
 
     if (isCollapsed) {
       return Tooltip(
-        message: '$title - $subtitle',
+        message: title,
         preferBelow: false,
         child: InkWell(
           onTap: () => onTabSelected(index),
@@ -465,7 +461,7 @@ class WebAdminSidebar extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF10B981).withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
@@ -486,10 +482,10 @@ class WebAdminSidebar extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
                 color: isSelected ? const Color(0xFF10B981) : const Color(0xFF13221C),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
@@ -499,28 +495,19 @@ class WebAdminSidebar extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
-                      fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: isSelected ? const Color(0xFF6EE7B7) : const Color(0xFF64748B),
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (badgeText != null)
+            if (badgeText != null) ...[
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
@@ -536,6 +523,7 @@ class WebAdminSidebar extends StatelessWidget {
                   ),
                 ),
               ),
+            ],
           ],
         ),
       ),
@@ -559,7 +547,7 @@ class WebAdminSidebar extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
               color: const Color(0xFF1E352B),
               borderRadius: BorderRadius.circular(8),
@@ -574,10 +562,14 @@ class WebAdminSidebar extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 12, fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   subtitle,
                   style: const TextStyle(color: Color(0xFF64748B), fontSize: 10),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

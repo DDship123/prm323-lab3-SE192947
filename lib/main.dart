@@ -4,12 +4,12 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'firebase/cloud_storage_service.dart';
 import 'firebase_options.dart';
 import 'models/order_model.dart';
 import 'models/user_role_enum.dart';
-import 'screens/admin_dispute_management_screen.dart';
 import 'screens/dispute_refund_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/group_cart_checkout_screen.dart';
@@ -55,6 +55,9 @@ import 'widgets/server_config_dialog.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await initializeDateFormatting('vi_VN', null);
+  } catch (_) {}
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Tự động tải địa chỉ máy chủ lưu trước đó (hoặc mặc định VPS/Emulator)

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../services/api_config.dart';
 
 /// Thanh Header trên cùng của Dashboard Admin (Web Top Bar) chuẩn SaaS hiện đại
@@ -18,11 +17,28 @@ class WebAdminTopbar extends StatelessWidget {
     this.onToggleSidebar,
   });
 
+  String _formatDate(DateTime dt) {
+    const weekdays = [
+      'Thứ Hai',
+      'Thứ Ba',
+      'Thứ Tư',
+      'Thứ Năm',
+      'Thứ Sáu',
+      'Thứ Bảy',
+      'Chủ Nhật'
+    ];
+    final wd = weekdays[dt.weekday - 1];
+    final d = dt.day.toString().padLeft(2, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    final y = dt.year;
+    return '$wd, $d/$m/$y';
+  }
+
   @override
   Widget build(BuildContext context) {
     final titles = [
       'Bảng Điều Khiển Tổng Quan KPI',
-      'Trọng Tài Khiếu Nại & Món Hỏng',
+      'Xử Lý Khiếu Nại & Bồi Hoàn',
       'Giám Sát Toàn Bộ Đơn Hàng KTX',
     ];
     final breadcrumbs = [
@@ -31,7 +47,7 @@ class WebAdminTopbar extends StatelessWidget {
       'Nghiệp vụ / Giám sát Gom ca',
     ];
 
-    final nowStr = DateFormat('EEEE, dd/MM/yyyy', 'vi_VN').format(DateTime.now());
+    final nowStr = _formatDate(DateTime.now());
 
     return Container(
       height: 70,
@@ -172,7 +188,7 @@ class WebAdminTopbar extends StatelessWidget {
 
           const SizedBox(width: 16),
 
-          // Ngày hiện tại
+          // Ngày hiện tại (An toàn, không bị LocaleDataException)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(

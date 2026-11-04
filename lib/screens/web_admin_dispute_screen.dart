@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/dispute_model.dart';
 import '../services/dispute_service.dart';
-import '../theme/app_colors.dart';
 
-/// Màn hình Web Admin Trọng tài Khiếu nại Món hỏng - Phong cách Greenova SaaS Portal
+/// Màn hình Web Admin Xử lý Khiếu nại Món hỏng - Phong cách Greenova SaaS Portal
 /// Phục vụ BQL KTX kiểm tra ảnh chụp món hỏng độ phân giải cao và quyết định hoàn tiền
 class WebAdminDisputeScreen extends StatefulWidget {
   final DisputeService disputeService;
@@ -24,6 +23,25 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
   DisputeModel? _selectedDispute;
   String _statusFilter = 'ALL';
   final TextEditingController _noteController = TextEditingController();
+
+  String _formatDateTime(DateTime dt) {
+    const weekdays = [
+      'Thứ Hai',
+      'Thứ Ba',
+      'Thứ Tư',
+      'Thứ Năm',
+      'Thứ Sáu',
+      'Thứ Bảy',
+      'Chủ Nhật'
+    ];
+    final wd = weekdays[dt.weekday - 1];
+    final h = dt.hour.toString().padLeft(2, '0');
+    final min = dt.minute.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    final y = dt.year;
+    return '$h:$min • $wd, $d/$m/$y';
+  }
 
   @override
   void initState() {
@@ -167,7 +185,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'Ghi chú phân xử: $note',
+                'Ghi chú xử lý: $note',
                 style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
               ),
             ),
@@ -286,7 +304,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                       child: Image.network(
                         imageUrl,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => Container(
+                        errorBuilder: (context, error, stackTrace) => Container(
                           padding: const EdgeInsets.all(48),
                           color: const Color(0xFF1E293B),
                           child: const Text('Không thể tải ảnh bằng chứng', style: TextStyle(color: Colors.white)),
@@ -323,7 +341,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
         children: [
           // ==================== CỘT TRÁI: MASTER LIST KHIẾU NẠI ====================
           SizedBox(
-            width: 400,
+            width: 390,
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -355,7 +373,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Icon(
-                                Icons.gavel_rounded,
+                                Icons.assignment_late_rounded,
                                 color: Color(0xFF10B981),
                                 size: 20,
                               ),
@@ -368,7 +386,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                                   Row(
                                     children: [
                                       const Text(
-                                        'Khiếu Nại Sự Cố',
+                                        'Xử Lý Khiếu Nại',
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
@@ -395,7 +413,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   const Text(
-                                    'Trọng tài hoàn tiền Lab 3 KTX',
+                                    'Xử lý bồi hoàn & món hỏng KTX',
                                     style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                                   ),
                                 ],
@@ -425,7 +443,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                                 _disputes.where((d) => d.status == DisputeStatus.pending).length,
                               ),
                               _buildFilterTab(
-                                'Đã phân xử',
+                                'Đã xử lý',
                                 'RESOLVED',
                                 _disputes.where((d) => d.status != DisputeStatus.pending).length,
                               ),
@@ -459,7 +477,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                         : ListView.separated(
                             padding: const EdgeInsets.all(12),
                             itemCount: _filteredDisputes.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            separatorBuilder: (context, index) => const SizedBox(height: 8),
                             itemBuilder: (context, index) {
                               final item = _filteredDisputes[index];
                               final isSelected = _selectedDispute?.id == item.id;
@@ -711,7 +729,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
             Icon(Icons.shield_outlined, size: 64, color: Color(0xFF94A3B8)),
             SizedBox(height: 16),
             Text(
-              'Chọn khiếu nại để tiến hành phân xử',
+              'Chọn khiếu nại để tiến hành xử lý',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF334155)),
             ),
             SizedBox(height: 8),
@@ -727,7 +745,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
 
   Widget _buildDetailPanel(DisputeModel item) {
     final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-    final formattedDate = DateFormat('HH:mm • EEEE, dd/MM/yyyy', 'vi_VN').format(item.createdAt);
+    final formattedDate = _formatDateTime(item.createdAt);
 
     return Container(
       decoration: BoxDecoration(
@@ -769,7 +787,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                         Row(
                           children: [
                             Text(
-                              'Hồ Sơ Trọng Tài #DIS-${item.id}',
+                              'Hồ Sơ Xử Lý Khiếu Nại #DIS-${item.id}',
                               style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
@@ -818,7 +836,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: _buildMetricMiniCard(
-                      title: 'Kênh thanh toán',
+                      title: 'Kênh hoàn tiền',
                       value: 'Ví KTX Pay',
                       icon: Icons.account_balance_wallet_rounded,
                       color: const Color(0xFF10B981),
@@ -922,7 +940,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                         Image.network(
                           item.evidenceImageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => const Center(
+                          errorBuilder: (context, error, stackTrace) => const Center(
                             child: Text('Không thể tải ảnh bằng chứng', style: TextStyle(color: Colors.white)),
                           ),
                         ),
@@ -991,10 +1009,10 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
 
               const SizedBox(height: 28),
 
-              // ================= KHU VỰC PHÁN QUYẾT TRỌNG TÀI =================
+              // ================= KHU VỰC PHÁN QUYẾT XỬ LÝ =================
               if (item.status == DisputeStatus.pending) ...[
                 const Text(
-                  'Quyết Định Trọng Tài (Ban Quản Lý KTX)',
+                  'Quyết Định Xử Lý Khiếu Nại (Ban Quản Lý KTX)',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 10),
@@ -1012,7 +1030,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                 TextField(
                   controller: _noteController,
                   decoration: InputDecoration(
-                    hintText: 'Nhập lý do phân xử hoặc chọn ghi chú nhanh bên trên...',
+                    hintText: 'Nhập lý do xử lý hoặc chọn ghi chú nhanh bên trên...',
                     hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
