@@ -58,7 +58,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       body: RefreshIndicator(
         onRefresh: vm.loadOrderHistory,
         child: switch (state) {
-          StateLoading() => const Padding(
+          StateInitial() || StateLoading() => const Padding(
               padding: EdgeInsets.all(AppSpacing.md),
               child: KtxLoadingState(itemCount: 3),
             ),

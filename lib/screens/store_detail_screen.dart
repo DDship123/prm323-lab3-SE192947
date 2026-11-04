@@ -191,7 +191,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
   Widget _buildMenuSliver(StoreDetailViewModel vm, StoreModel store) {
     final state = vm.menuState;
     return switch (state) {
-      StateLoading() => const SliverToBoxAdapter(
+      StateInitial() || StateLoading() => const SliverToBoxAdapter(
           child: KtxLoadingState(itemCount: 3),
         ),
       StateError(:final errorMessage) => SliverToBoxAdapter(

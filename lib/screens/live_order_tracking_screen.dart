@@ -100,7 +100,7 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
         ],
       ),
       body: switch (state) {
-        StateLoading() => const Padding(
+        StateInitial() || StateLoading() => const Padding(
             padding: EdgeInsets.all(AppSpacing.md),
             child: KtxLoadingState(itemCount: 3),
           ),
