@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import '../models/shipper_wallet_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import '../viewmodels/shipper_vm.dart';
 import '../widgets/ktx_app_bar.dart';
 
 class ShipperWalletHistoryScreen extends StatefulWidget {
