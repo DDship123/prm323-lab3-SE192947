@@ -1,16 +1,118 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:provider/provider.dart';
+import 'firebase/cloud_storage_service.dart';
+import 'firebase_options.dart';
+import 'models/order_model.dart';
+import 'screens/dispute_refund_screen.dart';
+import 'screens/group_cart_checkout_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/live_order_tracking_screen.dart';
+import 'screens/notification_board_screen.dart';
+import 'screens/order_history_screen.dart';
+import 'screens/profile_settings_screen.dart';
+import 'screens/student_register_screen.dart';
+import 'services/auth_api_service.dart';
+import 'services/dispute_service.dart';
+import 'services/notification_service.dart';
+import 'services/order_service.dart';
+import 'services/payment_service.dart';
+import 'services/review_service.dart';
+import 'services/store_service.dart';
+import 'theme/app_colors.dart';
+import 'theme/app_spacing.dart';
+import 'theme/app_typography.dart';
+import 'viewmodels/auth_vm.dart';
+import 'viewmodels/cart_checkout_vm.dart';
+import 'viewmodels/dispute_vm.dart';
+import 'viewmodels/home_vm.dart';
+import 'viewmodels/order_tracking_vm.dart';
+import 'viewmodels/profile_demo_vm.dart';
+import 'viewmodels/review_vm.dart';
+import 'viewmodels/store_detail_vm.dart';
+import 'widgets/ktx_bottom_nav_bar.dart';
+import 'widgets/ktx_button.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Khởi tạo GoogleSignIn theo chuẩn package google_sign_in phiên bản 7.x
-  await GoogleSignIn.instance.initialize();
+  await GoogleSignIn.instance.initialize(
+    clientId: kIsWeb
+        ? '119011257696-fhiv11ekbecn6gjvdi2emv6gthpm60bp.apps.googleusercontent.com'
+        : null,
+  );
 
-  runApp(const MyApp());
+  runApp(const AppBootstrap());
+}
+
+/// Khởi tạo toàn bộ Dependency Injection (Services & ViewModels) qua MultiProvider
+class AppBootstrap extends StatelessWidget {
+  const AppBootstrap({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiProvider(
+      providers: [
+        Provider<AuthApiService>(create: (_) => AuthApiService()),
+        Provider<StoreService>(create: (_) => StoreService()),
+        Provider<OrderService>(create: (_) => OrderService()),
+        Provider<PaymentService>(create: (_) => PaymentService()),
+        Provider<ReviewService>(create: (_) => ReviewService()),
+        Provider<NotificationService>(create: (_) => NotificationService()),
+        Provider<CloudStorageService>(create: (_) => CloudStorageService()),
+        Provider<DisputeService>(create: (_) => DisputeService()),
+        ChangeNotifierProvider<AuthViewModel>(
+          create: (ctx) => AuthViewModel(
+            authApiService: ctx.read<AuthApiService>(),
+          ),
+        ),
+        ChangeNotifierProvider<HomeViewModel>(
+          create: (ctx) => HomeViewModel(
+            storeService: ctx.read<StoreService>(),
+            notificationService: ctx.read<NotificationService>(),
+          ),
+        ),
+        ChangeNotifierProvider<StoreDetailViewModel>(
+          create: (ctx) => StoreDetailViewModel(
+            storeService: ctx.read<StoreService>(),
+            reviewService: ctx.read<ReviewService>(),
+          ),
+        ),
+        ChangeNotifierProvider<CartCheckoutViewModel>(
+          create: (ctx) => CartCheckoutViewModel(
+            orderService: ctx.read<OrderService>(),
+            paymentService: ctx.read<PaymentService>(),
+          ),
+        ),
+        ChangeNotifierProvider<OrderTrackingViewModel>(
+          create: (ctx) => OrderTrackingViewModel(
+            orderService: ctx.read<OrderService>(),
+          ),
+        ),
+        ChangeNotifierProvider<DisputeViewModel>(
+          create: (ctx) => DisputeViewModel(
+            cloudStorageService: ctx.read<CloudStorageService>(),
+            disputeService: ctx.read<DisputeService>(),
+          ),
+        ),
+        ChangeNotifierProvider<ReviewViewModel>(
+          create: (ctx) => ReviewViewModel(
+            reviewService: ctx.read<ReviewService>(),
+          ),
+        ),
+        ChangeNotifierProvider<ProfileDemoViewModel>(
+          create: (ctx) => ProfileDemoViewModel(
+            notificationService: ctx.read<NotificationService>(),
+          ),
+        ),
+      ],
+      child: const MyApp(),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -19,10 +121,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PRM393 Lab 03 - Google Sign-In',
+      title: 'KTX Food Ordering - PRM393 Lab 3',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+        scaffoldBackgroundColor: AppColors.background,
         useMaterial3: true,
       ),
       home: const AuthGate(),
@@ -30,37 +133,60 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Widget điều hướng tự động dựa trên trạng thái đăng nhập
-class AuthGate extends StatelessWidget {
+/// Điều hướng tự động theo trạng thái đăng nhập (S0 -> S1..S13)
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool _manualDemoSignedIn = false;
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Đang kiểm tra trạng thái khởi tạo
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // Đã đăng nhập
-        if (snapshot.hasData && snapshot.data != null) {
-          return HomeScreen(user: snapshot.data!);
+        final firebaseUser = snapshot.data;
+        if (firebaseUser != null || _manualDemoSignedIn) {
+          return MainShellScreen(
+            firebaseUser: firebaseUser,
+            onSignOut: () async {
+              setState(() => _manualDemoSignedIn = false);
+              try {
+                await GoogleSignIn.instance.signOut();
+                await FirebaseAuth.instance.signOut();
+              } catch (_) {}
+            },
+          );
         }
 
-        // Chưa đăng nhập
-        return const LoginScreen();
+        return LoginScreen(
+          onRegisteredOrDemoSuccess: () {
+            setState(() => _manualDemoSignedIn = true);
+          },
+        );
       },
     );
   }
 }
 
-/// Màn hình đăng nhập
+/// Màn hình S0: Đăng nhập Google Sign-In & Đăng ký tài khoản Sinh viên KTX
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final VoidCallback onRegisteredOrDemoSuccess;
+
+  const LoginScreen({
+    super.key,
+    required this.onRegisteredOrDemoSuccess,
+  });
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -73,48 +199,41 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Kích hoạt luồng xác thực Google (v7.x sử dụng authenticate())
-      final GoogleSignInAccount account =
-          await GoogleSignIn.instance.authenticate();
-
-      // 2. Lấy ID Token từ tài khoản Google
-      final GoogleSignInAuthentication googleAuth = account.authentication;
-
-      // 3. Tạo credential cho Firebase Auth
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
-
-      // 4. Đăng nhập vào Firebase
-      await FirebaseAuth.instance.signInWithCredential(credential);
-    } on GoogleSignInException catch (e) {
-      if (e.code == GoogleSignInExceptionCode.canceled) {
-        // Người dùng chủ động hủy hoặc đóng hộp thoại đăng nhập
-        return;
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi Google Sign-In: ${e.description ?? e.code.name}'),
-            backgroundColor: Colors.red,
-          ),
+      User? user;
+      try {
+        final GoogleSignInAccount account =
+            await GoogleSignIn.instance.authenticate();
+        final GoogleSignInAuthentication googleAuth = account.authentication;
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          idToken: googleAuth.idToken,
         );
+        final userCred =
+            await FirebaseAuth.instance.signInWithCredential(credential);
+        user = userCred.user;
+      } on GoogleSignInException catch (e) {
+        if (e.code == GoogleSignInExceptionCode.canceled) return;
+        // Fallback cho máy ảo Android có Google Play Services < 24.x (bị lỗi GetSignInWithGoogleOption NPE)
+        final provider = GoogleAuthProvider();
+        provider.setCustomParameters({'prompt': 'select_account'});
+        final userCred =
+            await FirebaseAuth.instance.signInWithProvider(provider);
+        user = userCred.user;
       }
-    } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi Firebase: ${e.message}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+
+      if (user != null && mounted) {
+        await context.read<AuthViewModel>().syncFirebaseUser(
+              uid: user.uid,
+              email: user.email ?? 'student@fpt.edu.vn',
+              displayName: user.displayName ?? 'Sinh viên KTX',
+              photoUrl: user.photoURL,
+            );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lỗi đăng nhập: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -127,65 +246,62 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.lock_person_outlined,
-                  size: 90,
-                  color: theme.colorScheme.primary,
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight.withValues(alpha: 0.45),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.fastfood_rounded,
+                    size: 48,
+                    color: AppColors.primary,
+                  ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.md),
                 Text(
-                  'PRM393 - Lab 03',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  'KTX Food Ordering',
+                  style: AppTypography.heading1,
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  'Xác thực Firebase bằng Google Sign-In',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                  'Đặt món & Gom đơn theo Ca KTX Khu A / Khu B\n(PRM393 - Lab 3)',
+                  style: AppTypography.bodySmall,
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 48),
-                if (_isLoading)
-                  const CircularProgressIndicator()
-                else
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 14,
+                const SizedBox(height: AppSpacing.xl),
+                KtxButton(
+                  label: 'Đăng nhập bằng Google (S0)',
+                  icon: Icons.login_rounded,
+                  isLoading: _isLoading,
+                  onPressed: _signInWithGoogle,
+                ),
+                const SizedBox(height: AppSpacing.sm + 4),
+                KtxButton(
+                  label: 'Đăng ký SĐT & Phòng KTX (S0_Reg / OTP)',
+                  variant: KtxButtonVariant.outline,
+                  icon: Icons.person_add_alt_1_rounded,
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => StudentRegisterScreen(
+                          onRegisterCompleted: widget.onRegisteredOrDemoSuccess,
+                        ),
                       ),
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: _signInWithGoogle,
-                    icon: Image.network(
-                      'https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg',
-                      width: 24,
-                      height: 24,
-                      errorBuilder: (_, __, ___) => const Icon(
-                        Icons.account_circle,
-                        color: Colors.red,
-                      ),
-                    ),
-                    label: const Text(
-                      'Đăng nhập với Google',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                  ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -195,115 +311,100 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// Màn hình chính sau khi đăng nhập thành công
-class HomeScreen extends StatelessWidget {
-  final User user;
+/// Khung điều hướng chính 4 Tab (S1 Trang chủ, S12 Thông báo, S10 Đơn hàng, S13 Hồ sơ)
+class MainShellScreen extends StatefulWidget {
+  final User? firebaseUser;
+  final VoidCallback onSignOut;
 
-  const HomeScreen({super.key, required this.user});
+  const MainShellScreen({
+    super.key,
+    required this.firebaseUser,
+    required this.onSignOut,
+  });
 
-  Future<void> _signOut(BuildContext context) async {
-    try {
-      // Gọi signOut qua singleton instance (v7.x)
-      await GoogleSignIn.instance.signOut();
-      await FirebaseAuth.instance.signOut();
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi đăng xuất: $e')),
-        );
+  @override
+  State<MainShellScreen> createState() => _MainShellScreenState();
+}
+
+class _MainShellScreenState extends State<MainShellScreen> {
+  int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = widget.firebaseUser;
+      if (user != null) {
+        context.read<AuthViewModel>().syncFirebaseUser(
+              uid: user.uid,
+              email: user.email ?? 'student@fpt.edu.vn',
+              displayName: user.displayName ?? 'Sinh viên KTX',
+              photoUrl: user.photoURL,
+            );
       }
-    }
+    });
+  }
+
+  void _openCheckout() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GroupCartCheckoutScreen(
+          onOrderCompleted: (OrderDetailModel order) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => LiveOrderTrackingScreen(initialOrder: order),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _openDispute() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const DisputeRefundScreen(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final user = widget.firebaseUser;
+    final authVm = context.watch<AuthViewModel>();
+    final displayName =
+        user?.displayName ?? authVm.currentUser?.displayName ?? 'Sinh viên KTX';
+    final email =
+        user?.email ?? authVm.currentUser?.email ?? 'student@fpt.edu.vn';
+    final uid =
+        user?.uid ?? authVm.currentUser?.firebaseUid ?? 'student_ktx_demo';
+
+    final pages = [
+      HomeScreen(
+        onOpenNotifications: () => setState(() => _selectedIndex = 1),
+        onOpenCheckout: _openCheckout,
+        onOpenDispute: _openDispute,
+      ),
+      const NotificationBoardScreen(),
+      const OrderHistoryScreen(),
+      ProfileSettingsScreen(
+        displayName: displayName,
+        email: email,
+        uid: uid,
+        photoUrl: user?.photoURL,
+        onSignOut: widget.onSignOut,
+      ),
+    ];
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Thông tin người dùng'),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            tooltip: 'Đăng xuất',
-            icon: const Icon(Icons.logout),
-            onPressed: () => _signOut(context),
-          ),
-        ],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: pages,
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(
-                    radius: 48,
-                    backgroundColor: theme.colorScheme.primaryContainer,
-                    backgroundImage: user.photoURL != null
-                        ? NetworkImage(user.photoURL!)
-                        : null,
-                    child: user.photoURL == null
-                        ? Icon(
-                            Icons.person,
-                            size: 48,
-                            color: theme.colorScheme.primary,
-                          )
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    user.displayName ?? 'Chưa cập nhật tên',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    user.email ?? 'Không có email',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const Divider(height: 32),
-                  ListTile(
-                    dense: true,
-                    leading: const Icon(Icons.perm_identity),
-                    title: const Text('User ID (UID)'),
-                    subtitle: Text(
-                      user.uid,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      onPressed: () => _signOut(context),
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Đăng xuất'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+      bottomNavigationBar: KtxBottomNavBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) => setState(() => _selectedIndex = index),
       ),
     );
   }

@@ -1,30 +1,90 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:prm393_lab03_se192947/main.dart';
+import 'package:prm393_lab03_se192947/widgets/ktx_button.dart';
+import 'package:prm393_lab03_se192947/widgets/ktx_empty_state.dart';
+import 'package:prm393_lab03_se192947/widgets/ktx_error_state.dart';
+import 'package:prm393_lab03_se192947/widgets/ktx_loading_state.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('Design System Widgets Smoke Tests', () {
+    testWidgets('KtxButton hiển thị nhãn và kích hoạt sự kiện tap', (tester) async {
+      bool tapped = false;
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: KtxButton(
+              label: 'Xác nhận khiếu nại',
+              onPressed: () => tapped = true,
+            ),
+          ),
+        ),
+      );
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      expect(find.text('Xác nhận khiếu nại'), findsOneWidget);
+      await tester.tap(find.byType(KtxButton));
+      await tester.pump();
+      expect(tapped, isTrue);
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    testWidgets('KtxLoadingState hiển thị thông báo tải dữ liệu', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: KtxLoadingState(message: 'Đang tải ảnh lên Cloud Storage...'),
+          ),
+        ),
+      );
+
+      expect(find.text('Đang tải ảnh lên Cloud Storage...'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+
+    testWidgets('KtxEmptyState hiển thị nội dung rỗng và nút hành động', (tester) async {
+      bool actionClicked = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: KtxEmptyState(
+              title: 'Chưa có khiếu nại',
+              message: 'Danh sách khiếu nại của bạn đang trống.',
+              actionLabel: 'Tạo khiếu nại mới',
+              onAction: () => actionClicked = true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Chưa có khiếu nại'), findsOneWidget);
+      expect(find.text('Danh sách khiếu nại của bạn đang trống.'), findsOneWidget);
+      expect(find.text('Tạo khiếu nại mới'), findsOneWidget);
+
+      await tester.tap(find.text('Tạo khiếu nại mới'));
+      await tester.pump();
+      expect(actionClicked, isTrue);
+    });
+
+    testWidgets('KtxErrorState hiển thị thông báo lỗi và nút Thử lại', (tester) async {
+      bool retried = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: KtxErrorState(
+              errorMessage: 'Không thể kết nối máy chủ',
+              onRetry: () => retried = true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Không thể kết nối máy chủ'), findsOneWidget);
+      expect(find.text('Thử lại'), findsOneWidget);
+
+      await tester.tap(find.text('Thử lại'));
+      await tester.pump();
+      expect(retried, isTrue);
+    });
   });
 }
