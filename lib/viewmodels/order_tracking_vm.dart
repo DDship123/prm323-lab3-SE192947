@@ -118,6 +118,29 @@ class OrderTrackingViewModel extends ChangeNotifier {
     }
   }
 
+  /// Bỏ qua toàn bộ quá trình chờ để sinh viên tới thẳng bước Nhận hàng (S7 Mã QR / PIN)
+  Future<OrderDetailModel> skipToDeliveryStep(OrderDetailModel current) async {
+    _isActionLoading = true;
+    _actionError = null;
+    notifyListeners();
+
+    try {
+      final updated = await _orderService.updateOrderStatus(
+        orderId: current.id,
+        newStatus: 'DELIVERING',
+      );
+      _trackingState = StateSuccess(updated);
+      return updated;
+    } catch (_) {
+      final fallback = current.copyWith(status: 'DELIVERING');
+      _trackingState = StateSuccess(fallback);
+      return fallback;
+    } finally {
+      _isActionLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// API-011: Xác nhận nhận hàng tại cổng KTX bằng QR_SCAN hoặc PIN (S7 -> S9)
   Future<bool> confirmPickupAtGate({
     required OrderDetailModel order,

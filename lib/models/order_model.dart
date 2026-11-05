@@ -182,6 +182,52 @@ class OrderDetailModel {
         createdAt: createdAt,
       );
 
+  OrderDetailModel copyWith({
+    int? id,
+    String? orderCode,
+    int? userId,
+    int? storeId,
+    String? storeName,
+    String? slotTime,
+    String? pickupLocation,
+    double? subtotalAmount,
+    double? deliveryFee,
+    double? groupDiscountAmount,
+    double? finalAmount,
+    String? status,
+    String? paymentMethod,
+    String? paymentStatus,
+    String? pickupQrCode,
+    String? pickupPin,
+    String? note,
+    List<OrderItemModel>? items,
+    DateTime? deliveredAt,
+    DateTime? createdAt,
+  }) {
+    return OrderDetailModel(
+      id: id ?? this.id,
+      orderCode: orderCode ?? this.orderCode,
+      userId: userId ?? this.userId,
+      storeId: storeId ?? this.storeId,
+      storeName: storeName ?? this.storeName,
+      slotTime: slotTime ?? this.slotTime,
+      pickupLocation: pickupLocation ?? this.pickupLocation,
+      subtotalAmount: subtotalAmount ?? this.subtotalAmount,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      groupDiscountAmount: groupDiscountAmount ?? this.groupDiscountAmount,
+      finalAmount: finalAmount ?? this.finalAmount,
+      status: status ?? this.status,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      pickupQrCode: pickupQrCode ?? this.pickupQrCode,
+      pickupPin: pickupPin ?? this.pickupPin,
+      note: note ?? this.note,
+      items: items ?? this.items,
+      deliveredAt: deliveredAt ?? this.deliveredAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   String get statusLabel {
     switch (status) {
       case 'PENDING':

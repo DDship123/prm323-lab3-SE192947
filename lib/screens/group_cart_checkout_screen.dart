@@ -15,7 +15,9 @@ import '../widgets/ktx_dialog.dart';
 import '../widgets/ktx_empty_state.dart';
 import '../widgets/ktx_error_state.dart';
 import '../widgets/ktx_text_field.dart';
+import '../services/order_service.dart';
 import 'online_payment_screen.dart';
+import 'pickup_qr_code_screen.dart';
 
 /// Màn hình S4: Giỏ hàng, Chọn Ca gom đơn KTX & Đặt hàng (API-006)
 class GroupCartCheckoutScreen extends StatefulWidget {
@@ -84,6 +86,21 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
         onTrackOrder: () {
           Navigator.of(context).pop();
           widget.onOrderCompleted(created);
+        },
+        onSkipToPickup: () async {
+          Navigator.of(context).pop();
+          try {
+            await OrderService().updateOrderStatus(
+              orderId: created.id,
+              newStatus: 'DELIVERING',
+            );
+          } catch (_) {}
+          final delivering = created.copyWith(status: 'DELIVERING');
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => PickupQrCodeScreen(order: delivering)),
+            );
+          }
         },
       );
     }

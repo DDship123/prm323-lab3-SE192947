@@ -58,6 +58,11 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
         title: 'Bảng giao nhận tại Cổng KTX',
         actions: [
           IconButton(
+            tooltip: 'Quét QR giao hàng nhanh',
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+            onPressed: () => _openQuickScanDialog(context, vm),
+          ),
+          IconButton(
             tooltip: 'Ví Thu nhập & Đối soát',
             icon: const Icon(Icons.account_balance_wallet_rounded),
             onPressed: () {
@@ -442,5 +447,116 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
         );
       }
     }
+  }
+
+  void _openQuickScanDialog(BuildContext context, ShipperViewModel vm) {
+    final state = vm.state;
+    if (state is! StateSuccess<ShipperBatchSummaryModel>) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng đợi tải danh sách đơn hàng ca gom.')),
+      );
+      return;
+    }
+
+    final batch = state.data;
+    final orders = batch.orders;
+    if (orders.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chưa có đơn hàng nào trong ca gom này.')),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: EdgeInsets.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          top: AppSpacing.lg,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.lg,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.primary, size: 20),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text('Quét QR Giao Nhanh', style: AppTypography.heading2),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(ctx),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Chọn đơn hàng để đối soát mã QR / PIN với sinh viên tại cổng KTX:',
+              style: AppTypography.caption,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ...orders.map((ord) {
+              return Card(
+                elevation: 1,
+                margin: const EdgeInsets.only(bottom: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  side: const BorderSide(color: AppColors.border),
+                ),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.primaryLight,
+                    child: const Icon(Icons.person, color: AppColors.primary),
+                  ),
+                  title: Text('#${ord.orderCode} - ${ord.customerName}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text('SĐT: ${ord.customerPhone} • PIN: ${ord.pickupPin ?? "4567"}'),
+                  trailing: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    ),
+                    icon: const Icon(Icons.qr_code_scanner, size: 16),
+                    label: const Text('Trao hàng', style: TextStyle(fontSize: 12)),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ShipperHandoverConfirmScreen(
+                            order: ord,
+                            shipperId: widget.shipperId,
+                          ),
+                        ),
+                      ).then((_) => vm.fetchBatch(shipperId: widget.shipperId));
+                    },
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
   }
 }

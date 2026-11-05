@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../firebase/analytics_service.dart';
 import '../services/crashlytics_service.dart';
 import '../models/order_model.dart';
+import '../services/order_service.dart';
 import '../services/store_bank_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -14,6 +15,7 @@ import '../viewmodels/cart_checkout_vm.dart';
 import '../widgets/ktx_app_bar.dart';
 import '../widgets/ktx_button.dart';
 import '../widgets/ktx_dialog.dart';
+import 'pickup_qr_code_screen.dart';
 
 /// Màn hình S5: Thanh toán VietQR Napas 247 & Cơ chế Dự phòng Chuyển sang COD (API-012, API-013)
 class OnlinePaymentScreen extends StatefulWidget {
@@ -74,7 +76,41 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
         Navigator.of(context).pop();
         widget.onPaymentDone(widget.order);
       },
+      onSkipToPickup: () => _skipToQr(widget.order),
     );
+  }
+
+  Future<void> _skipToQr(OrderDetailModel order) async {
+    Navigator.of(context).pop();
+    try {
+      await OrderService().updateOrderStatus(
+        orderId: order.id,
+        newStatus: 'DELIVERING',
+      );
+    } catch (_) {}
+    final delivering = order.copyWith(status: 'DELIVERING', paymentStatus: 'PAID');
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => PickupQrCodeScreen(order: delivering)),
+      );
+    }
+  }
+
+  Future<void> _handleDirectSkip(CartCheckoutViewModel vm) async {
+    await vm.confirmVietQrPaid(widget.order.id);
+    if (!mounted) return;
+    try {
+      await OrderService().updateOrderStatus(
+        orderId: widget.order.id,
+        newStatus: 'DELIVERING',
+      );
+    } catch (_) {}
+    final delivering = widget.order.copyWith(status: 'DELIVERING', paymentStatus: 'PAID');
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => PickupQrCodeScreen(order: delivering)),
+      );
+    }
   }
 
   Future<void> _handleSwitchToCod(CartCheckoutViewModel vm) async {
@@ -115,6 +151,7 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
         Navigator.of(context).pop();
         widget.onPaymentDone(widget.order);
       },
+      onSkipToPickup: () => _skipToQr(widget.order),
     );
   }
 
@@ -219,7 +256,15 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
               isLoading: vm.isSubmitting,
               onPressed: () => _handleConfirmTransfer(vm),
             ),
-            const SizedBox(height: AppSpacing.sm + 4),
+            const SizedBox(height: AppSpacing.sm),
+            KtxButton(
+              label: '🚀 Giả lập thanh toán & Nhận hàng ngay (Mở QR)',
+              variant: KtxButtonVariant.secondary,
+              icon: Icons.rocket_launch_rounded,
+              isLoading: vm.isSubmitting,
+              onPressed: () => _handleDirectSkip(vm),
+            ),
+            const SizedBox(height: AppSpacing.sm),
             KtxButton(
               label: 'App ngân hàng lỗi? Đổi sang Tiền mặt (COD)',
               variant: KtxButtonVariant.outline,
