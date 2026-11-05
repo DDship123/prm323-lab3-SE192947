@@ -249,8 +249,8 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
                               )
                             : SingleChildScrollView(
                                 scrollDirection: Axis.vertical,
-                                child: SizedBox(
-                                  width: double.infinity,
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
                                   child: RepaintBoundary(
                                     child: DataTable(
                                       headingRowColor: WidgetStateProperty.all(AppColors.surfaceVariant),

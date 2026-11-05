@@ -339,170 +339,190 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 800;
+
+        if (isMobile) {
+          return Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: _selectedDispute != null
+                ? _buildDetailPanel(_selectedDispute!, isMobile: true)
+                : _buildMasterList(isMobile: true),
+          );
+        }
+
+        return Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ==================== CỘT TRÁI: MASTER LIST KHIẾU NẠI ====================
+              SizedBox(
+                width: 380,
+                child: _buildMasterList(isMobile: false),
+              ),
+
+              const SizedBox(width: AppSpacing.lg),
+
+              // ==================== CỘT PHẢI: CHI TIẾT & BẰNG CHỨNG HÌNH ẢNH ====================
+              Expanded(
+                child: _selectedDispute == null
+                    ? _buildEmptyDetailState()
+                    : _buildDetailPanel(_selectedDispute!, isMobile: false),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMasterList({required bool isMobile}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.roundedMd,
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ==================== CỘT TRÁI: MASTER LIST KHIẾU NẠI ====================
-          SizedBox(
-            width: 380,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: AppRadius.roundedMd,
-                border: Border.all(color: AppColors.border),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x06000000),
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header danh sách
-                  Padding(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryLight.withValues(alpha: 0.4),
-                                borderRadius: AppRadius.roundedSm,
-                              ),
-                              child: const Icon(
-                                Icons.assignment_late_rounded,
-                                color: AppColors.primary,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        'Xử Lý Khiếu Nại',
-                                        style: AppTypography.heading3.copyWith(fontSize: 16),
-                                      ),
-                                      const SizedBox(width: AppSpacing.xs),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.errorLight,
-                                          borderRadius: AppRadius.roundedFull,
-                                        ),
-                                        child: Text(
-                                          '${_disputes.where((d) => d.status == DisputeStatus.pending).length} chờ',
-                                          style: const TextStyle(
-                                            color: AppColors.error,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Xử lý bồi hoàn & sự cố món KTX',
-                                    style: AppTypography.caption,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.textSecondary),
-                              tooltip: 'Tải lại danh sách',
-                              onPressed: _loadDisputes,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        // Thanh lọc trạng thái phong cách KTX Food
-                        Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceVariant,
-                            borderRadius: AppRadius.roundedSm,
-                          ),
-                          child: Row(
+          // Header danh sách
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight.withValues(alpha: 0.4),
+                        borderRadius: AppRadius.roundedSm,
+                      ),
+                      child: const Icon(
+                        Icons.assignment_late_rounded,
+                        color: AppColors.primary,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              _buildFilterTab('Tất cả', 'ALL', _disputes.length),
-                              _buildFilterTab(
-                                'Chờ duyệt',
-                                'PENDING',
-                                _disputes.where((d) => d.status == DisputeStatus.pending).length,
+                              Text(
+                                'Xử Lý Khiếu Nại',
+                                style: AppTypography.heading3.copyWith(fontSize: 16),
                               ),
-                              _buildFilterTab(
-                                'Đã xử lý',
-                                'RESOLVED',
-                                _disputes.where((d) => d.status != DisputeStatus.pending).length,
+                              const SizedBox(width: AppSpacing.xs),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.errorLight,
+                                  borderRadius: AppRadius.roundedFull,
+                                ),
+                                child: Text(
+                                  '${_disputes.where((d) => d.status == DisputeStatus.pending).length} chờ',
+                                  style: const TextStyle(
+                                    color: AppColors.error,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1, color: AppColors.border),
-
-                  // Danh sách thẻ khiếu nại
-                  Expanded(
-                    child: _filteredDisputes.isEmpty
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(AppSpacing.lg),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.inbox_outlined, size: 44, color: AppColors.textHint),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  Text(
-                                    'Không có khiếu nại nào theo bộ lọc',
-                                    style: AppTypography.caption,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : ListView.separated(
-                            padding: const EdgeInsets.all(AppSpacing.sm),
-                            itemCount: _filteredDisputes.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 6),
-                            itemBuilder: (context, index) {
-                              final item = _filteredDisputes[index];
-                              final isSelected = _selectedDispute?.id == item.id;
-
-                              return _buildDisputeItemCard(item, isSelected);
-                            },
+                          const SizedBox(height: 2),
+                          Text(
+                            'Xử lý bồi hoàn & sự cố món KTX',
+                            style: AppTypography.caption,
                           ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.textSecondary),
+                      tooltip: 'Tải lại danh sách',
+                      onPressed: _loadDisputes,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                // Thanh lọc trạng thái phong cách KTX Food
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceVariant,
+                    borderRadius: AppRadius.roundedSm,
                   ),
-                ],
-              ),
+                  child: Row(
+                    children: [
+                      _buildFilterTab('Tất cả', 'ALL', _disputes.length),
+                      _buildFilterTab(
+                        'Chờ duyệt',
+                        'PENDING',
+                        _disputes.where((d) => d.status == DisputeStatus.pending).length,
+                      ),
+                      _buildFilterTab(
+                        'Đã xử lý',
+                        'RESOLVED',
+                        _disputes.where((d) => d.status != DisputeStatus.pending).length,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
+          const Divider(height: 1, color: AppColors.border),
 
-          const SizedBox(width: AppSpacing.lg),
-
-          // ==================== CỘT PHẢI: CHI TIẾT & BẰNG CHỨNG HÌNH ẢNH ====================
+          // Danh sách thẻ khiếu nại
           Expanded(
-            child: _selectedDispute == null
-                ? _buildEmptyDetailState()
-                : _buildDetailPanel(_selectedDispute!),
+            child: _filteredDisputes.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.inbox_outlined, size: 44, color: AppColors.textHint),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            'Không có khiếu nại nào theo bộ lọc',
+                            style: AppTypography.caption,
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    itemCount: _filteredDisputes.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      final item = _filteredDisputes[index];
+                      final isSelected = _selectedDispute?.id == item.id;
+
+                      return _buildDisputeItemCard(item, isSelected);
+                    },
+                  ),
           ),
         ],
       ),
     );
+  }
   }
 
   Widget _buildFilterTab(String title, String key, int count) {
@@ -730,9 +750,28 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
     );
   }
 
-  Widget _buildDetailPanel(DisputeModel item) {
+  Widget _buildDetailPanel(DisputeModel item, {bool isMobile = false}) {
     final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
     final formattedDate = _formatDateTime(item.createdAt);
+
+    final mini1 = _buildMetricMiniCard(
+      title: 'Số tiền yêu cầu hoàn',
+      value: currencyFormatter.format(item.requestedRefundAmount),
+      icon: Icons.monetization_on_rounded,
+      color: AppColors.error,
+    );
+    final mini2 = _buildMetricMiniCard(
+      title: 'Lý do khiếu nại',
+      value: item.reason,
+      icon: Icons.report_problem_rounded,
+      color: AppColors.warning,
+    );
+    final mini3 = _buildMetricMiniCard(
+      title: 'Kênh hoàn tiền',
+      value: 'Ví KTX Pay',
+      icon: Icons.account_balance_wallet_rounded,
+      color: AppColors.primary,
+    );
 
     return Container(
       decoration: BoxDecoration(
@@ -750,10 +789,19 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
       child: ClipRRect(
         borderRadius: AppRadius.roundedMd,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: EdgeInsets.all(isMobile ? AppSpacing.md : AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (isMobile) ...[
+                TextButton.icon(
+                  onPressed: () => setState(() => _selectedDispute = null),
+                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                  label: const Text('Quay lại danh sách khiếu nại', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+
               // ================= HEADER HỒ SƠ =================
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -773,9 +821,13 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              'Hồ Sơ Xử Lý Khiếu Nại #DIS-${item.id}',
-                              style: AppTypography.heading2.copyWith(fontSize: 20),
+                            Expanded(
+                              child: Text(
+                                'Hồ Sơ Xử Lý Khiếu Nại #DIS-${item.id}',
+                                style: AppTypography.heading2.copyWith(fontSize: isMobile ? 16 : 20),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                             const SizedBox(width: AppSpacing.sm),
                             _buildStatusPill(item.status),
@@ -797,36 +849,23 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
               const SizedBox(height: AppSpacing.lg),
 
               // ================= 3 THẺ TỔNG HỢP NHANH =================
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricMiniCard(
-                      title: 'Số tiền yêu cầu hoàn',
-                      value: currencyFormatter.format(item.requestedRefundAmount),
-                      icon: Icons.monetization_on_rounded,
-                      color: AppColors.error,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: _buildMetricMiniCard(
-                      title: 'Lý do khiếu nại',
-                      value: item.reason,
-                      icon: Icons.report_problem_rounded,
-                      color: AppColors.warning,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: _buildMetricMiniCard(
-                      title: 'Kênh hoàn tiền',
-                      value: 'Ví KTX Pay',
-                      icon: Icons.account_balance_wallet_rounded,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
+              if (isMobile) ...[
+                mini1,
+                const SizedBox(height: AppSpacing.sm),
+                mini2,
+                const SizedBox(height: AppSpacing.sm),
+                mini3,
+              ] else ...[
+                Row(
+                  children: [
+                    Expanded(child: mini1),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(child: mini2),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(child: mini3),
+                  ],
+                ),
+              ],
 
               const SizedBox(height: AppSpacing.lg),
 

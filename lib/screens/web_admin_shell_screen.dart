@@ -29,6 +29,7 @@ class WebAdminShellScreen extends StatefulWidget {
 }
 
 class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentTabIndex = 0;
   bool _isSidebarCollapsed = false;
   AdminDashboardStatsModel _stats = AdminDashboardStatsModel.mockData();
@@ -63,19 +64,31 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 900;
+
+    final sidebar = WebAdminSidebar(
+      isCollapsed: isMobile ? false : _isSidebarCollapsed,
+      onToggleCollapse: _toggleSidebar,
+      selectedIndex: _currentTabIndex,
+      onTabSelected: (idx) {
+        setState(() => _currentTabIndex = idx);
+        if (isMobile && _scaffoldKey.currentState?.isDrawerOpen == true) {
+          Navigator.of(context).pop();
+        }
+      },
+      onSignOut: widget.onSignOut,
+      onSwitchRole: widget.onSwitchRole,
+    );
+
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: AppColors.background,
+      drawer: isMobile ? Drawer(child: SafeArea(child: sidebar)) : null,
       body: Row(
         children: [
-          // 1. Menu thanh bên trái (chứa duy nhất 1 nút toggle đóng/mở)
-          WebAdminSidebar(
-            isCollapsed: _isSidebarCollapsed,
-            onToggleCollapse: _toggleSidebar,
-            selectedIndex: _currentTabIndex,
-            onTabSelected: (idx) => setState(() => _currentTabIndex = idx),
-            onSignOut: widget.onSignOut,
-            onSwitchRole: widget.onSwitchRole,
-          ),
+          // 1. Menu thanh bên trái: chỉ hiện dạng fixed column trên màn hình Desktop (>= 900px)
+          if (!isMobile) sidebar,
 
           // 2. Khu vực nội dung chính bên phải (được cô lập RepaintBoundary để giữ FPS mượt mà)
           Expanded(
@@ -84,6 +97,8 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
                 children: [
                   WebAdminTopbar(
                     activeTabIndex: _currentTabIndex,
+                    isMobile: isMobile,
+                    onOpenDrawer: () => _scaffoldKey.currentState?.openDrawer(),
                     onRefresh: () async {
                       await _loadDashboardStats();
                       if (mounted) {
