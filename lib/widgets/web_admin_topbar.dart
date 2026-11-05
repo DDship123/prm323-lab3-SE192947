@@ -10,11 +10,13 @@ import '../theme/app_typography.dart';
 class WebAdminTopbar extends StatelessWidget {
   final int activeTabIndex;
   final VoidCallback onRefresh;
+  final VoidCallback? onToggleSidebar;
 
   const WebAdminTopbar({
     super.key,
     required this.activeTabIndex,
     required this.onRefresh,
+    this.onToggleSidebar,
   });
 
   String _formatDate(DateTime dt) {
