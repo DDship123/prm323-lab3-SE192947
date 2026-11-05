@@ -40,7 +40,6 @@ class ProfileSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authVm = context.watch<AuthViewModel>();
     final demoVm = context.watch<ProfileDemoViewModel>();
-    final remoteConfig = context.watch<RemoteConfigService>();
     final profile = authVm.currentUser;
 
     return Scaffold(

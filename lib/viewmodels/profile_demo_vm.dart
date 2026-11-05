@@ -189,7 +189,8 @@ class ProfileDemoViewModel extends ChangeNotifier {
   Future<void> triggerCrashlyticsNonFatalTest() async {
     final now = DateTime.now().toIso8601String();
     await _crashlyticsService.recordNonFatalError(
-      exception: Exception('SimulatedKtxPaymentTimeoutException'),
+      Exception('SimulatedKtxPaymentTimeoutException'),
+      StackTrace.current,
       reason: 'Người dùng nhấn kiểm thử Non-Fatal lỗi thanh toán tại S13',
     );
     _lastCrashlyticsLog =
@@ -231,6 +232,5 @@ class ProfileDemoViewModel extends ChangeNotifier {
       appState: appState,
       dataPayload: '101',
     );
-  }
   }
 }

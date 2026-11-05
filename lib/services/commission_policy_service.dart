@@ -52,3 +52,4 @@ class CommissionPolicyService extends ChangeNotifier {
     return price * ((100.0 - _commissionRate) / 100.0);
   }
 }
+

@@ -233,25 +233,7 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
     );
   }
 
-  Widget _buildFallbackQrBox(String content) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(
-          Icons.qr_code_2_rounded,
-          size: 140,
-          color: AppColors.textPrimary,
-        ),
-        Text(
-          content,
-          style: AppTypography.bodyMedium.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildInfoRow(String label, String value, {bool highlight = false}) {
     return Padding(

@@ -8,7 +8,6 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase/analytics_service.dart';
-import 'firebase/crashlytics_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase/fcm_service.dart';
 import 'firebase/remote_config_service.dart';
@@ -60,8 +59,6 @@ import 'widgets/ktx_button.dart';
 import 'widgets/role_selection_sheet.dart';
 import 'services/server_config_service.dart';
 import 'widgets/server_config_dialog.dart';
-
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

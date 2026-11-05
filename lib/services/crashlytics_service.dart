@@ -2,6 +2,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 
 /// Dịch vụ quản lý chẩn đoán và báo cáo sự cố qua Firebase Crashlytics
+/// Bảo vệ an toàn trên Web và tương thích đa nền tảng
 class CrashlyticsService {
   FirebaseCrashlytics? _crashlytics;
 
@@ -20,7 +21,9 @@ class CrashlyticsService {
   /// Thiết lập các thuộc tính định danh người dùng và vai trò KTX
   Future<void> setUserContext({
     required String userId,
-    required String role,
+    String? role,
+    String? campusZone,
+    String? currentScreen,
     String? ktxBuilding,
     String? ktxRoom,
   }) async {
@@ -28,13 +31,11 @@ class CrashlyticsService {
     if (client == null) return;
     try {
       await client.setUserIdentifier(userId);
-      await client.setCustomKey('user_role', role);
-      if (ktxBuilding != null) {
-        await client.setCustomKey('ktx_building', ktxBuilding);
-      }
-      if (ktxRoom != null) {
-        await client.setCustomKey('ktx_room', ktxRoom);
-      }
+      if (role != null) await client.setCustomKey('user_role', role);
+      if (campusZone != null) await client.setCustomKey('ktx_campus_zone', campusZone);
+      if (currentScreen != null) await client.setCustomKey('current_screen', currentScreen);
+      if (ktxBuilding != null) await client.setCustomKey('ktx_building', ktxBuilding);
+      if (ktxRoom != null) await client.setCustomKey('ktx_room', ktxRoom);
     } catch (e) {
       debugPrint('Không thể thiết lập context Crashlytics: $e');
     }
@@ -50,9 +51,9 @@ class CrashlyticsService {
   }
 
   /// Ghi nhận lỗi phi nghiêm trọng (Non-fatal handled exception)
-  Future<void> recordNonFatalError({
-    required dynamic exception,
-    StackTrace? stackTrace,
+  Future<void> recordNonFatalError(
+    dynamic exception,
+    StackTrace? stackTrace, {
     String? reason,
   }) async {
     final client = _safeCrashlytics;
@@ -79,6 +80,11 @@ class CrashlyticsService {
     }
     // Fallback ném lỗi bất đồng bộ chưa bắt nếu chạy ngoài môi trường native
     throw Exception('FatalCrashTest: $message');
+  }
+
+  /// Kích hoạt lỗi thử nghiệm (Test Fatal Crash) từ bảng điều khiển S13
+  void triggerTestCrash() {
+    forceCrashTest(message: 'User triggered manual test crash from S13 Demo Area');
   }
 
   String get nowString => DateTime.now().toIso8601String();
