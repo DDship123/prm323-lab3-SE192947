@@ -20,6 +20,18 @@ class _ShipperWalletHistoryScreenState extends State<ShipperWalletHistoryScreen>
   final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
   int _filterIndex = 0; // 0: Tất cả, 1: Thù lao, 2: Rút tiền
 
+  String _formatDateTime(DateTime dt) {
+    try {
+      return DateFormat('dd/MM HH:mm').format(dt);
+    } catch (_) {
+      final d = dt.day.toString().padLeft(2, '0');
+      final m = dt.month.toString().padLeft(2, '0');
+      final h = dt.hour.toString().padLeft(2, '0');
+      final min = dt.minute.toString().padLeft(2, '0');
+      return '$d/$m $h:$min';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -114,7 +126,7 @@ class _ShipperWalletHistoryScreenState extends State<ShipperWalletHistoryScreen>
                             Text(tx.title, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
                             const SizedBox(height: 2),
                             Text(
-                              '${tx.transactionId} • ${tx.createdAt != null ? DateFormat('dd/MM HH:mm').format(tx.createdAt!) : ''}',
+                              '${tx.transactionId} • ${tx.createdAt != null ? _formatDateTime(tx.createdAt!) : ''}',
                               style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                             ),
                           ],

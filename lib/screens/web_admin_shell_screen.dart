@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/admin_dashboard_model.dart';
+import '../services/admin_api_service.dart';
 import '../services/dispute_service.dart';
 import '../services/order_service.dart';
 import '../theme/app_colors.dart';
+import '../viewmodels/auth_vm.dart';
 import '../widgets/web_admin_sidebar.dart';
 import '../widgets/web_admin_topbar.dart';
 import 'web_admin_dashboard_screen.dart';
@@ -29,7 +31,29 @@ class WebAdminShellScreen extends StatefulWidget {
 class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
   int _currentTabIndex = 0;
   bool _isSidebarCollapsed = false;
-  final AdminDashboardStatsModel _stats = AdminDashboardStatsModel.mockData();
+  AdminDashboardStatsModel _stats = AdminDashboardStatsModel.mockData();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDashboardStats();
+    });
+  }
+
+  Future<void> _loadDashboardStats() async {
+    try {
+      final authVm = context.read<AuthViewModel>();
+      final adminId = authVm.currentUser?.id.toString() ?? '4';
+      final service = AdminApiService();
+      final stats = await service.fetchDashboardStats(adminId: adminId);
+      if (mounted) {
+        setState(() {
+          _stats = stats;
+        });
+      }
+    } catch (_) {}
+  }
 
   void _toggleSidebar() {
     setState(() {
@@ -60,14 +84,16 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
                 children: [
                   WebAdminTopbar(
                     activeTabIndex: _currentTabIndex,
-                    onRefresh: () {
-                      setState(() {});
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Đã cập nhật dữ liệu mới nhất từ hệ thống'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
+                    onRefresh: () async {
+                      await _loadDashboardStats();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Đã cập nhật dữ liệu mới nhất từ hệ thống'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      }
                     },
                   ),
                   Expanded(

@@ -562,7 +562,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
 
   Widget _buildDisputeItemCard(DisputeModel item, bool isSelected) {
     final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-    final timeStr = DateFormat('HH:mm • dd/MM').format(item.createdAt);
+    final timeStr = '${item.createdAt.hour.toString().padLeft(2, '0')}:${item.createdAt.minute.toString().padLeft(2, '0')} • ${item.createdAt.day.toString().padLeft(2, '0')}/${item.createdAt.month.toString().padLeft(2, '0')}';
 
     return InkWell(
       onTap: () {

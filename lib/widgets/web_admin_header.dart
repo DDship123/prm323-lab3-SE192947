@@ -72,7 +72,7 @@ class WebAdminHeader extends StatelessWidget {
               children: [
                 _buildNavItem(0, 'Tổng quan KPI', Icons.dashboard_rounded),
                 const SizedBox(width: 8),
-                _buildNavItem(1, 'Trọng tài Khiếu nại', Icons.gavel_rounded),
+                _buildNavItem(1, 'Xử Lý Khiếu Nại', Icons.assignment_late_rounded),
                 const SizedBox(width: 8),
                 _buildNavItem(2, 'Giám sát Đơn hàng', Icons.receipt_long_rounded),
               ],

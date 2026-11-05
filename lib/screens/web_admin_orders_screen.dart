@@ -36,7 +36,7 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
   Future<void> _loadOrders() async {
     setState(() => _isLoading = true);
     try {
-      final list = await widget.orderService.fetchMyOrders();
+      final list = await widget.orderService.fetchAllOrdersForAdmin();
       if (mounted) {
         setState(() {
           _orders = list.isNotEmpty ? list : _mockOrders();

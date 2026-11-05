@@ -56,7 +56,11 @@ import 'widgets/server_config_dialog.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
+    await initializeDateFormatting();
+    await initializeDateFormatting('vi', null);
     await initializeDateFormatting('vi_VN', null);
+    await initializeDateFormatting('en', null);
+    await initializeDateFormatting('en_US', null);
   } catch (_) {}
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 

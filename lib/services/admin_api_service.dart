@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/admin_dashboard_model.dart';
 import '../models/dispute_model.dart';
 import 'api_config.dart';
 
@@ -7,6 +8,32 @@ class AdminApiService {
   final http.Client _client;
 
   AdminApiService({http.Client? client}) : _client = client ?? http.Client();
+
+  Future<AdminDashboardStatsModel> fetchDashboardStats({
+    required String adminId,
+    String? idToken,
+  }) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}/admin/dashboard-stats');
+    final headers = {
+      'Content-Type': 'application/json',
+      'X-User-Id': adminId,
+      'X-User-Role': 'ADMIN',
+      if (idToken != null) 'Authorization': 'Bearer $idToken',
+    };
+
+    try {
+      final response = await _client.get(url, headers: headers).timeout(const Duration(seconds: 4));
+      if (response.statusCode == 200) {
+        final utf8Body = utf8.decode(response.bodyBytes);
+        final jsonMap = jsonDecode(utf8Body) as Map<String, dynamic>;
+        final data = jsonMap['data'] as Map<String, dynamic>? ?? {};
+        return AdminDashboardStatsModel.fromJson(data);
+      }
+      return AdminDashboardStatsModel.mockData();
+    } catch (_) {
+      return AdminDashboardStatsModel.mockData();
+    }
+  }
 
   Future<List<DisputeModel>> fetchAllDisputes({
     required String? idToken,

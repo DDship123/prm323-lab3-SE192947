@@ -79,7 +79,12 @@ class _NotificationBoardScreenState extends State<NotificationBoardScreen> {
     ProfileDemoViewModel vm,
     NotificationModel noti,
   ) {
-    final timeStr = DateFormat('HH:mm - dd/MM').format(noti.createdAt);
+    String timeStr;
+    try {
+      timeStr = DateFormat('HH:mm - dd/MM').format(noti.createdAt);
+    } catch (_) {
+      timeStr = '${noti.createdAt.hour.toString().padLeft(2, '0')}:${noti.createdAt.minute.toString().padLeft(2, '0')} - ${noti.createdAt.day.toString().padLeft(2, '0')}/${noti.createdAt.month.toString().padLeft(2, '0')}';
+    }
 
     return InkWell(
       onTap: () {

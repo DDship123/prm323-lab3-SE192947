@@ -25,6 +25,19 @@ class _DisputeHistoryScreenState extends State<DisputeHistoryScreen> {
   final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
   final dateFormatter = DateFormat('dd/MM/yyyy HH:mm');
 
+  String _formatDate(DateTime dt) {
+    try {
+      return dateFormatter.format(dt);
+    } catch (_) {
+      final d = dt.day.toString().padLeft(2, '0');
+      final m = dt.month.toString().padLeft(2, '0');
+      final y = dt.year;
+      final h = dt.hour.toString().padLeft(2, '0');
+      final min = dt.minute.toString().padLeft(2, '0');
+      return '$d/$m/$y $h:$min';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -198,7 +211,7 @@ class _DisputeHistoryScreenState extends State<DisputeHistoryScreen> {
                               ),
                             ),
                             Text(
-                              dateFormatter.format(dispute.createdAt),
+                              _formatDate(dispute.createdAt),
                               style: AppTypography.bodySmall,
                             ),
                           ],
