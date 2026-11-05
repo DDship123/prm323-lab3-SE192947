@@ -185,14 +185,16 @@ class ProfileSettingsScreen extends StatelessWidget {
     BuildContext context,
     ProfileDemoViewModel demoVm,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.roundedMd,
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
+    return Material(
+      color: AppColors.surface,
+      borderRadius: AppRadius.roundedMd,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.roundedMd,
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -305,6 +307,7 @@ class ProfileSettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

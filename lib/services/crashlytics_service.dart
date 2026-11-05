@@ -9,6 +9,7 @@ class CrashlyticsService {
       : _crashlytics = crashlytics;
 
   FirebaseCrashlytics? get _safeCrashlytics {
+    if (kIsWeb) return null;
     if (_crashlytics != null) return _crashlytics;
     try {
       _crashlytics = FirebaseCrashlytics.instance;

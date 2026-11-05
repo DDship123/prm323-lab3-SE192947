@@ -253,7 +253,9 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
   }
 
   Widget _buildToppingTile(String name, double price, bool available) {
-    return ListTile(
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(name, style: AppTypography.bodyMedium),
       subtitle: Text(
@@ -271,6 +273,7 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
         ),
         backgroundColor: AppColors.successLight,
       ),
+    ),
     );
   }
 }

@@ -93,3 +93,4 @@ class StoreBankService {
     return '2.0001021238540010A00000072701240006$_bankBin01${_accountNumber.length.toString().padLeft(2, '0')}$_accountNumber0208QRIBFTTA5303704540${intAmount.toString().length.toString().padLeft(2, '0')}$intAmount5802VN62${(transferContent.length + 4).toString().padLeft(2, '0')}08${transferContent.length.toString().padLeft(2, '0')}$transferContent6304';
   }
 }
+

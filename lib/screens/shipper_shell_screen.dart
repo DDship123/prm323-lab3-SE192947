@@ -77,3 +77,4 @@ class _ShipperShellScreenState extends State<ShipperShellScreen> {
     );
   }
 }
+

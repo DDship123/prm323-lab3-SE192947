@@ -77,3 +77,4 @@ class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
     );
   }
 }
+

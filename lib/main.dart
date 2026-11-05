@@ -71,14 +71,24 @@ void main() async {
     await ServerConfigService().loadConfig();
   } catch (_) {}
 
-  // Cấu hình bắt lỗi Fatal và chuyển tiếp tới Firebase Crashlytics
-  FlutterError.onError = (errorDetails) {
-    FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
-  };
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+  // Cấu hình bắt lỗi Fatal và chuyển tiếp tới Firebase Crashlytics (chỉ áp dụng Native Android/iOS, Web không hỗ trợ Crashlytics)
+  if (!kIsWeb) {
+    FlutterError.onError = (errorDetails) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
+  } else {
+    FlutterError.onError = (errorDetails) {
+      FlutterError.presentError(errorDetails);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      debugPrint('[Web Platform Error]: $error\n$stack');
+      return true;
+    };
+  }
 
   await GoogleSignIn.instance.initialize(
     clientId: kIsWeb
