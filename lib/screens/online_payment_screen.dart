@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../models/order_model.dart';
+import '../services/store_bank_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -113,39 +115,48 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Container(
-                    width: 240,
-                    height: 240,
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: AppRadius.roundedMd,
-                      border: Border.all(color: AppColors.primary, width: 2),
-                    ),
-                    child: payment?.qrUrl != null
-                        ? Image.network(
-                            payment!.qrUrl!,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, _, _) => _buildFallbackQrBox(
-                              transferContent,
-                            ),
-                          )
-                        : _buildFallbackQrBox(transferContent),
+                  Builder(
+                    builder: (context) {
+                      final bankService = StoreBankService();
+                      final qrPayload = bankService.getQrPaymentPayload(
+                        amount: widget.order.finalAmount,
+                        transferContent: transferContent,
+                      );
+                      return Container(
+                        width: 240,
+                        height: 240,
+                        padding: const EdgeInsets.all(AppSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: AppRadius.roundedMd,
+                          border: Border.all(color: AppColors.primary, width: 2),
+                        ),
+                        child: Center(
+                          child: QrImageView(
+                            data: qrPayload,
+                            version: QrVersions.auto,
+                            size: 210.0,
+                            backgroundColor: Colors.white,
+                            errorCorrectionLevel: QrErrorCorrectLevel.M,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _buildInfoRow(
                     'Ngân hàng thụ hưởng',
-                    payment?.bankName ?? 'MBBank (970422)',
+                    StoreBankService().bankName,
                   ),
                   const Divider(),
                   _buildInfoRow(
                     'Số tài khoản',
-                    payment?.accountNumber ?? '0987654321',
+                    StoreBankService().accountNumber,
                   ),
                   const Divider(),
                   _buildInfoRow(
                     'Chủ tài khoản',
-                    payment?.accountName ?? 'KTX FOOD ORDERING',
+                    StoreBankService().accountName,
                   ),
                   const Divider(),
                   _buildInfoRow(

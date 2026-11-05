@@ -19,6 +19,8 @@ import 'screens/notification_board_screen.dart';
 import 'screens/order_history_screen.dart';
 import 'screens/profile_settings_screen.dart';
 import 'screens/restaurant_dashboard_screen.dart';
+import 'screens/restaurant_shell_screen.dart';
+import 'screens/shipper_shell_screen.dart';
 import 'screens/shipper_batch_pickup_screen.dart';
 import 'screens/student_register_screen.dart';
 import 'screens/web_admin_shell_screen.dart';
@@ -236,13 +238,13 @@ class _AuthGateState extends State<AuthGate> {
           // Điều hướng màn hình giao diện theo đúng vai trò đang chọn
           switch (_activeRole) {
             case UserAppRole.storeOwner:
-              return RestaurantDashboardScreen(
+              return RestaurantShellScreen(
                 ownerId: '2',
                 onSwitchRole: () => _openRoleSwitcher(context),
                 onSignOut: _signOut,
               );
             case UserAppRole.shipper:
-              return ShipperBatchPickupScreen(
+              return ShipperShellScreen(
                 shipperId: '3',
                 onSwitchRole: () => _openRoleSwitcher(context),
                 onSignOut: _signOut,

@@ -1,3 +1,4 @@
+import '../services/order_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -232,6 +233,92 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
     );
   }
 
+  
+  Future<void> _acceptOrder(OwnerOrderSummaryModel order) async {
+    try {
+      final orderService = OrderService();
+      await orderService.updateOrderStatus(orderId: order.id, newStatus: 'PREPARING');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã nhận đơn #${order.orderCode} và chuyển cho Bếp nấu!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        context.read<OwnerViewModel>().fetchKitchenOrders(ownerId: widget.ownerId);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi khi nhận đơn: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
+  Future<void> _rejectOrder(OwnerOrderSummaryModel order) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedMd),
+        title: Text('Xác nhận từ chối đơn #${order.orderCode}?'),
+        content: const Text('Bạn có chắc chắn muốn từ chối đơn hàng này (hết nguyên liệu / quá tải)? Số tiền sẽ được hoàn trả cho sinh viên.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Không')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Từ chối đơn'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final orderService = OrderService();
+        await orderService.cancelOrder(order.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã từ chối đơn #${order.orderCode}!'),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+          context.read<OwnerViewModel>().fetchKitchenOrders(ownerId: widget.ownerId);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi khi từ chối đơn: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _markOrderReady(OwnerOrderSummaryModel order) async {
+    try {
+      final orderService = OrderService();
+      await orderService.updateOrderStatus(orderId: order.id, newStatus: 'READY');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đơn #${order.orderCode} đã nấu xong! Đã báo Shipper đến lấy.'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        context.read<OwnerViewModel>().fetchKitchenOrders(ownerId: widget.ownerId);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi cập nhật: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
   Widget _buildOrderCard(OwnerOrderSummaryModel order) {
     return Card(
       elevation: 2,
@@ -291,9 +378,59 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
               children: [
                 Text('Tổng tiền: ${currencyFormatter.format(order.finalAmount)}',
                     style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
-                Text(order.paymentMethod, style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold)),
+                                Text(order.paymentMethod, style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold)),
               ],
             ),
+            if (order.status == 'PENDING') ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        side: const BorderSide(color: AppColors.error),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedSm),
+                      ),
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      label: const Text('Từ chối đơn'),
+                      onPressed: () => _rejectOrder(order),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedSm),
+                      ),
+                      icon: const Icon(Icons.check_rounded, size: 18),
+                      label: const Text('Nhận đơn'),
+                      onPressed: () => _acceptOrder(order),
+                    ),
+                  ),
+                ],
+              ),
+            ] else if (order.status == 'PREPARING' || order.status == 'CONFIRMED') ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.success,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedSm),
+                  ),
+                  icon: const Icon(Icons.soup_kitchen_rounded, size: 18),
+                  label: const Text('Nấu xong (Sẵn sàng giao cho Shipper)'),
+                  onPressed: () => _markOrderReady(order),
+                ),
+              ),
+            ],
           ],
         ),
       ),
