@@ -27,6 +27,8 @@ class _RestaurantMenuManagementScreenState extends State<RestaurantMenuManagemen
   List<MenuItemModel> _menuItems = [];
   bool _isLoading = true;
 
+  int get storeId => int.tryParse(widget.ownerId) ?? 1;
+
   @override
   void initState() {
     super.initState();
@@ -36,13 +38,50 @@ class _RestaurantMenuManagementScreenState extends State<RestaurantMenuManagemen
   Future<void> _loadMenu() async {
     setState(() => _isLoading = true);
     try {
-      final items = await _storeService.fetchMenuItems(1);
+      final items = await _storeService.fetchMenuItems(storeId);
       setState(() {
         _menuItems = items;
         _isLoading = false;
       });
     } catch (_) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _confirmDeleteItem(MenuItemModel item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận xóa món'),
+        content: Text('Bạn có chắc chắn muốn xóa "${item.name}" khỏi thực đơn không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Xóa món', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final success = await _storeService.deleteMenuItem(item.id);
+      if (mounted) {
+        if (success) {
+          _loadMenu();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã xóa món ăn thành công!'), backgroundColor: AppColors.success),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Xóa món thất bại, vui lòng thử lại!'), backgroundColor: AppColors.error),
+          );
+        }
+      }
     }
   }
 
@@ -71,7 +110,7 @@ class _RestaurantMenuManagementScreenState extends State<RestaurantMenuManagemen
           final res = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (_) => const RestaurantEditItemScreen(storeId: 1),
+              builder: (_) => RestaurantEditItemScreen(storeId: storeId),
             ),
           );
           if (res == true) {
@@ -112,7 +151,7 @@ class _RestaurantMenuManagementScreenState extends State<RestaurantMenuManagemen
                           final res = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => RestaurantEditItemScreen(item: item, storeId: 1),
+                              builder: (_) => RestaurantEditItemScreen(item: item, storeId: storeId),
                             ),
                           );
                           if (res == true) {
@@ -171,13 +210,18 @@ class _RestaurantMenuManagementScreenState extends State<RestaurantMenuManagemen
                                   final res = await Navigator.push<bool>(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (_) => RestaurantEditItemScreen(item: item, storeId: 1),
+                                      builder: (_) => RestaurantEditItemScreen(item: item, storeId: storeId),
                                     ),
                                   );
                                   if (res == true) {
                                     _loadMenu();
                                   }
                                 },
+                              ),
+                              IconButton(
+                                tooltip: 'Xóa món',
+                                icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                                onPressed: () => _confirmDeleteItem(item),
                               ),
                               Switch(
                                 value: item.isAvailable,

@@ -88,6 +88,16 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
           description: desc,
           imageUrl: img,
         );
+      } else {
+        await service.updateMenuItem(
+          id: widget.item!.id,
+          name: name,
+          basePrice: price,
+          category: _selectedCategory,
+          description: desc,
+          imageUrl: img,
+          isAvailable: _isAvailable,
+        );
       }
 
       if (mounted) {
@@ -110,11 +120,69 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
     }
   }
 
+  Future<void> _handleDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận xóa món'),
+        content: Text('Bạn có chắc chắn muốn xóa "${widget.item?.name}" khỏi thực đơn không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Xóa món', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isSaving = true);
+      try {
+        final success = await StoreService().deleteMenuItem(widget.item!.id);
+        if (mounted) {
+          if (success) {
+            Navigator.pop(context, true);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Đã xóa món ăn thành công!'), backgroundColor: AppColors.success),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Không thể xóa món ăn, vui lòng thử lại!'), backgroundColor: AppColors.error),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Lỗi: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isSaving = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: KtxAppBar(title: isCreateMode ? 'Thêm Món Mới KTX' : 'Chỉnh sửa Món & Topping'),
+      appBar: KtxAppBar(
+        title: isCreateMode ? 'Thêm Món Mới KTX' : 'Chỉnh sửa Món & Topping',
+        actions: [
+          if (!isCreateMode)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: AppColors.error),
+              tooltip: 'Xóa món',
+              onPressed: _isSaving ? null : _handleDelete,
+            ),
+        ],
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -254,6 +322,19 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
               isLoading: _isSaving,
               onPressed: _handleSave,
             ),
+            if (!isCreateMode) ...[
+              const SizedBox(height: AppSpacing.md),
+              OutlinedButton.icon(
+                onPressed: _isSaving ? null : _handleDelete,
+                icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                label: const Text('Xóa món ăn này', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.error),
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                ),
+              ),
+            ],
           ],
         ),
       ),

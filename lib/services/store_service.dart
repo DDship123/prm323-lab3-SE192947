@@ -123,7 +123,7 @@ class StoreService {
     required String description,
     required String imageUrl,
   }) async {
-    final uri = Uri.parse('\/stores/\/menu-items');
+    final uri = Uri.parse('${ApiConfig.stores}/$storeId/menu-items');
     final body = jsonEncode({
       'name': name,
       'basePrice': basePrice,
@@ -131,7 +131,7 @@ class StoreService {
       'description': description,
       'imageUrl': imageUrl,
       'isAvailable': true,
-      'customizationOptions': '[]',
+      'customizationOptions': [],
     });
 
     try {
@@ -153,6 +153,50 @@ class StoreService {
       isAvailable: true,
       customizationOptions: [],
     );
+  }
+
+  /// API Cập nhật món ăn (PUT /api/v1/menu-items/{id})
+  Future<MenuItemModel?> updateMenuItem({
+    required int id,
+    required String name,
+    required double basePrice,
+    required String category,
+    required String description,
+    required String imageUrl,
+    bool? isAvailable,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.menuItems}/$id');
+    final body = jsonEncode({
+      'name': name,
+      'basePrice': basePrice,
+      'category': category,
+      'description': description,
+      'imageUrl': imageUrl,
+      if (isAvailable != null) 'isAvailable': isAvailable,
+      'customizationOptions': [],
+    });
+
+    try {
+      final response = await _client.put(uri, headers: ApiConfig.headers(), body: body).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final jsonMap = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final data = jsonMap['data'] as Map<String, dynamic>;
+        return MenuItemModel.fromJson(data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// API Xóa món ăn khỏi thực đơn (DELETE /api/v1/menu-items/{id})
+  Future<bool> deleteMenuItem(int id) async {
+    final uri = Uri.parse('${ApiConfig.menuItems}/$id');
+    try {
+      final response = await _client.delete(uri, headers: ApiConfig.headers()).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return true;
+      }
+    } catch (_) {}
+    return false;
   }
 
   List<StoreModel> _fallbackStores() => const [
