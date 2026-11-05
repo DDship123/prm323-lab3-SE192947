@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class BankInfo {
@@ -89,8 +88,13 @@ class StoreBankService {
   /// Chuỗi dữ liệu QR thật để vẽ QrImageView quét trên mọi app ngân hàng / Momo
   String getQrPaymentPayload({required double amount, required String transferContent}) {
     final intAmount = amount.round();
-    // Tạo chuẩn chuỗi Napas247 / VietQR payload hoặc link SePay thanh toán tự động
-    return '2.0001021238540010A00000072701240006$_bankBin01${_accountNumber.length.toString().padLeft(2, '0')}$_accountNumber0208QRIBFTTA5303704540${intAmount.toString().length.toString().padLeft(2, '0')}$intAmount5802VN62${(transferContent.length + 4).toString().padLeft(2, '0')}08${transferContent.length.toString().padLeft(2, '0')}$transferContent6304';
+    final amtStr = intAmount.toString();
+    final amtLen = amtStr.length.toString().padLeft(2, '0');
+    final accLen = _accountNumber.length.toString().padLeft(2, '0');
+    final cLen = transferContent.length.toString().padLeft(2, '0');
+    final cSubLen = (transferContent.length + 4).toString().padLeft(2, '0');
+    // Chuỗi mã QR thanh toán chuẩn VietQR / SePay quét được trên mọi ứng dụng ngân hàng & ví điện tử
+    return '00020101021238540010A00000072701240006${_bankBin}01${accLen}${_accountNumber}0208QRIBFTTA5303704540${amtLen}${amtStr}5802VN62${cSubLen}08${cLen}${transferContent}6304';
   }
 }
 
