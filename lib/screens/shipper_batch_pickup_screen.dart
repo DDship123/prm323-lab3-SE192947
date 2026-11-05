@@ -443,11 +443,4 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
       }
     }
   }
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
