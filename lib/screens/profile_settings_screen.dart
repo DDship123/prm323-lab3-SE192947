@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../firebase/analytics_service.dart';
+import '../firebase/crashlytics_service.dart';
+import '../firebase/remote_config_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -10,6 +14,7 @@ import '../widgets/ktx_app_bar.dart';
 import '../widgets/ktx_button.dart';
 import 'dispute_history_screen.dart';
 import 'dispute_refund_screen.dart';
+import 'notification_board_screen.dart';
 
 /// Màn hình S13: Hồ sơ Sinh viên KTX & Khu vực Firebase Lab 3 Demo Area
 class ProfileSettingsScreen extends StatelessWidget {
@@ -32,6 +37,7 @@ class ProfileSettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authVm = context.watch<AuthViewModel>();
     final demoVm = context.watch<ProfileDemoViewModel>();
+    final remoteConfig = context.watch<RemoteConfigService>();
     final profile = authVm.currentUser;
 
     return Scaffold(
@@ -189,44 +195,185 @@ class ProfileSettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Bảng điều khiển kiểm thử trực tiếp Remote Config, FCM và Crashlytics phục vụ chấm điểm Lab 3.',
+            'Bảng điều khiển kiểm thử trực tiếp Remote Config, FCM, Crashlytics và Analytics phục vụ chấm điểm Lab 3.',
             style: AppTypography.bodySmall,
           ),
           const Divider(height: AppSpacing.lg),
-          SwitchListTile(
+          ListTile(
             contentPadding: EdgeInsets.zero,
-            activeThumbColor: AppColors.primary,
-            title: const Text('Remote Config: Banner Gom đơn 5.000đ'),
-            subtitle: Text(
-              demoVm.remoteConfigFreeShipBanner
-                  ? 'Đang bật (Hiển thị trên Trang chủ S1)'
-                  : 'Đang tắt',
+            leading: const Icon(
+              Icons.analytics_rounded,
+              color: Colors.blue,
+              size: 32,
             ),
-            value: demoVm.remoteConfigFreeShipBanner,
-            onChanged: (_) => demoVm.toggleRemoteConfigFreeShip(),
+            title: const Text(
+              'Bắn 8 sự kiện lên DebugView',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: const Text('Gửi tức thì 8 sự kiện đo lường lên Firebase Console'),
+            trailing: FilledButton.tonal(
+              onPressed: () => _triggerAllAnalyticsEvents(context),
+              child: const Text('Bắn 8 Sự Kiện'),
+            ),
           ),
           const Divider(),
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(
-              Icons.notifications_active_outlined,
-              color: AppColors.primary,
+              Icons.cloud_sync_outlined,
+              color: Colors.teal,
+              size: 32,
             ),
-            title: const Text('FCM Push Notification Simulator'),
-            subtitle: Text(demoVm.fcmStatusMessage),
-            trailing: OutlinedButton(
-              onPressed: () {
-                demoVm.simulateIncomingFcmPush();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Đã giả lập nhận FCM Push: Shipper đã tới cổng KTX!',
+            title: const Text(
+              'Firebase Remote Config',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text('• Banner Trang chủ S1: ${remoteConfig.promoBannerEnabled ? "BẬT" : "TẮT"}'),
+                Text('• Phí ship gom đơn: ${remoteConfig.groupShipFee}đ'),
+                Text(
+                  '• Nội dung banner: "${remoteConfig.promoBannerText}"',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+            trailing: FilledButton.tonal(
+              onPressed: () async {
+                final updated = await context.read<RemoteConfigService>().fetchAndActivate();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        updated
+                            ? '🎉 Đã cập nhật giá trị mới từ Firebase Remote Config!'
+                            : 'Đã kích hoạt cấu hình mới nhất từ Firebase Console.',
+                      ),
+                      backgroundColor: Colors.teal,
                     ),
-                  ),
-                );
+                  );
+                }
               },
-              child: const Text('Test FCM'),
+              child: const Text('Fetch & Activate'),
             ),
+          ),
+          const Divider(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(
+                  Icons.notifications_active_outlined,
+                  color: AppColors.primary,
+                  size: 30,
+                ),
+                title: const Text(
+                  'Firebase Cloud Messaging (FCM)',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 4),
+                    Text('• Trạng thái: ${demoVm.fcmStatusMessage}'),
+                    Text(
+                      '• FCM Token: ${demoVm.fcmToken ?? "Đang lấy token..."}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySmall,
+                    ),
+                  ],
+                ),
+                trailing: demoVm.fcmToken != null
+                    ? IconButton(
+                        tooltip: 'Copy FCM Token',
+                        icon: const Icon(Icons.copy_rounded, size: 20),
+                        onPressed: () {
+                          Clipboard.setData(
+                            ClipboardData(text: demoVm.fcmToken!),
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                '📋 Đã copy FCM Token vào Clipboard! Có thể dán vào Firebase Console.',
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : null,
+              ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.local_shipping_outlined, size: 18),
+                    label: const Text('Test FCM Đơn hàng (S6)'),
+                    onPressed: () {
+                      final noti = demoVm.simulateIncomingFcmPush(
+                        type: 'ORDER_STATUS',
+                        appState: 'FOREGROUND',
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '🔔 Đã lưu vào S12: ${noti.title}\nNhấn "Xem ngay" hoặc mở tab Thông báo S12 để chuyển màn hình.',
+                          ),
+                          duration: const Duration(seconds: 5),
+                          action: SnackBarAction(
+                            label: 'Xem ngay (S6)',
+                            textColor: Colors.amberAccent,
+                            onPressed: () {
+                              demoVm.markAsRead(noti.id);
+                              NotificationBoardScreen.navigateByNotificationType(
+                                context,
+                                type: noti.type,
+                                dataPayload: noti.dataPayload,
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.published_with_changes_rounded, size: 18),
+                    label: const Text('Test FCM Khiếu nại (S8b)'),
+                    onPressed: () {
+                      final noti = demoVm.simulateIncomingFcmPush(
+                        type: 'DISPUTE_UPDATE',
+                        appState: 'FOREGROUND',
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '🔔 Đã lưu vào S12: ${noti.title}\nNhấn "Xem ngay" hoặc mở tab Thông báo S12 để chuyển màn hình.',
+                          ),
+                          duration: const Duration(seconds: 5),
+                          action: SnackBarAction(
+                            label: 'Xem ngay (S8b)',
+                            textColor: Colors.amberAccent,
+                            onPressed: () {
+                              demoVm.markAsRead(noti.id);
+                              NotificationBoardScreen.navigateByNotificationType(
+                                context,
+                                type: noti.type,
+                                dataPayload: noti.dataPayload,
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
           const Divider(),
           ListTile(
@@ -238,19 +385,123 @@ class ProfileSettingsScreen extends StatelessWidget {
             title: const Text('Firebase Crashlytics Non-Fatal Log'),
             subtitle: Text(demoVm.lastCrashlyticsLog),
             trailing: OutlinedButton(
-              onPressed: () {
+              onPressed: () async {
                 demoVm.triggerCrashlyticsNonFatalTest();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Đã ghi log Non-Fatal Exception!'),
-                  ),
-                );
+                await context.read<CrashlyticsService>().recordNonFatalError(
+                      Exception('HandledPaymentTimeoutException: Simulated timeout after 30s'),
+                      StackTrace.current,
+                      reason: 'Thử nghiệm ghi log Non-Fatal Error tại S13 Hồ sơ',
+                    );
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('✅ Đã gửi Non-Fatal Error lên Firebase Crashlytics!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
               },
               child: const Text('Ghi Log'),
+            ),
+          ),
+          const Divider(),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(
+              Icons.dangerous_outlined,
+              color: Colors.deepOrange,
+            ),
+            title: const Text('Firebase Crashlytics Fatal Crash (Test)'),
+            subtitle: const Text('Kích hoạt lỗi Crash thử nghiệm (văng app) để kiểm tra Dashboard'),
+            trailing: FilledButton.tonal(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red.shade100),
+              onPressed: () {
+                context.read<CrashlyticsService>().triggerTestCrash();
+              },
+              child: const Text('Crash App', style: TextStyle(color: Colors.red)),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _triggerAllAnalyticsEvents(BuildContext context) async {
+    final analytics = context.read<AnalyticsService>();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Đang gửi 8 sự kiện lên Firebase DebugView...'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // 1. login
+    await analytics.logSignIn(method: 'google', campusZone: 'KTX_KHU_B');
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 2. search
+    await analytics.logSearch(
+      searchTerm: 'Cơm tấm sườn bì',
+      campusZone: 'KTX_KHU_B',
+      resultCount: 3,
+    );
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 3. view_store_detail
+    await analytics.logViewStoreDetail(
+      storeId: 101,
+      storeCategory: 'KTX_KHU_B',
+      ratingAvg: 4.8,
+    );
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 4. add_to_cart
+    await analytics.logAddToCart(
+      menuItemId: 501,
+      storeId: 101,
+      quantity: 2,
+      unitPrice: 35000,
+    );
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 5. begin_checkout
+    await analytics.logBeginCheckout(
+      itemCount: 2,
+      subtotalAmount: 70000,
+      shippingFee: 5000,
+    );
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 6. purchase
+    await analytics.logPurchase(
+      orderId: 'ORD_${DateTime.now().millisecondsSinceEpoch}',
+      totalValue: 75000,
+      paymentMethod: 'VIETQR',
+    );
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 7. upload_dispute_evidence
+    await analytics.logUploadDisputeEvidence(
+      orderId: 'ORD_DEMO_KTX',
+      reasonCode: 'MISSING_ITEM',
+      refundRequested: 35000,
+      uploadStatus: 'success',
+    );
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 8. sign_out
+    await analytics.logSignOut(sessionType: 'authenticated');
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            '🎉 Đã gửi thành công đủ 8 sự kiện! Hãy kiểm tra dòng thời gian trên Firebase DebugView.',
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 4),
+        ),
+      );
+    }
   }
 }
