@@ -523,7 +523,6 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
       ),
     );
   }
-  }
 
   Widget _buildFilterTab(String title, String key, int count) {
     final isSelected = _statusFilter == key;
