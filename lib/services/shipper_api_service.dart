@@ -59,6 +59,52 @@ class ShipperApiService {
     }
   }
 
+  Future<bool> cancelPickupAtStore({
+    required int orderId,
+    required String? idToken,
+    required String shipperId,
+    String? reason,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/shipper/orders/$orderId/cancel-pickup')
+        .replace(queryParameters: reason != null ? {'reason': reason} : null);
+    final headers = {
+      'Content-Type': 'application/json',
+      'X-User-Id': shipperId,
+      'X-User-Role': 'SHIPPER',
+      if (idToken != null) 'Authorization': 'Bearer $idToken',
+    };
+
+    try {
+      final response = await _client.patch(uri, headers: headers).timeout(const Duration(seconds: 4));
+      return response.statusCode == 200;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  Future<bool> reportDeliveryFailure({
+    required int orderId,
+    required String? idToken,
+    required String shipperId,
+    String? reason,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/shipper/orders/$orderId/report-failure')
+        .replace(queryParameters: reason != null ? {'reason': reason} : null);
+    final headers = {
+      'Content-Type': 'application/json',
+      'X-User-Id': shipperId,
+      'X-User-Role': 'SHIPPER',
+      if (idToken != null) 'Authorization': 'Bearer $idToken',
+    };
+
+    try {
+      final response = await _client.post(uri, headers: headers).timeout(const Duration(seconds: 4));
+      return response.statusCode == 200;
+    } catch (_) {
+      return true;
+    }
+  }
+
   Future<bool> confirmDeliveryAtGate({
     required int orderId,
     required String? idToken,

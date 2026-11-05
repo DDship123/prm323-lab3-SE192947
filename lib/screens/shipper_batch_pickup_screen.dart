@@ -274,22 +274,175 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                     ],
                   )
                 else
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                    icon: const Icon(Icons.qr_code_scanner, size: 16, color: Colors.white),
-                    label: const Text('Trao hàng & Thu tiền', style: TextStyle(color: Colors.white, fontSize: 12)),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ShipperHandoverConfirmScreen(
-                            order: order,
-                            shipperId: widget.shipperId,
-                          ),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          side: const BorderSide(color: AppColors.error),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                         ),
-                      );
-                    },
+                        icon: const Icon(Icons.report_problem_outlined, size: 14),
+                        label: const Text('Bom hàng', style: TextStyle(fontSize: 11)),
+                        onPressed: () => _showReportFailureDialog(context, order, vm),
+                      ),
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        ),
+                        icon: const Icon(Icons.undo_rounded, size: 14),
+                        label: const Text('Hủy nhận', style: TextStyle(fontSize: 11)),
+                        onPressed: () => _showCancelPickupDialog(context, order, vm),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                        icon: const Icon(Icons.qr_code_scanner, size: 14, color: Colors.white),
+                        label: const Text('Trao hàng', style: TextStyle(color: Colors.white, fontSize: 11)),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ShipperHandoverConfirmScreen(
+                                order: order,
+                                shipperId: widget.shipperId,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showCancelPickupDialog(
+    BuildContext context,
+    ShipperBatchItemModel order,
+    ShipperViewModel vm,
+  ) async {
+    final reasonController = TextEditingController(text: 'Sự cố xe cộ / Không thể giao kịp');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedMd),
+        title: Text('Hủy nhận đơn #${order.orderCode}?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Đơn hàng sẽ được chuyển lại trạng thái SẴN SÀNG để tài xế khác trong ca tiếp nhận giao đến KTX.',
+              style: TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: reasonController,
+              decoration: const InputDecoration(
+                labelText: 'Lý do hủy nhận',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Đóng')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning, foregroundColor: Colors.black),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Xác nhận trả đơn'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final ok = await vm.cancelPickup(
+        orderId: order.orderId,
+        shipperId: widget.shipperId,
+        reason: reasonController.text.trim(),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ok ? 'Đã hủy nhận đơn thành công, trả lại bếp KTX.' : 'Không thể hủy đơn lúc này.'),
+            backgroundColor: ok ? AppColors.success : AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showReportFailureDialog(
+    BuildContext context,
+    ShipperBatchItemModel order,
+    ShipperViewModel vm,
+  ) async {
+    String selectedReason = 'Khách không nghe máy (đã gọi 3 lần)';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedMd),
+          title: Text('Báo cáo khách bom hàng #${order.orderCode}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Biên bản sự cố sẽ được gửi tới Ban Quản Lý KTX và Quán ăn để ghi nhận đối soát:',
+                style: TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: selectedReason,
+                isExpanded: true,
+                items: const [
+                  DropdownMenuItem(value: 'Khách không nghe máy (đã gọi 3 lần)', child: Text('Không nghe máy (3 lần)')),
+                  DropdownMenuItem(value: 'Khách từ chối nhận đồ ăn', child: Text('Khách từ chối nhận')),
+                  DropdownMenuItem(value: 'Khách sai thông tin phòng/tòa KTX', child: Text('Sai địa chỉ / phòng')),
+                ],
+                onChanged: (val) {
+                  if (val != null) setDialogState(() => selectedReason = val);
+                },
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy bỏ')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error, foregroundColor: Colors.white),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Gửi báo cáo sự cố'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final ok = await vm.reportFailure(
+        orderId: order.orderId,
+        shipperId: widget.shipperId,
+        reason: selectedReason,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ok ? 'Đã ghi nhận sự cố bom hàng. Admin KTX sẽ đối soát bảo vệ quyền lợi tài xế.' : 'Gửi báo cáo thất bại.'),
+            backgroundColor: ok ? AppColors.warning : AppColors.error,
+          ),
+        );
+      }
+    }
+  }
               ],
             ),
           ],

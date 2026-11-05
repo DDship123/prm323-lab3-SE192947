@@ -56,6 +56,42 @@ class ShipperViewModel extends ChangeNotifier {
     return success;
   }
 
+  Future<bool> cancelPickup({
+    required int orderId,
+    required String shipperId,
+    String? reason,
+    String? idToken,
+  }) async {
+    final success = await _apiService.cancelPickupAtStore(
+      orderId: orderId,
+      shipperId: shipperId,
+      reason: reason,
+      idToken: idToken,
+    );
+    if (success) {
+      await fetchBatch(shipperId: shipperId, idToken: idToken);
+    }
+    return success;
+  }
+
+  Future<bool> reportFailure({
+    required int orderId,
+    required String shipperId,
+    String? reason,
+    String? idToken,
+  }) async {
+    final success = await _apiService.reportDeliveryFailure(
+      orderId: orderId,
+      shipperId: shipperId,
+      reason: reason,
+      idToken: idToken,
+    );
+    if (success) {
+      await fetchBatch(shipperId: shipperId, idToken: idToken);
+    }
+    return success;
+  }
+
   Future<bool> confirmDelivery({
     required int orderId,
     required String shipperId,

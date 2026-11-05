@@ -277,7 +277,7 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
     if (confirmed == true) {
       try {
         final orderService = OrderService();
-        await orderService.cancelOrder(order.id);
+        await orderService.updateOrderStatus(orderId: order.id, newStatus: 'CANCELLED');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
