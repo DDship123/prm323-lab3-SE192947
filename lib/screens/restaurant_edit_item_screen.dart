@@ -5,6 +5,7 @@ import '../services/store_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
+import '../services/commission_policy_service.dart';
 import '../theme/app_typography.dart';
 import '../widgets/ktx_app_bar.dart';
 import '../widgets/ktx_button.dart';
@@ -48,6 +49,12 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
     );
     _isAvailable = widget.item?.isAvailable ?? true;
     _selectedCategory = widget.item?.category ?? 'COM';
+    CommissionPolicyService().loadCommissionRate().then((_) {
+      if (mounted) setState(() {});
+    });
+    _priceController.addListener(() {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -172,6 +179,7 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
                       ),
                     ],
                   ),
+                  _buildCommissionCalculationBox(),
                   const SizedBox(height: AppSpacing.md),
                   TextFormField(
                     controller: _imageUrlController,
@@ -276,4 +284,96 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
     ),
     );
   }
+
+  Widget _buildCommissionCalculationBox() {
+    final policy = CommissionPolicyService();
+    final rate = policy.commissionRate;
+    final storeRate = policy.storePayoutRate;
+    final rawPrice = double.tryParse(_priceController.text.trim()) ?? 0.0;
+    final platformFee = policy.calculatePlatformFee(rawPrice);
+    final netPayout = policy.calculateNetPayout(rawPrice);
+
+    return Container(
+      margin: const EdgeInsets.only(top: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.calculate_rounded, color: AppColors.primary, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Dự toán Thực nhận của Quán',
+                    style: AppTypography.heading3.copyWith(fontSize: 13, color: AppColors.primaryDark),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Text(
+                  'Chiết khấu sàn: ${rate.toStringAsFixed(0)}%',
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Giá niêm yết cho Sinh viên:', style: AppTypography.bodySmall),
+              Text(currencyFormatter.format(rawPrice), style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Phí sàn KTX Food (${rate.toStringAsFixed(0)}% theo Admin):', style: AppTypography.bodySmall),
+              Text('-${currencyFormatter.format(platformFee)}', style: AppTypography.bodySmall.copyWith(color: AppColors.error, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const Divider(height: AppSpacing.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.account_balance_wallet_rounded, size: 18, color: AppColors.success),
+                  const SizedBox(width: 4),
+                  Text(
+                    '💵 Quán thực nhận (${storeRate.toStringAsFixed(0)}%):',
+                    style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                ],
+              ),
+              Text(
+                currencyFormatter.format(netPayout),
+                style: AppTypography.heading3.copyWith(color: AppColors.success, fontSize: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '* Tỷ lệ chiết khấu ${rate.toStringAsFixed(0)}% được thiết lập tập trung bởi Ban Quản Lý KTX.',
+            style: AppTypography.caption.copyWith(color: AppColors.textSecondary, fontStyle: FontStyle.italic, fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+
 }

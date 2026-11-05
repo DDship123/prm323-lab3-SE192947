@@ -28,6 +28,7 @@ import 'screens/restaurant_shell_screen.dart';
 import 'screens/shipper_shell_screen.dart';
 import 'screens/student_register_screen.dart';
 import 'screens/web_admin_shell_screen.dart';
+import 'services/commission_policy_service.dart';
 import 'services/api_config.dart';
 import 'services/admin_api_service.dart';
 import 'services/auth_api_service.dart';
@@ -76,6 +77,7 @@ void main() async {
   // Tự động tải địa chỉ máy chủ lưu trước đó (hoặc mặc định VPS/Emulator)
   try {
     await ServerConfigService().loadConfig();
+    await CommissionPolicyService().loadCommissionRate();
   } catch (_) {}
 
   // Cấu hình bắt lỗi Fatal và chuyển tiếp tới Firebase Crashlytics (chỉ áp dụng Native Android/iOS, Web không hỗ trợ Crashlytics)

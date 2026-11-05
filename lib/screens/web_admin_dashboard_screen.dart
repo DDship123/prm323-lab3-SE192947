@@ -4,6 +4,7 @@ import '../models/admin_dashboard_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/admin_commission_settings_card.dart';
 import '../theme/app_typography.dart';
 
 /// Màn hình Web Admin Dashboard chuẩn Design System KTX Food (Figma Lab 2 & 3)
@@ -163,6 +164,11 @@ class WebAdminDashboardScreen extends StatelessWidget {
               ),
             ],
           ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // ================= CẤU HÌNH CHÍNH SÁCH CHIẾT KHẤU SÀN DÀNH CHO ADMIN =================
+          AdminCommissionSettingsCard(totalRevenue: stats.totalRevenue),
 
           const SizedBox(height: AppSpacing.lg),
 
