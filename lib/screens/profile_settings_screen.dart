@@ -44,7 +44,7 @@ class ProfileSettingsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const KtxAppBar(title: 'Hồ sơ & Firebase Demo S13'),
+      appBar: const KtxAppBar(title: 'Tài Khoản'),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [

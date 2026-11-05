@@ -14,6 +14,7 @@ import 'firebase/remote_config_service.dart';
 import 'firebase/cloud_storage_service.dart';
 import 'firebase_options.dart';
 import 'models/order_model.dart';
+import 'models/store_model.dart';
 import 'models/user_role_enum.dart';
 import 'screens/dispute_refund_screen.dart';
 import 'screens/forgot_password_screen.dart';
@@ -25,6 +26,7 @@ import 'screens/order_history_screen.dart';
 import 'screens/profile_settings_screen.dart';
 import 'screens/restaurant_shell_screen.dart';
 import 'screens/shipper_shell_screen.dart';
+import 'screens/store_detail_screen.dart';
 import 'screens/student_register_screen.dart';
 import 'screens/web_admin_shell_screen.dart';
 import 'services/commission_policy_service.dart';
@@ -56,6 +58,7 @@ import 'viewmodels/shipper_vm.dart';
 import 'viewmodels/store_detail_vm.dart';
 import 'widgets/ktx_bottom_nav_bar.dart';
 import 'widgets/ktx_button.dart';
+import 'widgets/ktx_sticky_cart_bar.dart';
 import 'widgets/role_selection_sheet.dart';
 import 'services/server_config_service.dart';
 import 'widgets/server_config_dialog.dart';
@@ -946,6 +949,14 @@ class _MainShellScreenState extends State<MainShellScreen> {
     }
   }
 
+  void _openNotifications() {
+    setState(() => _selectedIndex = 2);
+  }
+
+  void _openProfile() {
+    setState(() => _selectedIndex = 4);
+  }
+
   void _openCheckout() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -971,6 +982,11 @@ class _MainShellScreenState extends State<MainShellScreen> {
   Widget build(BuildContext context) {
     final user = widget.firebaseUser;
     final authVm = context.watch<AuthViewModel>();
+    final cartVm = context.watch<CartCheckoutViewModel>();
+    final demoVm = context.watch<ProfileDemoViewModel>();
+    final homeVm = context.watch<HomeViewModel>();
+    final unreadNotis = demoVm.unreadCount + homeVm.unreadNotificationCount;
+
     final displayName =
         user?.displayName ?? authVm.currentUser?.displayName ?? 'Sinh viên KTX';
     final email =
@@ -979,14 +995,36 @@ class _MainShellScreenState extends State<MainShellScreen> {
         user?.uid ?? authVm.currentUser?.firebaseUid ?? 'student_ktx_demo';
 
     final pages = [
+      // Tab 0: Khám phá (Trang chủ gom đơn KTX - Node 462:1932)
       HomeScreen(
-        onOpenNotifications: () => setState(() => _selectedIndex = 1),
+        onOpenNotifications: _openNotifications,
         onOpenCheckout: _openCheckout,
         onOpenDispute: _openDispute,
+        onOpenProfile: _openProfile,
         onSwitchRole: widget.onSwitchRole,
       ),
+      // Tab 1: Đặt món (Chi tiết Quán ăn & Thực đơn - Node 438:1030)
+      StoreDetailScreen(
+        store: const StoreModel(
+          id: 1,
+          name: 'Cơm Tấm Sườn Bì KTX B2',
+          description: 'Cơm tấm sườn nướng mật ong, giao gom đơn tận trụ KTX Khu B',
+          address: 'Cổng B2 KTX ĐHQG TP.HCM',
+          campusZone: 'KTX_KHU_B',
+          phoneNumber: '0901234567',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600',
+          isActive: true,
+          ratingAvg: 4.8,
+          ratingCount: 128,
+        ),
+        onOpenCheckout: _openCheckout,
+      ),
+      // Tab 2: Thông báo (Bảng thông báo KTX - Node 438:1710)
       const NotificationBoardScreen(),
+      // Tab 3: Lịch sử (Lịch sử đơn hàng - Node 438:3541)
       const OrderHistoryScreen(),
+      // Tab 4: Tài khoản (Hồ sơ cá nhân & Cài đặt - Node 438:3979)
       ProfileSettingsScreen(
         displayName: displayName,
         email: email,
@@ -999,9 +1037,24 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: pages),
-      bottomNavigationBar: KtxBottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Thanh giỏ hàng nổi bám đáy: CHỈ HIỆN Ở TRANG CHỦ (tab 0) VÀ TRANG CHỌN MÓN (tab 1)
+          if (cartVm.totalItemCount > 0 && (_selectedIndex == 0 || _selectedIndex == 1))
+            KtxStickyCartBar(
+              itemCount: cartVm.totalItemCount,
+              totalAmount: cartVm.subtotalAmount,
+              pickupLocation: 'Đơn gom Cổng KTX Khu B',
+              onCheckoutTap: _openCheckout,
+            ),
+          // Footer Navigation chuẩn 5 tab (Tab 2: Thông báo)
+          KtxBottomNavBar(
+            currentIndex: _selectedIndex,
+            notificationBadgeCount: unreadNotis,
+            onTap: (index) => setState(() => _selectedIndex = index),
+          ),
+        ],
       ),
     );
   }

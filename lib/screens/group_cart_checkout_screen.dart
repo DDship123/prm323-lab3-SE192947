@@ -22,10 +22,12 @@ import 'pickup_qr_code_screen.dart';
 /// Màn hình S4: Giỏ hàng, Chọn Ca gom đơn KTX & Đặt hàng (API-006)
 class GroupCartCheckoutScreen extends StatefulWidget {
   final ValueChanged<OrderDetailModel> onOrderCompleted;
+  final VoidCallback? onBackToMenu;
 
   const GroupCartCheckoutScreen({
     super.key,
     required this.onOrderCompleted,
+    this.onBackToMenu,
   });
 
   @override
@@ -113,7 +115,7 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: KtxAppBar(
-        title: 'Giỏ hàng Gom đơn KTX',
+        title: 'Thanh Toán Gom Đơn',
         subtitle: cartVm.storeName.isNotEmpty ? cartVm.storeName : null,
       ),
       body: cartVm.items.isEmpty
@@ -122,7 +124,13 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
               message:
                   'Hãy chọn món ăn tại các quán liên kết KTX để được hưởng phí ship gom đơn chỉ 5.000đ.',
               actionLabel: 'Quay lại chọn món',
-              onAction: () => Navigator.of(context).pop(),
+              onAction: () {
+                if (widget.onBackToMenu != null) {
+                  widget.onBackToMenu!();
+                } else {
+                  Navigator.of(context).maybePop();
+                }
+              },
             )
           : ListView(
               padding: const EdgeInsets.all(AppSpacing.md),

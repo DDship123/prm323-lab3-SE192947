@@ -141,7 +141,7 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(AppRadius.roundedFull),
+                        borderRadius: AppRadius.roundedFull,
                       ),
                       child: const Text(
                         'ĐANG QUÉT TỰ ĐỘNG...',

@@ -96,12 +96,25 @@ class _NotificationBoardScreenState extends State<NotificationBoardScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: KtxAppBar(
-        title: 'Trung tâm Thông báo S12',
+        title: 'Bảng Thông Báo',
         actions: [
-          TextButton.icon(
-            onPressed: vm.markAllAsRead,
-            icon: const Icon(Icons.done_all_rounded, size: 18),
-            label: const Text('Đọc tất cả'),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.headerBtnBackground,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: InkWell(
+              onTap: vm.markAllAsRead,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.done_all_rounded, size: 16, color: AppColors.primary),
+                  SizedBox(width: 4),
+                  Text('Đã đọc', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                ],
+              ),
+            ),
           ),
         ],
       ),

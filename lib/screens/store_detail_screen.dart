@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/menu_item_model.dart';
+import '../models/order_model.dart';
 import '../models/store_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -16,6 +17,8 @@ import '../widgets/ktx_loading_state.dart';
 import '../widgets/ktx_sticky_cart_bar.dart';
 import '../widgets/screen_state.dart';
 import 'food_customization_sheet.dart';
+import 'group_cart_checkout_screen.dart';
+import 'live_order_tracking_screen.dart';
 
 /// Màn hình S2: Chi tiết Quán ăn, Thực đơn & Đánh giá của Sinh viên
 class StoreDetailScreen extends StatefulWidget {
@@ -57,23 +60,45 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     );
   }
 
+  void _navigateToCheckout() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => GroupCartCheckoutScreen(
+          onOrderCompleted: (OrderDetailModel order) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => LiveOrderTrackingScreen(initialOrder: order),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final storeVm = context.watch<StoreDetailViewModel>();
     final cartVm = context.watch<CartCheckoutViewModel>();
     final activeStore = storeVm.store ?? widget.store;
+    final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: KtxAppBar(
         title: activeStore.name,
         subtitle: activeStore.campusZoneLabel,
+        cartItemCount: cartVm.totalItemCount,
+        onCartTap: _navigateToCheckout,
       ),
-      bottomNavigationBar: KtxStickyCartBar(
-        itemCount: cartVm.totalItemCount,
-        totalAmount: cartVm.subtotalAmount,
-        onCheckoutTap: widget.onOpenCheckout,
-      ),
+      bottomNavigationBar: canPop
+          ? KtxStickyCartBar(
+              itemCount: cartVm.totalItemCount,
+              totalAmount: cartVm.subtotalAmount,
+              pickupLocation: activeStore.campusZoneLabel,
+              onCheckoutTap: _navigateToCheckout,
+            )
+          : null,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(

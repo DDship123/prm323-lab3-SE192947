@@ -46,12 +46,20 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: KtxAppBar(
-        title: 'Lịch sử Đơn hàng S10',
+        title: 'Lịch Sử Đơn Hàng',
         actions: [
-          IconButton(
-            onPressed: vm.loadOrderHistory,
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Tải lại',
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: AppColors.headerBtnBackground,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: vm.loadOrderHistory,
+              icon: const Icon(Icons.refresh_rounded, size: 20, color: AppColors.textPrimary),
+              tooltip: 'Tải lại',
+            ),
           ),
         ],
       ),

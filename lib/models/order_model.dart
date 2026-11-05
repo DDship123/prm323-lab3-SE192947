@@ -94,6 +94,7 @@ class CartItemModel {
 }
 
 /// Thực thể chi tiết đơn hàng gom đơn KTX (OrderResponse)
+const _sentinel = Object();
 class OrderDetailModel {
   final int id;
   final String orderCode;
@@ -115,6 +116,8 @@ class OrderDetailModel {
   final List<OrderItemModel> items;
   final DateTime? deliveredAt;
   final DateTime createdAt;
+  final String? shipperName;
+  final String? shipperPhone;
 
   const OrderDetailModel({
     required this.id,
@@ -137,6 +140,8 @@ class OrderDetailModel {
     this.items = const [],
     this.deliveredAt,
     required this.createdAt,
+    this.shipperName,
+    this.shipperPhone,
   });
 
   factory OrderDetailModel.fromJson(Map<String, dynamic> json) {
@@ -170,6 +175,8 @@ class OrderDetailModel {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
           : DateTime.now(),
+      shipperName: json['shipperName'] as String?,
+      shipperPhone: json['shipperPhone'] as String?,
     );
   }
 
@@ -203,6 +210,8 @@ class OrderDetailModel {
     List<OrderItemModel>? items,
     DateTime? deliveredAt,
     DateTime? createdAt,
+    Object? shipperName = _sentinel,
+    Object? shipperPhone = _sentinel,
   }) {
     return OrderDetailModel(
       id: id ?? this.id,
@@ -225,6 +234,8 @@ class OrderDetailModel {
       items: items ?? this.items,
       deliveredAt: deliveredAt ?? this.deliveredAt,
       createdAt: createdAt ?? this.createdAt,
+      shipperName: shipperName == _sentinel ? this.shipperName : shipperName as String?,
+      shipperPhone: shipperPhone == _sentinel ? this.shipperPhone : shipperPhone as String?,
     );
   }
 

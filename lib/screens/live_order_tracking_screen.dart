@@ -2,13 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/order_model.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_radius.dart';
-import '../theme/app_spacing.dart';
-import '../theme/app_typography.dart';
+import '../theme/ktx_design_system.dart';
 import '../viewmodels/order_tracking_vm.dart';
-import '../widgets/ktx_app_bar.dart';
-import '../widgets/ktx_button.dart';
 import '../widgets/ktx_dialog.dart';
 import '../widgets/ktx_error_state.dart';
 import '../widgets/ktx_loading_state.dart';
@@ -17,7 +12,7 @@ import 'dispute_refund_screen.dart';
 import 'pickup_qr_code_screen.dart';
 import 'review_feedback_screen.dart';
 
-/// Màn hình S6: Theo dõi tiến trình đơn hàng Live & Quản lý trạng thái (API-007, API-009, API-010)
+/// Màn hình S6: Theo dõi tiến trình đơn hàng Live theo tài liệu Thông số thiết kế KTX Food
 class LiveOrderTrackingScreen extends StatefulWidget {
   final OrderDetailModel initialOrder;
 
@@ -89,19 +84,36 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: KtxAppBar(
-        title: 'Theo dõi Đơn hàng S6',
+        title: 'Theo Dõi Đơn Hàng',
         subtitle: widget.initialOrder.orderCode,
         actions: [
-          IconButton(
-            onPressed: () => vm.loadOrderDetail(widget.initialOrder.id),
-            icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Làm mới trạng thái',
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: AppColors.headerBtnBackground,
+              shape: BoxShape.circle,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => vm.loadOrderDetail(widget.initialOrder.id),
+                customBorder: const CircleBorder(),
+                child: const Center(
+                  child: Icon(
+                    Icons.refresh_rounded,
+                    size: 20,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
       body: switch (state) {
         StateInitial() || StateLoading() => const Padding(
-            padding: EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.all(AppSpacing.cardPadding),
             child: KtxLoadingState(itemCount: 3),
           ),
         StateError(:final errorMessage) => KtxErrorState(
@@ -121,10 +133,11 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
   ) {
     final currentStep = _stepIndex(order.status);
     final isCancelled = order.status == 'CANCELLED';
+    final isDelivering = order.status == 'DELIVERING';
     final isDelivered = order.status == 'DELIVERED';
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.cardPadding),
       children: [
         if (vm.actionError != null) ...[
           KtxErrorState(
@@ -133,61 +146,69 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
           ),
           const SizedBox(height: AppSpacing.md),
         ],
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: AppRadius.roundedMd,
-            border: Border.all(color: AppColors.divider),
-          ),
+
+        // 1. THẺ THÔNG TIN ĐƠN HÀNG (Bo 16, viền #f3f4f6, bóng mờ 5%)
+        KtxCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(order.storeName, style: AppTypography.heading3),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isCancelled
-                          ? AppColors.error.withValues(alpha: 0.12)
-                          : isDelivered
-                              ? AppColors.success.withValues(alpha: 0.12)
-                              : AppColors.primaryLight.withValues(alpha: 0.4),
-                      borderRadius: AppRadius.roundedFull,
-                    ),
+                  Expanded(
                     child: Text(
-                      order.statusLabel,
-                      style: AppTypography.bodySmall.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isCancelled
-                            ? AppColors.error
-                            : isDelivered
-                                ? AppColors.success
-                                : AppColors.primaryDark,
-                      ),
+                      order.storeName,
+                      style: AppTypography.heading2,
+                      softWrap: true,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  KtxPill(
+                    label: order.statusLabel,
+                    variant: isCancelled
+                        ? KtxPillVariant.rejected
+                        : isDelivered
+                            ? KtxPillVariant.done
+                            : isDelivering
+                                ? KtxPillVariant.waiting
+                                : KtxPillVariant.waiting,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.location_on_outlined,
+                    size: 14,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      'Điểm nhận: ${order.pickupLocation}',
+                      style: AppTypography.bodySmall,
+                      softWrap: true,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: 2),
               Text(
-                'Điểm nhận: ${order.pickupLocation}',
-                style: AppTypography.bodyMedium,
+                'Ca gom: ${order.slotTime} • Thanh toán: ${order.paymentMethod}',
+                style: AppTypography.caption,
+                softWrap: true,
               ),
-              Text(
-                'Ca gom: ${order.slotTime} • Thanh toán: ${order.paymentMethod} (${order.paymentStatus})',
-                style: AppTypography.bodySmall,
-              ),
-              const Divider(height: AppSpacing.lg),
+              const Divider(height: 18, color: AppColors.divider),
+
+              // TIMELINE TRẠNG THÁI
               if (isCancelled)
-                const Text(
+                Text(
                   'Đơn hàng này đã bị hủy.',
-                  style: TextStyle(
+                  style: AppTypography.bodySmall.copyWith(
                     color: AppColors.error,
                     fontWeight: FontWeight.bold,
                   ),
@@ -197,28 +218,33 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                   final step = _steps[idx];
                   final done = idx <= currentStep;
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          done
-                              ? Icons.check_circle_rounded
-                              : Icons.radio_button_unchecked_rounded,
-                          color: done ? AppColors.success : AppColors.border,
-                          size: 22,
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Icon(
+                            done
+                                ? Icons.check_circle_rounded
+                                : Icons.radio_button_unchecked_rounded,
+                            color: done ? AppColors.success : AppColors.borderStrong,
+                            size: 16,
+                          ),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             step['label']!,
                             style: AppTypography.bodyMedium.copyWith(
                               fontWeight: idx == currentStep
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                                  ? FontWeight.w700
+                                  : FontWeight.w400,
                               color: done
                                   ? AppColors.textPrimary
                                   : AppColors.textSecondary,
                             ),
+                            softWrap: true,
                           ),
                         ),
                       ],
@@ -229,53 +255,56 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: AppRadius.roundedMd,
-            border: Border.all(color: AppColors.divider),
-          ),
+
+        // 2. THẺ SHIPPER (CHỈ HIỂN THỊ KHI DELIVERING - THEO FIGMA S6)
+        if (isDelivering) ...[
+          _buildShipperCard(order),
+          const SizedBox(height: AppSpacing.md),
+        ],
+
+        // 3. THẺ MÓN ĂN & GIÁ TIỀN
+        KtxCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Chi tiết món ăn (Price Snapshot - BR-ORD-02)',
+                'Chi tiết món ăn',
                 style: AppTypography.heading3,
               ),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 8),
               ...order.items.map(
                 (item) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Text(
                           '${item.quantity}x ${item.itemName}',
                           style: AppTypography.bodyMedium,
+                          softWrap: true,
                         ),
                       ),
+                      const SizedBox(width: AppSpacing.xs),
                       Text(
                         _formatCurrency(item.itemTotalAmount),
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: AppTypography.price,
                       ),
                     ],
                   ),
                 ),
               ),
-              const Divider(),
+              const Divider(height: 18, color: AppColors.divider),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Tổng thanh toán', style: AppTypography.heading3),
+                  Text(
+                    'Tổng thanh toán',
+                    style: AppTypography.heading3,
+                  ),
                   Text(
                     _formatCurrency(order.finalAmount),
-                    style: AppTypography.heading3.copyWith(
-                      color: AppColors.primary,
-                    ),
+                    style: AppTypography.price.copyWith(fontSize: 16),
                   ),
                 ],
               ),
@@ -283,32 +312,13 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
+
+        // 4. NÚT CHÍNH VÀ NÚT PHỤ (Mỗi màn hình chỉ 1 nút chính nền #ff5722)
         if (!isCancelled && !isDelivered) ...[
-          if (order.status != 'DELIVERING') ...[
-            KtxButton(
-              label: '🚀 Bỏ qua chờ: Tới thẳng Nhận hàng (Mở QR)',
-              variant: KtxButtonVariant.primary,
-              icon: Icons.rocket_launch_rounded,
-              isLoading: vm.isActionLoading,
-              onPressed: () async {
-                final deliveringOrder = await vm.skipToDeliveryStep(order);
-                if (context.mounted) {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => PickupQrCodeScreen(order: deliveringOrder),
-                    ),
-                  );
-                  if (context.mounted) {
-                    vm.loadOrderDetail(order.id);
-                  }
-                }
-              },
-            ),
-            const SizedBox(height: AppSpacing.sm),
-          ],
+          // NÚT CHÍNH DUY NHẤT: Mở mã QR / Nhận hàng
           KtxButton(
-            label: 'Mở Mã QR / PIN Nhận Hàng tại Cổng (S7)',
-            variant: order.status == 'DELIVERING' ? KtxButtonVariant.primary : KtxButtonVariant.secondary,
+            label: 'Mở Mã Nhận Hàng (QR Code)',
+            variant: KtxButtonVariant.primary,
             icon: Icons.qr_code_scanner_rounded,
             onPressed: () async {
               await Navigator.of(context).push(
@@ -321,17 +331,21 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
               }
             },
           ),
-          const SizedBox(height: AppSpacing.sm),
-          if (order.status != 'DELIVERING')
+          const SizedBox(height: 8),
+
+          // Nút phụ: Bỏ qua chờ / Test Demo
+          if (!isDelivering) ...[
             KtxButton(
-              label: 'Chuyển trạng thái kế tiếp (Demo Store/Shipper)',
-              variant: KtxButtonVariant.outline,
+              label: 'Chuyển trạng thái kế tiếp (Demo)',
+              variant: KtxButtonVariant.secondary,
               icon: Icons.fast_forward_rounded,
               isLoading: vm.isActionLoading,
               onPressed: () => vm.advanceOrderStatusForDemo(order),
             ),
-          if (order.status == 'PENDING') ...[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: 8),
+          ],
+
+          if (order.status == 'PENDING')
             KtxButton(
               label: 'Hủy đơn hàng (Chỉ khi PENDING)',
               variant: KtxButtonVariant.danger,
@@ -339,11 +353,13 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
               isLoading: vm.isActionLoading,
               onPressed: () => _confirmCancel(vm, order),
             ),
-          ],
         ],
+
         if (isDelivered) ...[
+          // NÚT CHÍNH: Đánh giá
           KtxButton(
-            label: 'Đánh giá Quán & Shipper (S9)',
+            label: 'Đánh Giá Quán & Shipper',
+            variant: KtxButtonVariant.primary,
             icon: Icons.star_rate_rounded,
             onPressed: () {
               Navigator.of(context).push(
@@ -353,10 +369,11 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
               );
             },
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: 8),
+          // Nút phụ / Báo cáo sự cố
           KtxButton(
-            label: 'Báo cáo sự cố / Khiếu nại hoàn tiền (S8)',
-            variant: KtxButtonVariant.outline,
+            label: 'Báo Cáo Sự Cố / Hoàn Tiền',
+            variant: KtxButtonVariant.secondary,
             icon: Icons.report_problem_outlined,
             onPressed: () {
               Navigator.of(context).push(
@@ -367,7 +384,143 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
             },
           ),
         ],
+        const SizedBox(height: AppSpacing.lg),
       ],
+    );
+  }
+
+  /// Thẻ Shipper theo chuẩn Figma Frame 6 (Nguyễn Văn Minh - Bàn số 2 Cổng B2)
+  Widget _buildShipperCard(OrderDetailModel order) {
+    final shipperName = order.shipperName?.isNotEmpty == true
+        ? order.shipperName!
+        : 'Nguyễn Văn Minh';
+    final shipperPhone = order.shipperPhone?.isNotEmpty == true
+        ? order.shipperPhone!
+        : '0912 345 829';
+
+    return KtxCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: const BoxDecoration(
+                  color: AppColors.iconBoxBackground, // #fff7ed
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.two_wheeler_rounded,
+                    color: AppColors.primary,
+                    size: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TÀI XẾ KTX PHỤ TRÁCH',
+                      style: AppTypography.caption.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primaryDark,
+                      ),
+                    ),
+                    Text(
+                      'Đội xe KTX Food • Đang tới Cổng',
+                      style: AppTypography.caption,
+                    ),
+                  ],
+                ),
+              ),
+              const KtxPill(
+                label: '★ 4.9',
+                variant: KtxPillVariant.done,
+              ),
+            ],
+          ),
+          const Divider(height: 18, color: AppColors.divider),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.surfaceVariant,
+                child: Text(
+                  shipperName.isNotEmpty ? shipperName[0] : 'S',
+                  style: AppTypography.storeTitle.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      shipperName,
+                      style: AppTypography.storeTitle,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'Honda Wave Đỏ • 59-X1 839.24',
+                      style: AppTypography.caption,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceVariant,
+              borderRadius: AppRadius.roundedSm,
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.store_mall_directory_outlined,
+                  size: 14,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Điểm phát: Bàn số 2 – Trước Cổng KTX Khu B',
+                    style: AppTypography.caption.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          KtxButton(
+            label: 'Gọi tài xế: $shipperPhone',
+            variant: KtxButtonVariant.secondary,
+            icon: Icons.phone_rounded,
+            height: 38,
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Số điện thoại tài xế: $shipperPhone'),
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }

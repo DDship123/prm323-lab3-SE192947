@@ -5,17 +5,12 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../firebase/analytics_service.dart';
 import '../models/order_model.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_radius.dart';
-import '../theme/app_spacing.dart';
-import '../theme/app_typography.dart';
+import '../theme/ktx_design_system.dart';
 import '../viewmodels/dispute_vm.dart';
-import '../widgets/ktx_button.dart';
-import '../widgets/ktx_text_field.dart';
 import '../widgets/screen_state.dart';
 import 'dispute_history_screen.dart';
 
-/// Màn hình S8: Báo cáo sự cố đồ ăn, tải ảnh bằng chứng và yêu cầu hoàn tiền
+/// Màn hình S8: Khiếu nại & Hoàn tiền KTX theo tài liệu Thông số thiết kế (Figma Frame 8 - Node 766:7810)
 class DisputeRefundScreen extends StatefulWidget {
   final OrderSummaryModel? initialOrder;
 
@@ -47,25 +42,26 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (_) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'Tải ảnh bằng chứng sự cố món ăn',
                 style: AppTypography.heading3,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Hình ảnh sẽ được tải lên Cloud Storage theo chuẩn reports/{uid}/',
-                style: AppTypography.bodySmall,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 6),
+              Text(
+                'Chụp rõ tem niêm phong hoặc ảnh món ăn gặp sự cố.',
+                style: AppTypography.caption,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -103,8 +99,8 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
       onTap: onTap,
       borderRadius: AppRadius.roundedMd,
       child: Container(
-        width: 140,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        width: 130,
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           color: AppColors.surfaceVariant,
           borderRadius: AppRadius.roundedMd,
@@ -112,9 +108,15 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
         ),
         child: Column(
           children: [
-            Icon(icon, size: 36, color: AppColors.primary),
-            const SizedBox(height: 8),
-            Text(label, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+            Icon(icon, size: 30, color: AppColors.primary),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: AppTypography.caption.copyWith(
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ],
         ),
       ),
@@ -145,15 +147,16 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
               reasonCode: vm.selectedReason,
               refundRequested:
                   double.tryParse(vm.refundAmountController.text) ?? 0.0,
-              uploadStatus: 'failed',
+              uploadStatus: 'success',
             );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Gửi khiếu nại thành công! Ảnh bằng chứng đã được lưu vào Cloud Storage.'),
+            content: Text(
+              'Gửi khiếu nại thành công! Trưởng bàn gom KTX sẽ xử lý trong 30 phút.',
+            ),
             backgroundColor: AppColors.success,
           ),
         );
-        // Chuyển sang màn hình xem lịch sử khiếu nại S8b
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const DisputeHistoryScreen()),
@@ -162,15 +165,15 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
         if (vm.submitState is StateError) {
           final err = (vm.submitState as StateError).errorMessage;
           context.read<AnalyticsService>().logUploadDisputeEvidence(
-              orderId: vm.selectedOrder != null
-                  ? 'ORD_${vm.selectedOrder!.id}'
-                  : 'ORD_DEMO',
-              reasonCode: vm.selectedReason,
-              refundRequested:
-                  double.tryParse(vm.refundAmountController.text) ?? 0.0,
-              uploadStatus: 'failed',
-            );
-        ScaffoldMessenger.of(context).showSnackBar(
+                orderId: vm.selectedOrder != null
+                    ? 'ORD_${vm.selectedOrder!.id}'
+                    : 'ORD_DEMO',
+                reasonCode: vm.selectedReason,
+                refundRequested:
+                    double.tryParse(vm.refundAmountController.text) ?? 0.0,
+                uploadStatus: 'failed',
+              );
+          ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(err), backgroundColor: AppColors.error),
           );
         }
@@ -187,261 +190,312 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
         : '';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Báo cáo sự cố & Hoàn tiền'),
-        centerTitle: true,
+      backgroundColor: AppColors.background,
+      appBar: KtxAppBar(
+        title: 'Khiếu Nại & Hoàn Tiền',
+        subtitle: 'Bảo vệ quyền lợi Sinh viên ĐHQG',
         actions: [
-          IconButton(
-            tooltip: 'Lịch sử khiếu nại',
-            icon: const Icon(Icons.history_rounded),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const DisputeHistoryScreen()),
-              );
-            },
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: AppColors.headerBtnBackground,
+              shape: BoxShape.circle,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const DisputeHistoryScreen(),
+                    ),
+                  );
+                },
+                customBorder: const CircleBorder(),
+                child: const Center(
+                  child: Icon(
+                    Icons.history_rounded,
+                    size: 20,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.cardPadding),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 1. Chọn đơn hàng
-            Text('1. Chọn đơn hàng gặp sự cố tại KTX', style: AppTypography.heading3),
-            const SizedBox(height: AppSpacing.sm),
-            if (vm.availableOrders.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: AppRadius.roundedMd,
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: const Text('Đang tải danh sách đơn hàng đã nhận...'),
-              )
-            else
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: AppRadius.roundedMd,
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<OrderSummaryModel>(
-                    isExpanded: true,
-                    value: vm.selectedOrder,
-                    items: vm.availableOrders.map((order) {
-                      return DropdownMenuItem(
-                        value: order,
-                        child: Text(
-                          '#${order.id} - ${order.storeName} (${currencyFormatter.format(order.totalPrice)})',
-                          style: AppTypography.bodyMedium,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (order) {
-                      if (order != null) vm.selectOrder(order);
-                    },
-                  ),
-                ),
-              ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // 2. Chọn lý do sự cố
-            Text('2. Lý do khiếu nại', style: AppTypography.heading3),
-            const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: vm.commonReasons.map((reason) {
-                final isSelected = vm.selectedReason == reason;
-                return ChoiceChip(
-                  label: Text(reason),
-                  selected: isSelected,
-                  selectedColor: AppColors.primaryLight,
-                  backgroundColor: AppColors.surface,
-                  labelStyle: TextStyle(
-                    color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                    fontSize: 13,
-                  ),
-                  onSelected: (_) => vm.setReason(reason),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // 3. Mô tả chi tiết
-            Text('3. Mô tả chi tiết sự cố', style: AppTypography.heading3),
-            const SizedBox(height: AppSpacing.sm),
-            KtxTextField(
-              controller: vm.descriptionController,
-              hintText: 'Mô tả rõ tình trạng món ăn, vị trí nhận tại KTX hoặc món bị thiếu...',
-              maxLines: 3,
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // 4. Số tiền yêu cầu hoàn
-            Text('4. Số tiền yêu cầu hoàn (VND)', style: AppTypography.heading3),
-            const SizedBox(height: AppSpacing.sm),
-            KtxTextField(
-              controller: vm.refundAmountController,
-              hintText: 'Nhập số tiền hoàn mong muốn',
-              prefixIcon: const Icon(Icons.attach_money, color: AppColors.primary),
-            ),
-
-            const SizedBox(height: AppSpacing.lg),
-
-            // 5. Khu vực tải ảnh lên Đám mây (Cloud Storage)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('5. Bằng chứng hình ảnh', style: AppTypography.heading3),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Text(
-                    'Bắt buộc',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Chụp ảnh trực tiếp món ăn hoặc bao bì để shipper/quán đối soát.',
-              style: AppTypography.bodySmall,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-
-            // Khung hiển thị ảnh đã chọn hoặc nút bấm tải ảnh
-            if (vm.selectedImageBytes != null) ...[
-              Stack(
+            // 1. BANNER CAM KẾT (Theo Figma Node 766:7810: Bảo đảm 100%)
+            KtxCard(
+              child: Row(
                 children: [
                   Container(
-                    width: double.infinity,
-                    height: 220,
-                    decoration: BoxDecoration(
-                      borderRadius: AppRadius.roundedMd,
-                      border: Border.all(color: AppColors.primary, width: 2),
+                    width: 36,
+                    height: 36,
+                    decoration: const BoxDecoration(
+                      color: AppColors.iconBoxBackground,
+                      shape: BoxShape.circle,
                     ),
-                    child: ClipRRect(
-                      borderRadius: AppRadius.roundedMd,
-                      child: Image.memory(
-                        vm.selectedImageBytes!,
-                        fit: BoxFit.cover,
-                      ),
+                    child: const Icon(
+                      Icons.verified_user_rounded,
+                      color: AppColors.primary,
+                      size: 20,
                     ),
                   ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: CircleAvatar(
-                      backgroundColor: Colors.black54,
-                      child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        tooltip: 'Xóa ảnh',
-                        onPressed: isSubmitting ? null : vm.clearSelectedImage,
-                      ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Xử lý nhanh bàn giao • Bù tiền thỏa đáng',
+                          style: AppTypography.caption.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
+                        Text(
+                          'Quán và Trưởng bàn KTX Khu B sẽ trích xuất camera để giải quyết trong 30 phút.',
+                          style: AppTypography.caption,
+                        ),
+                      ],
                     ),
+                  ),
+                  const KtxPill(
+                    label: '100%',
+                    variant: KtxPillVariant.done,
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              // Thanh hiển thị tiến trình tải ảnh lên Firebase Cloud Storage
-              if (vm.uploadProgress > 0.0 && isSubmitting) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Tiến trình tải lên Cloud Storage:',
-                      style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '${(vm.uploadProgress * 100).toInt()}%',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                LinearProgressIndicator(
-                  value: vm.uploadProgress,
-                  backgroundColor: AppColors.surfaceVariant,
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  minHeight: 6,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ],
-            ] else ...[
-              InkWell(
-                onTap: isSubmitting ? null : () => _showImageSourcePicker(context, vm),
-                borderRadius: AppRadius.roundedMd,
-                child: Container(
-                  width: double.infinity,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: AppRadius.roundedMd,
-                    border: Border.all(
-                      color: AppColors.border,
-                      style: BorderStyle.solid,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.cloud_upload_outlined,
-                        size: 48,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Chạm để chụp hoặc chọn ảnh bằng chứng',
-                        style: AppTypography.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // 2. CHỌN ĐƠN HÀNG GẶP SỰ CỐ
+            KtxCard(
+              isFormCard: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('1. CHỌN ĐƠN HÀNG GẶP SỰ CỐ', style: AppTypography.heading3),
+                  const SizedBox(height: 8),
+                  if (vm.availableOrders.isEmpty)
+                    const Text('Đang tải danh sách đơn hàng đã nhận...')
+                  else
+                    DropdownButtonFormField<OrderSummaryModel>(
+                      value: vm.selectedOrder,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: AppColors.surfaceVariant,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        border: OutlineInputBorder(
+                          borderRadius: AppRadius.roundedMd,
+                          borderSide: BorderSide.none,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Hỗ trợ JPG, PNG (Tối đa 10MB)',
-                        style: AppTypography.bodySmall,
+                      items: vm.availableOrders.map((order) {
+                        return DropdownMenuItem(
+                          value: order,
+                          child: Text(
+                            '#${order.id} - ${order.storeName} (${currencyFormatter.format(order.totalPrice)})',
+                            style: AppTypography.bodySmall,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (order) {
+                        if (order != null) vm.selectOrder(order);
+                      },
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // 3. CHỌN LÝ DO KHIẾU NẠI (Chip co giãn Wrap)
+            KtxCard(
+              isFormCard: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('2. BẠN ĐANG GẶP SỰ CỐ GÌ?', style: AppTypography.heading3),
+                      const KtxPill(
+                        label: '*BẮT BUỘC',
+                        variant: KtxPillVariant.rejected,
                       ),
                     ],
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: vm.commonReasons.map((reason) {
+                      final isSelected = vm.selectedReason == reason;
+                      return GestureDetector(
+                        onTap: () => vm.setReason(reason),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primaryLight : AppColors.surfaceVariant,
+                            borderRadius: AppRadius.roundedFull,
+                            border: Border.all(
+                              color: isSelected ? AppColors.primary : AppColors.border,
+                            ),
+                          ),
+                          child: Text(
+                            reason,
+                            style: AppTypography.chipLabel.copyWith(
+                              color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
-            ],
+            ),
+            const SizedBox(height: AppSpacing.md),
 
-            const SizedBox(height: AppSpacing.xl),
+            // 4. MÔ TẢ CHI TIẾT SỰ CỐ & SỐ TIỀN HOÀN
+            KtxCard(
+              isFormCard: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  KtxTextField(
+                    label: '3. MÔ TẢ CHI TIẾT SỰ CỐ',
+                    hintText: 'Lúc nhận tại Bàn 2 mở túi thấy thiếu món hoặc đổ tràn...',
+                    controller: vm.descriptionController,
+                    maxLines: 3,
+                  ),
+                  const SizedBox(height: 12),
+                  KtxTextField(
+                    label: '4. SỐ TIỀN ĐỀ XUẤT HOÀN (VND)',
+                    hintText: 'Ví dụ: 35000',
+                    controller: vm.refundAmountController,
+                    keyboardType: TextInputType.number,
+                    prefixIcon: Icons.attach_money,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
 
-            // Thông báo đang gửi
+            // 5. BẰNG CHỨNG HÌNH ẢNH
+            KtxCard(
+              isFormCard: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('5. BẰNG CHỨNG HÌNH ẢNH', style: AppTypography.heading3),
+                      const KtxPill(
+                        label: 'BẮT BUỘC',
+                        variant: KtxPillVariant.waiting,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Túi gom có tem niêm phong nhiệt. Chụp rõ tem giúp duyệt hoàn tiền sau 15–30 phút.',
+                    style: AppTypography.caption,
+                  ),
+                  const SizedBox(height: 8),
+
+                  if (vm.selectedImageBytes != null) ...[
+                    Stack(
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            borderRadius: AppRadius.roundedMd,
+                            border: Border.all(color: AppColors.primary),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: AppRadius.roundedMd,
+                            child: Image.memory(
+                              vm.selectedImageBytes!,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 6,
+                          right: 6,
+                          child: CircleAvatar(
+                            radius: 14,
+                            backgroundColor: Colors.black54,
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              icon: const Icon(Icons.close, size: 16, color: Colors.white),
+                              onPressed: isSubmitting ? null : vm.clearSelectedImage,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    InkWell(
+                      onTap: isSubmitting ? null : () => _showImageSourcePicker(context, vm),
+                      borderRadius: AppRadius.roundedMd,
+                      child: Container(
+                        width: double.infinity,
+                        height: 110,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceVariant,
+                          borderRadius: AppRadius.roundedMd,
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.cloud_upload_outlined,
+                              size: 32,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '+ Thêm ảnh / Chụp tem bill',
+                              style: AppTypography.caption.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            Text(
+                              'Hỗ trợ JPG, PNG (Tối đa 10MB)',
+                              style: AppTypography.caption,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+
             if (isSubmitting) ...[
               Center(
                 child: Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
                     loadingMsg,
-                    style: AppTypography.bodyMedium.copyWith(
+                    style: AppTypography.caption.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600,
                     ),
@@ -450,9 +504,10 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
               ),
             ],
 
-            // Nút Gửi khiếu nại
+            // NÚT CHÍNH DUY NHẤT TRÊN TRANG (Mục 5: Nền #ff5722, cao 44, bo 12)
             KtxButton(
-              label: 'Gửi khiếu nại & Thẩm định hoàn tiền',
+              label: 'Gửi Yêu Cầu Hoàn Tiền',
+              variant: KtxButtonVariant.primary,
               icon: Icons.send_rounded,
               isLoading: isSubmitting,
               onPressed: isSubmitting ? null : () => _handleSubmit(vm),

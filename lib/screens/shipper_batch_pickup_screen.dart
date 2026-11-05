@@ -451,7 +451,7 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
 
   void _openQuickScanDialog(BuildContext context, ShipperViewModel vm) {
     final state = vm.state;
-    if (state is! StateSuccess<ShipperBatchSummaryModel>) {
+    if (state is! StateSuccess<ShipperBatchModel>) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Vui lòng đợi tải danh sách đơn hàng ca gom.')),
       );

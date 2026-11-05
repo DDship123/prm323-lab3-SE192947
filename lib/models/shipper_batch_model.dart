@@ -39,6 +39,7 @@ class ShipperBatchItemModel {
   final double finalAmount;
   final String status;
   final String? pickupPin;
+  final String? pickupQrCode;
   final DateTime createdAt;
 
   const ShipperBatchItemModel({
@@ -53,6 +54,7 @@ class ShipperBatchItemModel {
     required this.finalAmount,
     required this.status,
     this.pickupPin,
+    this.pickupQrCode,
     required this.createdAt,
   });
 
@@ -69,6 +71,7 @@ class ShipperBatchItemModel {
       finalAmount: (json['finalAmount'] as num?)?.toDouble() ?? 0.0,
       status: json['status'] as String? ?? 'READY',
       pickupPin: json['pickupPin'] as String?,
+      pickupQrCode: json['pickupQrCode'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
           : DateTime.now(),
