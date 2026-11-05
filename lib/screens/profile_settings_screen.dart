@@ -190,6 +190,7 @@ class ProfileSettingsScreen extends StatelessWidget {
     BuildContext context,
     ProfileDemoViewModel demoVm,
   ) {
+    final remoteConfig = context.watch<RemoteConfigService>();
     return Material(
       color: AppColors.surface,
       borderRadius: AppRadius.roundedMd,
