@@ -67,7 +67,17 @@ class CartCheckoutViewModel extends ChangeNotifier {
       _items.fold(0.0, (sum, element) => sum + element.totalPrice);
 
   /// Phí giao hàng gom đơn KTX theo BR-ORD-03 (5.000đ khi đặt theo ca gom đơn)
-  double get deliveryFee => _items.isEmpty ? 0.0 : 5000.0;
+  double _customDeliveryFee = 5000.0;
+
+  /// Cập nhật phí giao hàng gom đơn từ Firebase Remote Config
+  void updateDeliveryFee(double fee) {
+    if (_customDeliveryFee != fee) {
+      _customDeliveryFee = fee;
+      notifyListeners();
+    }
+  }
+
+  double get deliveryFee => _items.isEmpty ? 0.0 : _customDeliveryFee;
 
   double get finalAmount => subtotalAmount + deliveryFee;
 

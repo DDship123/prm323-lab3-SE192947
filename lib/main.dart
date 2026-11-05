@@ -6,6 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+
+import 'firebase/analytics_service.dart';
+import 'firebase/crashlytics_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase/fcm_service.dart';
+import 'firebase/remote_config_service.dart';
 import 'firebase/cloud_storage_service.dart';
 import 'firebase_options.dart';
 import 'models/order_model.dart';
@@ -54,6 +60,8 @@ import 'widgets/role_selection_sheet.dart';
 import 'services/server_config_service.dart';
 import 'widgets/server_config_dialog.dart';
 
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
@@ -72,6 +80,9 @@ void main() async {
 
   // Cấu hình bắt lỗi Fatal và chuyển tiếp tới Firebase Crashlytics (chỉ áp dụng Native Android/iOS, Web không hỗ trợ Crashlytics)
   if (!kIsWeb) {
+    try {
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    } catch (_) {}
     FlutterError.onError = (errorDetails) {
       FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
     };
@@ -95,17 +106,28 @@ void main() async {
         : null,
   );
 
-  runApp(const AppBootstrap());
+  final remoteConfigService = RemoteConfigService();
+  await remoteConfigService.initialize();
+
+  runApp(AppBootstrap(remoteConfigService: remoteConfigService));
 }
 
 /// Khởi tạo toàn bộ Dependency Injection (Services & ViewModels) qua MultiProvider
 class AppBootstrap extends StatelessWidget {
-  const AppBootstrap({super.key});
+  final RemoteConfigService remoteConfigService;
+
+  const AppBootstrap({super.key, required this.remoteConfigService});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider<RemoteConfigService>.value(
+          value: remoteConfigService,
+        ),
+        Provider<AnalyticsService>(create: (_) => AnalyticsService()),
+        Provider<CrashlyticsService>(create: (_) => CrashlyticsService()),
+        Provider<FcmService>(create: (_) => FcmService()),
         Provider<AuthApiService>(create: (_) => AuthApiService()),
         Provider<StoreService>(create: (_) => StoreService()),
         Provider<OrderService>(create: (_) => OrderService()),
@@ -119,9 +141,8 @@ class AppBootstrap extends StatelessWidget {
         Provider<AdminApiService>(create: (_) => AdminApiService()),
         Provider<CrashlyticsService>(create: (_) => CrashlyticsService()),
         ChangeNotifierProvider<AuthViewModel>(
-          create: (ctx) => AuthViewModel(
-            authApiService: ctx.read<AuthApiService>(),
-          ),
+          create: (ctx) =>
+              AuthViewModel(authApiService: ctx.read<AuthApiService>()),
         ),
         ChangeNotifierProvider<HomeViewModel>(
           create: (ctx) => HomeViewModel(
@@ -142,9 +163,8 @@ class AppBootstrap extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider<OrderTrackingViewModel>(
-          create: (ctx) => OrderTrackingViewModel(
-            orderService: ctx.read<OrderService>(),
-          ),
+          create: (ctx) =>
+              OrderTrackingViewModel(orderService: ctx.read<OrderService>()),
         ),
         ChangeNotifierProvider<DisputeViewModel>(
           create: (ctx) => DisputeViewModel(
@@ -153,9 +173,8 @@ class AppBootstrap extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider<ReviewViewModel>(
-          create: (ctx) => ReviewViewModel(
-            reviewService: ctx.read<ReviewService>(),
-          ),
+          create: (ctx) =>
+              ReviewViewModel(reviewService: ctx.read<ReviewService>()),
         ),
         ChangeNotifierProvider<ProfileDemoViewModel>(
           create: (ctx) => ProfileDemoViewModel(
@@ -244,7 +263,7 @@ class _AuthGateState extends State<AuthGate> {
 
         final firebaseUser = snapshot.data;
         if (firebaseUser != null || _manualDemoSignedIn) {
-          // Điều hướng màn hình giao diện theo đúng vai trò đang chọn
+          // Điều hướng màn hình giao diện theo đúng vai trò đang chọn (4 Roles)
           switch (_activeRole) {
             case UserAppRole.storeOwner:
               return RestaurantShellScreen(
@@ -414,31 +433,39 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       User? user;
       try {
-        final GoogleSignInAccount account =
-            await GoogleSignIn.instance.authenticate();
+        final GoogleSignInAccount account = await GoogleSignIn.instance
+            .authenticate();
         final GoogleSignInAuthentication googleAuth = account.authentication;
         final AuthCredential credential = GoogleAuthProvider.credential(
           idToken: googleAuth.idToken,
         );
-        final userCred =
-            await FirebaseAuth.instance.signInWithCredential(credential);
+        final userCred = await FirebaseAuth.instance.signInWithCredential(
+          credential,
+        );
         user = userCred.user;
       } on GoogleSignInException catch (e) {
         if (e.code == GoogleSignInExceptionCode.canceled) return;
         final provider = GoogleAuthProvider();
         provider.setCustomParameters({'prompt': 'select_account'});
-        final userCred =
-            await FirebaseAuth.instance.signInWithProvider(provider);
+        final userCred = await FirebaseAuth.instance.signInWithProvider(
+          provider,
+        );
         user = userCred.user;
       }
 
       if (user != null && mounted) {
+        context.read<AnalyticsService>().logSignIn(method: 'google');
         await context.read<AuthViewModel>().syncFirebaseUser(
-              uid: user.uid,
-              email: user.email ?? 'student@fpt.edu.vn',
-              displayName: user.displayName ?? 'Sinh viên KTX',
-              photoUrl: user.photoURL,
-            );
+          uid: user.uid,
+          email: user.email ?? 'student@fpt.edu.vn',
+          displayName: user.displayName ?? 'Sinh viên KTX',
+          photoUrl: user.photoURL,
+        );
+        context.read<CrashlyticsService>().setUserContext(
+          userId: user.uid,
+          campusZone: 'KTX_KHU_B',
+          currentScreen: 'S1_Home',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -826,16 +853,98 @@ class _MainShellScreenState extends State<MainShellScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupFcmListeners();
       final user = widget.firebaseUser;
       if (user != null) {
         context.read<AuthViewModel>().syncFirebaseUser(
-              uid: user.uid,
-              email: user.email ?? 'student@fpt.edu.vn',
-              displayName: user.displayName ?? 'Sinh viên KTX',
-              photoUrl: user.photoURL,
-            );
+          uid: user.uid,
+          email: user.email ?? 'student@fpt.edu.vn',
+          displayName: user.displayName ?? 'Sinh viên KTX',
+          photoUrl: user.photoURL,
+        );
+        context.read<CrashlyticsService>().setUserContext(
+          userId: user.uid,
+          campusZone: 'KTX_KHU_B',
+          currentScreen: 'S1_Home',
+        );
       }
     });
+  }
+
+  Future<void> _setupFcmListeners() async {
+    final fcmService = context.read<FcmService>();
+    final demoVm = context.read<ProfileDemoViewModel>();
+
+    final token = await fcmService.initialize(
+      onMessageReceived: (RemoteMessage message, String appState) {
+        if (!mounted) return;
+        final title =
+            message.notification?.title ?? 'Thông báo đơn hàng KTX';
+        final body = message.notification?.body ??
+            'Bạn có cập nhật mới về đơn hàng gom đơn KTX.';
+        final type = (message.data['type'] as String?) ?? 'ORDER_STATUS';
+        final orderId = message.data['order_id']?.toString() ?? '101';
+
+        final savedNoti = demoVm.recordIncomingFcmMessage(
+          title: title,
+          body: body,
+          type: type,
+          appState: appState,
+          dataPayload: orderId,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('🔔 [$appState] $title\n$body'),
+            duration: const Duration(seconds: 6),
+            behavior: SnackBarBehavior.floating,
+            action: SnackBarAction(
+              label: 'Xem ngay',
+              textColor: Colors.amberAccent,
+              onPressed: () {
+                demoVm.markAsRead(savedNoti.id);
+                NotificationBoardScreen.navigateByNotificationType(
+                  context,
+                  type: type,
+                  dataPayload: orderId,
+                );
+              },
+            ),
+          ),
+        );
+      },
+      onNotificationTapped: (RemoteMessage message, String appState) {
+        if (!mounted) return;
+        final title =
+            message.notification?.title ?? 'Thông báo đơn hàng KTX';
+        final body = message.notification?.body ??
+            'Đã mở ứng dụng từ thông báo đẩy FCM.';
+        final type = (message.data['type'] as String?) ?? 'ORDER_STATUS';
+        final orderId = message.data['order_id']?.toString() ?? '101';
+
+        final savedNoti = demoVm.recordIncomingFcmMessage(
+          title: title,
+          body: body,
+          type: type,
+          appState: appState,
+          dataPayload: orderId,
+        );
+        demoVm.markAsRead(savedNoti.id);
+
+        NotificationBoardScreen.navigateByNotificationType(
+          context,
+          type: type,
+          dataPayload: orderId,
+        );
+      },
+    );
+
+    if (mounted) {
+      demoVm.updateFcmMetadata(
+        token: token,
+        permissionStatus: fcmService.permissionStatus,
+      );
+    }
   }
 
   void _openCheckout() {
@@ -855,11 +964,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
   }
 
   void _openDispute() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const DisputeRefundScreen(),
-      ),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const DisputeRefundScreen()));
   }
 
   @override
@@ -893,10 +999,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
     ];
 
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: pages),
       bottomNavigationBar: KtxBottomNavBar(
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),

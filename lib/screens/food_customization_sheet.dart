@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../firebase/analytics_service.dart';
 import '../models/menu_item_model.dart';
 import '../models/order_model.dart';
 import '../theme/app_colors.dart';
@@ -291,6 +292,12 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                 label: 'Thêm vào giỏ gom đơn • ${_formatCurrency(_totalPrice)}',
                 icon: Icons.add_shopping_cart_rounded,
                 onPressed: () {
+                  context.read<AnalyticsService>().logAddToCart(
+                        menuItemId: widget.menuItem.id,
+                        storeId: widget.storeId,
+                        quantity: _quantity,
+                        unitPrice: widget.menuItem.basePrice,
+                      );
                   context.read<CartCheckoutViewModel>().addItemToCart(
                         storeId: widget.storeId,
                         storeName: widget.storeName,

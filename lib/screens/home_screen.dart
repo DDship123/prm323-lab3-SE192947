@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../firebase/analytics_service.dart';
+import '../firebase/remote_config_service.dart';
 import '../models/store_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -107,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final homeVm = context.watch<HomeViewModel>();
     final cartVm = context.watch<CartCheckoutViewModel>();
     final demoVm = context.watch<ProfileDemoViewModel>();
+    final remoteConfig = context.watch<RemoteConfigService>();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -137,11 +140,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: homeVm.loadHomeData,
+        onRefresh: () async {
+          await Future.wait([
+            homeVm.loadHomeData(),
+            context.read<RemoteConfigService>().fetchAndActivate(),
+          ]);
+        },
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
-            if (demoVm.remoteConfigFreeShipBanner) _buildPromoBanner(),
+            if (remoteConfig.promoBannerEnabled)
+              _buildPromoBanner(remoteConfig.promoBannerText),
             const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
@@ -165,7 +174,15 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: AppRadius.roundedMd,
                         ),
                       ),
-                      onPressed: () => homeVm.searchStores(_searchCtrl.text),
+                      onPressed: () {
+                        final term = _searchCtrl.text;
+                        homeVm.searchStores(term);
+                        context.read<AnalyticsService>().logSearch(
+                              searchTerm: term.isEmpty ? 'ALL' : term,
+                              campusZone: homeVm.selectedCampusZone,
+                              resultCount: 3,
+                            );
+                      },
                       child: const Text('Tìm'),
                     ),
                   ),
@@ -229,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPromoBanner() {
+  Widget _buildPromoBanner(String bannerText) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -259,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Đồng giá ship 5.000đ giao thẳng tới Trụ A1–A2 (Cổng B2) & Khu A.',
+                  bannerText,
                   style: AppTypography.bodySmall.copyWith(
                     color: Colors.white.withValues(alpha: 0.9),
                   ),
@@ -304,6 +321,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     rating: store.ratingAvg,
                     ratingCount: store.ratingCount,
                     onTap: () {
+                      context.read<AnalyticsService>().logViewStoreDetail(
+                            storeId: store.id,
+                            storeCategory: store.campusZoneLabel,
+                            ratingAvg: store.ratingAvg,
+                          );
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => StoreDetailScreen(

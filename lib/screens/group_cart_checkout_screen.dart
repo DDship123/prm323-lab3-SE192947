@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../firebase/analytics_service.dart';
+import '../firebase/remote_config_service.dart';
 import '../models/order_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -33,6 +35,16 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
   final _noteCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final remoteFee =
+          context.read<RemoteConfigService>().groupShipFee.toDouble();
+      context.read<CartCheckoutViewModel>().updateDeliveryFee(remoteFee);
+    });
+  }
+
+  @override
   void dispose() {
     _noteCtrl.dispose();
     super.dispose();
@@ -44,6 +56,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
   }
 
   Future<void> _handlePlaceOrder(CartCheckoutViewModel cartVm) async {
+    context.read<AnalyticsService>().logBeginCheckout(
+          itemCount: cartVm.totalItemCount,
+          subtotalAmount: cartVm.subtotalAmount,
+          shippingFee: cartVm.deliveryFee,
+        );
     cartVm.setNote(_noteCtrl.text);
     final created = await cartVm.placeOrder();
     if (!mounted || created == null) return;

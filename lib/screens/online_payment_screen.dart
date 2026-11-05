@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../firebase/analytics_service.dart';
+import '../services/crashlytics_service.dart';
 import '../models/order_model.dart';
 import '../services/store_bank_service.dart';
 import '../theme/app_colors.dart';
@@ -44,8 +46,27 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
 
   Future<void> _handleConfirmTransfer(CartCheckoutViewModel vm) async {
     final ok = await vm.confirmVietQrPaid(widget.order.id);
-    if (!mounted || !ok) return;
+    if (!mounted) return;
+    if (!ok) {
+      context.read<CrashlyticsService>().recordNonFatalError(
+        Exception('VietQrVerificationFailedException: Không tìm thấy giao dịch đơn #${widget.order.id} thất bại'),
+        StackTrace.current,
+        reason: 'Khách hàng bấm Xác nhận nhưng hệ thống ngân hàng chưa ghi nhận tiền về',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Chưa ghi nhận chuyển khoản. Vui lòng thử lại sau giây lát hoặc chuyển sang COD.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
 
+    context.read<AnalyticsService>().logPurchase(
+      orderId: widget.order.id.toString(),
+      totalValue: widget.order.finalAmount,
+      paymentMethod: 'VIETQR',
+    );
     await KtxDialog.showOrderSuccess(
       context,
       orderCode: widget.order.orderCode,
@@ -58,7 +79,21 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
 
   Future<void> _handleSwitchToCod(CartCheckoutViewModel vm) async {
     final ok = await vm.switchOrderToCod(widget.order.id);
-    if (!mounted || !ok) return;
+    if (!mounted) return;
+    if (!ok) {
+      context.read<CrashlyticsService>().recordNonFatalError(
+        Exception('SwitchToCodFailedException: Chuyển sang COD đơn #${widget.order.id} thất bại'),
+        StackTrace.current,
+        reason: 'Không thể cập nhật phương thức thanh toán sang tiền mặt COD',
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Chuyển đổi sang COD thất bại. Vui lòng thử lại.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -68,6 +103,11 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
       ),
     );
 
+    context.read<AnalyticsService>().logPurchase(
+      orderId: widget.order.id.toString(),
+      totalValue: widget.order.finalAmount,
+      paymentMethod: 'VIETQR',
+    );
     await KtxDialog.showOrderSuccess(
       context,
       orderCode: widget.order.orderCode,
@@ -141,8 +181,7 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
                           ),
                         ),
                       );
-                    },
-                  ),
+                    },                  ),
                   const SizedBox(height: AppSpacing.md),
                   _buildInfoRow(
                     'Ngân hàng thụ hưởng',

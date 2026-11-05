@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../firebase/analytics_service.dart';
 import '../models/order_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -137,6 +138,15 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
 
     if (mounted) {
       if (success) {
+        context.read<AnalyticsService>().logUploadDisputeEvidence(
+              orderId: vm.selectedOrder != null
+                  ? 'ORD_${vm.selectedOrder!.id}'
+                  : 'ORD_DEMO',
+              reasonCode: vm.selectedReason,
+              refundRequested:
+                  double.tryParse(vm.refundAmountController.text) ?? 0.0,
+              uploadStatus: 'failed',
+            );
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Gửi khiếu nại thành công! Ảnh bằng chứng đã được lưu vào Cloud Storage.'),
@@ -151,7 +161,16 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
       } else {
         if (vm.submitState is StateError) {
           final err = (vm.submitState as StateError).errorMessage;
-          ScaffoldMessenger.of(context).showSnackBar(
+          context.read<AnalyticsService>().logUploadDisputeEvidence(
+              orderId: vm.selectedOrder != null
+                  ? 'ORD_${vm.selectedOrder!.id}'
+                  : 'ORD_DEMO',
+              reasonCode: vm.selectedReason,
+              refundRequested:
+                  double.tryParse(vm.refundAmountController.text) ?? 0.0,
+              uploadStatus: 'failed',
+            );
+        ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(err), backgroundColor: AppColors.error),
           );
         }

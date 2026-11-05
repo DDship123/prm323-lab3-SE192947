@@ -13,17 +13,47 @@ class ProfileDemoViewModel extends ChangeNotifier {
       const StateLoading();
   int _unreadCount = 0;
 
+  /// Danh sách thông báo FCM đã nhận được lưu trữ trong ứng dụng
+  final List<NotificationModel> _inAppFcmNotifications = [
+    NotificationModel(
+      id: 9001,
+      userId: 1,
+      title: '🚚 Shipper đã tới Trụ A1–A2 (Cổng B2 KTX)',
+      body:
+          'Đơn gom #ORD-KTX-101 từ Cơm Tấm Phúc Lộc Thọ đã sẵn sàng giao. Nhấn để mở màn hình Theo dõi đơn & Mã QR nhận món (S6).',
+      type: 'ORDER_STATUS',
+      isRead: false,
+      dataPayload: '101',
+      createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
+    ),
+    NotificationModel(
+      id: 9002,
+      userId: 1,
+      title: '✅ Yêu cầu hoàn tiền khiếu nại đã được xử lý',
+      body:
+          'Khiếu nại thiếu món cho đơn #ORD-KTX-98 đã được duyệt hoàn 35.000đ. Nhấn để xem Lịch sử Khiếu nại (S8b).',
+      type: 'DISPUTE_UPDATE',
+      isRead: false,
+      dataPayload: '98',
+      createdAt: DateTime.now().subtract(const Duration(minutes: 20)),
+    ),
+  ];
+
   // Trạng thái Firebase Demo Area tại S13
   bool _remoteConfigFreeShipBanner = true;
-  int _remoteConfigMinGroupOrders = 5;
+  final int _remoteConfigMinGroupOrders = 5;
   String _lastCrashlyticsLog = 'Chưa có sự kiện lỗi nào được ghi nhận.';
   String _fcmStatusMessage = 'Đã đăng ký topic: ktx_group_orders';
+  String? _fcmToken;
+  String _fcmPermissionStatus = 'Đang kiểm tra...';
 
   ProfileDemoViewModel({
     required NotificationService notificationService,
     CrashlyticsService? crashlyticsService,
   })  : _notificationService = notificationService,
-        _crashlyticsService = crashlyticsService ?? CrashlyticsService();
+        _crashlyticsService = crashlyticsService ?? CrashlyticsService() {
+    _unreadCount = _inAppFcmNotifications.where((n) => !n.isRead).length;
+  }
 
   ScreenState<List<NotificationModel>> get notificationsState =>
       _notificationsState;
@@ -33,38 +63,118 @@ class ProfileDemoViewModel extends ChangeNotifier {
   String get lastCrashlyticsLog => _lastCrashlyticsLog;
   String get fcmStatusMessage => _fcmStatusMessage;
   CrashlyticsService get crashlyticsService => _crashlyticsService;
+  String? get fcmToken => _fcmToken;
+  String get fcmPermissionStatus => _fcmPermissionStatus;
 
-  /// API-019 & API-022: Tải danh sách thông báo và số lượng chưa đọc (S12)
+  /// Cập nhật thông tin khởi tạo từ FcmService
+  void updateFcmMetadata({String? token, required String permissionStatus}) {
+    _fcmToken = token;
+    _fcmPermissionStatus = permissionStatus;
+    _fcmStatusMessage =
+        'Quyền: $permissionStatus • Topic: ktx_group_orders';
+    notifyListeners();
+  }
+
+  /// Lưu thông báo FCM vừa nhận (Foreground / Background / Terminated) vào danh sách trong app
+  NotificationModel recordIncomingFcmMessage({
+    required String title,
+    required String body,
+    required String type,
+    required String appState,
+    String? dataPayload,
+  }) {
+    final newNoti = NotificationModel(
+      id: DateTime.now().millisecondsSinceEpoch,
+      userId: 1,
+      title: '[$appState] $title',
+      body: body,
+      type: type,
+      isRead: false,
+      dataPayload: dataPayload ?? '101',
+      createdAt: DateTime.now(),
+    );
+
+    _inAppFcmNotifications.insert(0, newNoti);
+    _fcmStatusMessage = '[$appState] Vừa nhận: "$title"';
+    _refreshMergedNotificationsState();
+    return newNoti;
+  }
+
+  void _refreshMergedNotificationsState([List<NotificationModel>? remoteList]) {
+    final currentRemote = remoteList ??
+        switch (_notificationsState) {
+          StateSuccess(:final data) => data
+              .where(
+                (item) => !_inAppFcmNotifications.any((f) => f.id == item.id),
+              )
+              .toList(),
+          _ => <NotificationModel>[],
+        };
+
+    final merged = [..._inAppFcmNotifications, ...currentRemote];
+    _unreadCount = merged.where((n) => !n.isRead).length;
+    if (merged.isEmpty) {
+      _notificationsState = const StateEmpty(
+        message: 'Bạn chưa có thông báo đơn hàng nào.',
+      );
+    } else {
+      _notificationsState = StateSuccess(merged);
+    }
+    notifyListeners();
+  }
+
+  /// API-019 & API-022: Tải danh sách thông báo và gộp cùng danh sách thông báo FCM đã nhận (S12)
   Future<void> loadNotifications() async {
     _notificationsState = const StateLoading();
     notifyListeners();
 
     try {
-      final list = await _notificationService.fetchNotifications();
-      _unreadCount = list.where((n) => !n.isRead).length;
-      if (list.isEmpty) {
-        _notificationsState = const StateEmpty(
-          message: 'Bạn chưa có thông báo đơn hàng nào.',
-        );
-      } else {
-        _notificationsState = StateSuccess(list);
-      }
+      final remoteList = await _notificationService.fetchNotifications();
+      _refreshMergedNotificationsState(remoteList);
     } catch (e) {
-      _notificationsState = StateError(
-        'Không thể tải thông báo: ${e.toString()}',
-      );
+      _refreshMergedNotificationsState(const []);
     }
-    notifyListeners();
   }
 
   /// API-020: Đánh dấu 1 thông báo đã đọc
   Future<void> markAsRead(int notificationId) async {
+    final localIdx =
+        _inAppFcmNotifications.indexWhere((n) => n.id == notificationId);
+    if (localIdx != -1) {
+      final old = _inAppFcmNotifications[localIdx];
+      _inAppFcmNotifications[localIdx] = NotificationModel(
+        id: old.id,
+        userId: old.userId,
+        title: old.title,
+        body: old.body,
+        type: old.type,
+        isRead: true,
+        dataPayload: old.dataPayload,
+        createdAt: old.createdAt,
+      );
+      _refreshMergedNotificationsState();
+      return;
+    }
+
     await _notificationService.markAsRead(notificationId);
     await loadNotifications();
   }
 
   /// API-021: Đánh dấu toàn bộ thông báo đã đọc
   Future<void> markAllAsRead() async {
+    for (int i = 0; i < _inAppFcmNotifications.length; i++) {
+      final old = _inAppFcmNotifications[i];
+      _inAppFcmNotifications[i] = NotificationModel(
+        id: old.id,
+        userId: old.userId,
+        title: old.title,
+        body: old.body,
+        type: old.type,
+        isRead: true,
+        dataPayload: old.dataPayload,
+        createdAt: old.createdAt,
+      );
+    }
     await _notificationService.markAllAsRead();
     await loadNotifications();
   }
@@ -83,7 +193,7 @@ class ProfileDemoViewModel extends ChangeNotifier {
       reason: 'Người dùng nhấn kiểm thử Non-Fatal lỗi thanh toán tại S13',
     );
     _lastCrashlyticsLog =
-        '[$now] Đã ghi nhận Handled Exception: SimulatedKtxPaymentTimeoutException lên Crashlytics.';
+        '[$now] Đã ghi nhận Handled Exception: HandledPaymentTimeoutException lên Crashlytics.';
     notifyListeners();
   }
 
@@ -94,11 +204,33 @@ class ProfileDemoViewModel extends ChangeNotifier {
     );
   }
 
-  /// Giả lập nhận FCM Push Notification mới
-  void simulateIncomingFcmPush() {
+  /// Giả lập nhận FCM Push Notification mới và lưu vào danh sách S12
+  NotificationModel simulateIncomingFcmPush({
+    String type = 'ORDER_STATUS',
+    String appState = 'FOREGROUND',
+  }) {
     _fcmStatusMessage =
         'FCM Push vừa nhận: "Shipper đã tới Cổng B2 KTX! Mở mã QR tại S7 để nhận món."';
     _unreadCount += 1;
     notifyListeners();
+    if (type == 'DISPUTE_UPDATE') {
+      return recordIncomingFcmMessage(
+        title: 'Cập nhật khiếu nại đơn hàng KTX',
+        body:
+            'Quán đã phản hồi yêu cầu hoàn tiền của bạn. Nhấn vào thông báo để mở Lịch sử Khiếu nại (S8b).',
+        type: 'DISPUTE_UPDATE',
+        appState: appState,
+        dataPayload: '102',
+      );
+    }
+    return recordIncomingFcmMessage(
+      title: 'Shipper đã tới Cổng B2 KTX!',
+      body:
+          'Món ăn ca gom 11:30 đã tới điểm hẹn Trụ A1–A2. Nhấn vào thông báo để xem Tiến trình & Mã QR nhận món (S6).',
+      type: 'ORDER_STATUS',
+      appState: appState,
+      dataPayload: '101',
+    );
+  }
   }
 }
