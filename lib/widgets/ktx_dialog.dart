@@ -15,6 +15,7 @@ class KtxDialog extends StatelessWidget {
   final VoidCallback? onCancel;
   final bool isDanger;
   final IconData? icon;
+  final Widget? extraButton;
 
   const KtxDialog({
     super.key,
@@ -26,6 +27,7 @@ class KtxDialog extends StatelessWidget {
     this.onCancel,
     this.isDanger = false,
     this.icon,
+    this.extraButton,
   });
 
   /// Hiển thị hộp thoại đặt đơn hàng thành công (S5_OrderSuccessDialog)
@@ -33,6 +35,7 @@ class KtxDialog extends StatelessWidget {
     BuildContext context, {
     required String orderCode,
     required VoidCallback onTrackOrder,
+    VoidCallback? onSkipToPickup,
   }) {
     return showDialog(
       context: context,
@@ -40,10 +43,21 @@ class KtxDialog extends StatelessWidget {
       builder: (_) => KtxDialog(
         title: 'Đặt đơn thành công!',
         message:
-            'Đơn hàng $orderCode của bạn đã được ghi nhận vào ca gom đơn KTX. Bạn có thể theo dõi tiến trình và lấy mã QR nhận hàng ngay.',
+            'Đơn hàng $orderCode của bạn đã được ghi nhận vào ca gom đơn KTX. Bạn có thể theo dõi tiến trình hoặc lấy mã QR nhận hàng ngay.',
         confirmLabel: 'Theo dõi đơn hàng',
         icon: Icons.check_circle_rounded,
         onConfirm: onTrackOrder,
+        extraButton: onSkipToPickup != null
+            ? Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: KtxButton(
+                  label: '🚀 Tới thẳng Nhận hàng (Mở QR Code)',
+                  variant: KtxButtonVariant.secondary,
+                  icon: Icons.qr_code_scanner_rounded,
+                  onPressed: onSkipToPickup,
+                ),
+              )
+            : null,
       ),
     );
   }
@@ -141,6 +155,7 @@ class KtxDialog extends StatelessWidget {
                   ),
                 ],
               ),
+              if (extraButton != null) extraButton!,
             ],
           ),
         ),

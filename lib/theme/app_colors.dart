@@ -14,15 +14,18 @@ class AppColors {
   static const Color surface = Colors.white;
   static const Color surfaceVariant = Color(0xFFF1F3F4);
 
-  // Màu văn bản (Text Colors)
-  static const Color textPrimary = Color(0xFF212121);
+  // Màu văn bản (Text Colors theo Figma Design System)
+  static const Color textPrimary = Color(0xFF111111);
   static const Color textSecondary = Color(0xFF757575);
   static const Color textHint = Color(0xFF9E9E9E);
 
-  // Màu trạng thái (Feedback Colors)
+  // Màu trạng thái (Feedback Colors theo Figma Design System)
   static const Color success = Color(0xFF2E7D32);
+  static const Color successLight = Color(0xFFE8F5E9);
   static const Color warning = Color(0xFFF57C00);
-  static const Color error = Color(0xFFD32F2F);
+  static const Color warningLight = Color(0xFFFFF3E0);
+  static const Color error = Color(0xFFF44336); // Error Red #F44336
+  static const Color errorLight = Color(0xFFFFEBEE);
   static const Color info = Color(0xFF1976D2);
 
   // Màu viền và ngăn cách

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../models/order_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -134,33 +135,46 @@ class PickupQrCodeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Container(
-                    width: 220,
-                    height: 220,
-                    padding: const EdgeInsets.all(AppSpacing.md),
+                    width: 230,
+                    height: 230,
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: AppRadius.roundedMd,
-                      border: Border.all(color: AppColors.textPrimary, width: 2),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.qr_code_scanner_rounded,
-                          size: 136,
-                          color: AppColors.textPrimary,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          qrCode,
-                          style: AppTypography.bodySmall.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      border: Border.all(color: AppColors.primary, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
                       ],
+                    ),
+                    child: Center(
+                      child: QrImageView(
+                        data: qrCode,
+                        version: QrVersions.auto,
+                        size: 200.0,
+                        backgroundColor: Colors.white,
+                        errorCorrectionLevel: QrErrorCorrectLevel.M,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceVariant,
+                      borderRadius: AppRadius.roundedSm,
+                    ),
+                    child: Text(
+                      'Mã QR đối soát: $qrCode',
+                      style: AppTypography.caption.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),

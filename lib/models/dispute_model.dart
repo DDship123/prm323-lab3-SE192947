@@ -47,17 +47,28 @@ class DisputeModel {
   });
 
   factory DisputeModel.fromJson(Map<String, dynamic> json) {
+    String evUrl = json['evidenceImageUrl'] as String? ?? '';
+    if (evUrl.isEmpty && json['evidenceImages'] is List && (json['evidenceImages'] as List).isNotEmpty) {
+      evUrl = (json['evidenceImages'] as List).first.toString();
+    }
+    final reqAmt = (json['requestedRefundAmount'] as num?)?.toDouble() ??
+        (json['refundRequestedAmount'] as num?)?.toDouble() ??
+        0.0;
+    final appAmt = (json['approvedRefundAmount'] as num?)?.toDouble() ??
+        (json['refundApprovedAmount'] as num?)?.toDouble();
+    final note = (json['adminNote'] as String?) ?? (json['resolutionNote'] as String?);
+
     return DisputeModel(
       id: json['id'] as int? ?? 0,
       orderId: json['orderId'] as int? ?? 0,
       storeName: json['storeName'] as String?,
-      reason: json['reason'] as String? ?? 'Sự cố món ăn',
+      reason: json['reason']?.toString() ?? 'Sự cố món ăn',
       description: json['description'] as String? ?? '',
-      evidenceImageUrl: json['evidenceImageUrl'] as String? ?? '',
-      requestedRefundAmount: (json['requestedRefundAmount'] as num?)?.toDouble() ?? 0.0,
-      approvedRefundAmount: (json['approvedRefundAmount'] as num?)?.toDouble(),
+      evidenceImageUrl: evUrl,
+      requestedRefundAmount: reqAmt,
+      approvedRefundAmount: appAmt,
       status: DisputeStatus.fromCode(json['status'] as String?),
-      adminNote: json['adminNote'] as String?,
+      adminNote: note,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
           : DateTime.now(),
@@ -65,11 +76,15 @@ class DisputeModel {
   }
 
   Map<String, dynamic> toJson() {
+    final images = evidenceImageUrl.trim().isNotEmpty ? [evidenceImageUrl.trim()] : <String>[];
+
     return {
       'orderId': orderId,
       'reason': reason,
       'description': description,
+      'evidenceImages': images,
       'evidenceImageUrl': evidenceImageUrl,
+      'refundRequestedAmount': requestedRefundAmount,
       'requestedRefundAmount': requestedRefundAmount,
     };
   }
@@ -92,11 +107,15 @@ class CreateDisputeDto {
   });
 
   Map<String, dynamic> toJson() {
+    final images = evidenceImageUrl.trim().isNotEmpty ? [evidenceImageUrl.trim()] : <String>[];
+
     return {
       'orderId': orderId,
       'reason': reason,
       'description': description,
+      'evidenceImages': images,
       'evidenceImageUrl': evidenceImageUrl,
+      'refundRequestedAmount': requestedRefundAmount,
       'requestedRefundAmount': requestedRefundAmount,
     };
   }

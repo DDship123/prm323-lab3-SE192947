@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-
+import 'package:qr_flutter/qr_flutter.dart';
 import '../firebase/analytics_service.dart';
-import '../firebase/crashlytics_service.dart';
+import '../services/crashlytics_service.dart';
 import '../models/order_model.dart';
+import '../services/order_service.dart';
+import '../services/store_bank_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -13,6 +15,7 @@ import '../viewmodels/cart_checkout_vm.dart';
 import '../widgets/ktx_app_bar.dart';
 import '../widgets/ktx_button.dart';
 import '../widgets/ktx_dialog.dart';
+import 'pickup_qr_code_screen.dart';
 
 /// Màn hình S5: Thanh toán VietQR Napas 247 & Cơ chế Dự phòng Chuyển sang COD (API-012, API-013)
 class OnlinePaymentScreen extends StatefulWidget {
@@ -73,7 +76,41 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
         Navigator.of(context).pop();
         widget.onPaymentDone(widget.order);
       },
+      onSkipToPickup: () => _skipToQr(widget.order),
     );
+  }
+
+  Future<void> _skipToQr(OrderDetailModel order) async {
+    Navigator.of(context).pop();
+    try {
+      await OrderService().updateOrderStatus(
+        orderId: order.id,
+        newStatus: 'DELIVERING',
+      );
+    } catch (_) {}
+    final delivering = order.copyWith(status: 'DELIVERING', paymentStatus: 'PAID');
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => PickupQrCodeScreen(order: delivering)),
+      );
+    }
+  }
+
+  Future<void> _handleDirectSkip(CartCheckoutViewModel vm) async {
+    await vm.confirmVietQrPaid(widget.order.id);
+    if (!mounted) return;
+    try {
+      await OrderService().updateOrderStatus(
+        orderId: widget.order.id,
+        newStatus: 'DELIVERING',
+      );
+    } catch (_) {}
+    final delivering = widget.order.copyWith(status: 'DELIVERING', paymentStatus: 'PAID');
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => PickupQrCodeScreen(order: delivering)),
+      );
+    }
   }
 
   Future<void> _handleSwitchToCod(CartCheckoutViewModel vm) async {
@@ -114,6 +151,7 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
         Navigator.of(context).pop();
         widget.onPaymentDone(widget.order);
       },
+      onSkipToPickup: () => _skipToQr(widget.order),
     );
   }
 
@@ -154,38 +192,47 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Container(
-                    width: 240,
-                    height: 240,
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: AppRadius.roundedMd,
-                      border: Border.all(color: AppColors.primary, width: 2),
-                    ),
-                    child: payment?.qrUrl != null
-                        ? Image.network(
-                            payment!.qrUrl!,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, _, _) =>
-                                _buildFallbackQrBox(transferContent),
-                          )
-                        : _buildFallbackQrBox(transferContent),
-                  ),
+                  Builder(
+                    builder: (context) {
+                      final bankService = StoreBankService();
+                      final qrPayload = bankService.getQrPaymentPayload(
+                        amount: widget.order.finalAmount,
+                        transferContent: transferContent,
+                      );
+                      return Container(
+                        width: 240,
+                        height: 240,
+                        padding: const EdgeInsets.all(AppSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: AppRadius.roundedMd,
+                          border: Border.all(color: AppColors.primary, width: 2),
+                        ),
+                        child: Center(
+                          child: QrImageView(
+                            data: qrPayload,
+                            version: QrVersions.auto,
+                            size: 210.0,
+                            backgroundColor: Colors.white,
+                            errorCorrectionLevel: QrErrorCorrectLevel.M,
+                          ),
+                        ),
+                      );
+                    },                  ),
                   const SizedBox(height: AppSpacing.md),
                   _buildInfoRow(
                     'Ngân hàng thụ hưởng',
-                    payment?.bankName ?? 'MBBank (970422)',
+                    StoreBankService().bankName,
                   ),
                   const Divider(),
                   _buildInfoRow(
                     'Số tài khoản',
-                    payment?.accountNumber ?? '0987654321',
+                    StoreBankService().accountNumber,
                   ),
                   const Divider(),
                   _buildInfoRow(
                     'Chủ tài khoản',
-                    payment?.accountName ?? 'KTX FOOD ORDERING',
+                    StoreBankService().accountName,
                   ),
                   const Divider(),
                   _buildInfoRow(
@@ -209,7 +256,15 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
               isLoading: vm.isSubmitting,
               onPressed: () => _handleConfirmTransfer(vm),
             ),
-            const SizedBox(height: AppSpacing.sm + 4),
+            const SizedBox(height: AppSpacing.sm),
+            KtxButton(
+              label: '🚀 Giả lập thanh toán & Nhận hàng ngay (Mở QR)',
+              variant: KtxButtonVariant.secondary,
+              icon: Icons.rocket_launch_rounded,
+              isLoading: vm.isSubmitting,
+              onPressed: () => _handleDirectSkip(vm),
+            ),
+            const SizedBox(height: AppSpacing.sm),
             KtxButton(
               label: 'App ngân hàng lỗi? Đổi sang Tiền mặt (COD)',
               variant: KtxButtonVariant.outline,
@@ -223,25 +278,7 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
     );
   }
 
-  Widget _buildFallbackQrBox(String content) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Icon(
-          Icons.qr_code_2_rounded,
-          size: 140,
-          color: AppColors.textPrimary,
-        ),
-        Text(
-          content,
-          style: AppTypography.bodyMedium.copyWith(
-            fontWeight: FontWeight.bold,
-            color: AppColors.primary,
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildInfoRow(String label, String value, {bool highlight = false}) {
     return Padding(

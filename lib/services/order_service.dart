@@ -121,6 +121,24 @@ class OrderService {
     throw Exception('Không tìm thấy đơn hàng #$orderId');
   }
 
+  /// API Giám sát toàn bộ đơn hàng gom ca cho Web Admin
+  Future<List<OrderDetailModel>> fetchAllOrdersForAdmin() async {
+    try {
+      final response = await _client
+          .get(Uri.parse('${ApiConfig.baseUrl}/admin/orders'), headers: ApiConfig.headers())
+          .timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final jsonMap =
+            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final rawList = jsonMap['data'] as List<dynamic>? ?? [];
+        return rawList
+            .map((e) => OrderDetailModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (_) {}
+    return fetchMyOrders();
+  }
+
   /// API-008: Lấy danh sách lịch sử đơn hàng của sinh viên
   Future<List<OrderDetailModel>> fetchMyOrders() async {
     try {

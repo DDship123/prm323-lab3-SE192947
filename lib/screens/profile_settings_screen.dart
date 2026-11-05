@@ -10,6 +10,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import '../viewmodels/auth_vm.dart';
 import '../viewmodels/profile_demo_vm.dart';
+import '../widgets/crash_confirm_dialog.dart';
 import '../widgets/ktx_app_bar.dart';
 import '../widgets/ktx_button.dart';
 import 'dispute_history_screen.dart';
@@ -23,6 +24,7 @@ class ProfileSettingsScreen extends StatelessWidget {
   final String uid;
   final String? photoUrl;
   final VoidCallback onSignOut;
+  final VoidCallback? onSwitchRole;
 
   const ProfileSettingsScreen({
     super.key,
@@ -31,13 +33,13 @@ class ProfileSettingsScreen extends StatelessWidget {
     required this.uid,
     this.photoUrl,
     required this.onSignOut,
+    this.onSwitchRole,
   });
 
   @override
   Widget build(BuildContext context) {
     final authVm = context.watch<AuthViewModel>();
     final demoVm = context.watch<ProfileDemoViewModel>();
-    final remoteConfig = context.watch<RemoteConfigService>();
     final profile = authVm.currentUser;
 
     return Scaffold(
@@ -99,7 +101,16 @@ class ProfileSettingsScreen extends StatelessWidget {
           _buildDisputeCard(context),
           const SizedBox(height: AppSpacing.md),
           _buildFirebaseDemoCard(context, demoVm),
-          const SizedBox(height: AppSpacing.lg),
+          if (onSwitchRole != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            KtxButton(
+              label: 'Đổi vai trò người dùng (Demo)',
+              variant: KtxButtonVariant.outline,
+              icon: Icons.swap_horiz_rounded,
+              onPressed: onSwitchRole,
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
           KtxButton(
             label: 'Đăng xuất tài khoản',
             variant: KtxButtonVariant.danger,
@@ -179,14 +190,17 @@ class ProfileSettingsScreen extends StatelessWidget {
     BuildContext context,
     ProfileDemoViewModel demoVm,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.roundedMd,
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
+    final remoteConfig = context.watch<RemoteConfigService>();
+    return Material(
+      color: AppColors.surface,
+      borderRadius: AppRadius.roundedMd,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.roundedMd,
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -380,7 +394,7 @@ class ProfileSettingsScreen extends StatelessWidget {
             contentPadding: EdgeInsets.zero,
             leading: const Icon(
               Icons.bug_report_outlined,
-              color: AppColors.error,
+              color: AppColors.warning,
             ),
             title: const Text('Firebase Crashlytics Non-Fatal Log'),
             subtitle: Text(demoVm.lastCrashlyticsLog),
@@ -404,25 +418,51 @@ class ProfileSettingsScreen extends StatelessWidget {
               child: const Text('Ghi Log'),
             ),
           ),
-          const Divider(),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(
-              Icons.dangerous_outlined,
-              color: Colors.deepOrange,
+          const SizedBox(height: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
             ),
-            title: const Text('Firebase Crashlytics Fatal Crash (Test)'),
-            subtitle: const Text('Kích hoạt lỗi Crash thử nghiệm (văng app) để kiểm tra Dashboard'),
-            trailing: FilledButton.tonal(
-              style: FilledButton.styleFrom(backgroundColor: Colors.red.shade100),
-              onPressed: () {
-                context.read<CrashlyticsService>().triggerTestCrash();
-              },
-              child: const Text('Crash App', style: TextStyle(color: Colors.red)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.flash_on_rounded, color: AppColors.error),
+                    const SizedBox(width: AppSpacing.xs),
+                    Expanded(
+                      child: Text(
+                        'Demo Crashlytics Fatal Crash',
+                        style: AppTypography.heading3.copyWith(color: AppColors.error, fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Nhấn nút để gây sập ứng dụng tức thì. Sau đó mở lại app để Crashlytics đồng bộ báo cáo lỗi lên Firebase Console.',
+                  style: AppTypography.bodySmall,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                KtxButton(
+                  label: '💥 Gây Crash App (Test Crashlytics)',
+                  variant: KtxButtonVariant.danger,
+                  onPressed: () {
+                    CrashConfirmDialog.show(
+                      context,
+                      onConfirm: () => demoVm.triggerFatalCrashTest(),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ],
       ),
+    ),
     );
   }
 

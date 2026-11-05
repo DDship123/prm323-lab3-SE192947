@@ -284,8 +284,31 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
         ),
         const SizedBox(height: AppSpacing.lg),
         if (!isCancelled && !isDelivered) ...[
+          if (order.status != 'DELIVERING') ...[
+            KtxButton(
+              label: '🚀 Bỏ qua chờ: Tới thẳng Nhận hàng (Mở QR)',
+              variant: KtxButtonVariant.primary,
+              icon: Icons.rocket_launch_rounded,
+              isLoading: vm.isActionLoading,
+              onPressed: () async {
+                final deliveringOrder = await vm.skipToDeliveryStep(order);
+                if (context.mounted) {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PickupQrCodeScreen(order: deliveringOrder),
+                    ),
+                  );
+                  if (context.mounted) {
+                    vm.loadOrderDetail(order.id);
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           KtxButton(
             label: 'Mở Mã QR / PIN Nhận Hàng tại Cổng (S7)',
+            variant: order.status == 'DELIVERING' ? KtxButtonVariant.primary : KtxButtonVariant.secondary,
             icon: Icons.qr_code_scanner_rounded,
             onPressed: () async {
               await Navigator.of(context).push(
@@ -302,7 +325,7 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
           if (order.status != 'DELIVERING')
             KtxButton(
               label: 'Chuyển trạng thái kế tiếp (Demo Store/Shipper)',
-              variant: KtxButtonVariant.secondary,
+              variant: KtxButtonVariant.outline,
               icon: Icons.fast_forward_rounded,
               isLoading: vm.isActionLoading,
               onPressed: () => vm.advanceOrderStatusForDemo(order),

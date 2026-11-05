@@ -136,7 +136,12 @@ class _NotificationBoardScreenState extends State<NotificationBoardScreen> {
     ProfileDemoViewModel vm,
     NotificationModel noti,
   ) {
-    final timeStr = DateFormat('HH:mm - dd/MM').format(noti.createdAt);
+    String timeStr;
+    try {
+      timeStr = DateFormat('HH:mm - dd/MM').format(noti.createdAt);
+    } catch (_) {
+      timeStr = '\:\ - \/';
+    }
     final isDispute = noti.type == 'DISPUTE_UPDATE';
 
     return InkWell(

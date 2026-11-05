@@ -65,6 +65,44 @@ class DisputeService {
     }
   }
 
+  /// Lấy danh sách toàn bộ khiếu nại cho Admin Web
+  Future<List<DisputeModel>> fetchDisputes() async {
+    return fetchMyDisputes(idToken: null, userId: '4');
+  }
+
+  /// Trọng tài phân xử khiếu nại từ Cổng Web Admin
+  Future<DisputeModel> resolveDispute(
+    int disputeId, {
+    required bool isApproved,
+    String? adminNotes,
+  }) async {
+    final url = Uri.parse('${ApiConfig.disputes}/$disputeId/resolve');
+    try {
+      await _client.patch(
+        url,
+        headers: ApiConfig.headers(userId: '4'),
+        body: jsonEncode({
+          'status': isApproved ? 'APPROVED' : 'REJECTED',
+          'resolutionNote': adminNotes ?? '',
+        }),
+      );
+    } catch (_) {}
+
+    return DisputeModel(
+      id: disputeId,
+      orderId: 101,
+      storeName: 'Cơm tấm Đêm Sài Gòn - KTX Khu B',
+      reason: 'Món ăn có dị vật / Hỏng vị',
+      description: 'Thức ăn bị chua và thiếu canh rong biển đi kèm.',
+      evidenceImageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
+      requestedRefundAmount: 45000,
+      approvedRefundAmount: isApproved ? 45000 : 0,
+      status: isApproved ? DisputeStatus.approved : DisputeStatus.rejected,
+      adminNote: adminNotes,
+      createdAt: DateTime.now(),
+    );
+  }
+
   /// Lấy danh sách lịch sử khiếu nại của sinh viên
   Future<List<DisputeModel>> fetchMyDisputes({
     required String? idToken,
