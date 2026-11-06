@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/order_model.dart';
 import '../viewmodels/order_tracking_vm.dart';
+import '../widgets/screen_state.dart';
 import 'live_order_tracking_screen.dart';
 import 'pickup_qr_code_screen.dart';
 import 'notification_board_screen.dart';
@@ -271,7 +272,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
     final state = context.watch<OrderTrackingViewModel>().historyState;
     return switch (state) {
-      StateLoading() => const Center(
+      StateInitial() || StateLoading() => const Center(
           child: CircularProgressIndicator(color: Color(0xFFFF521B)),
         ),
       StateError() => _buildOfflineErrorState(),
