@@ -116,8 +116,18 @@ class StoreService {
     required String category,
     required String description,
     required String imageUrl,
+    List<CustomizationGroupModel>? customizationOptions,
   }) async {
     final uri = Uri.parse('${ApiConfig.stores}/$storeId/menu-items');
+    final formattedCustomization = (customizationOptions ?? []).map((g) => {
+      'group': g.group,
+      'required': g.required,
+      'options': g.options.map((o) => {
+        'name': o.name,
+        'extraPrice': o.extraPrice,
+      }).toList(),
+    }).toList();
+
     final body = jsonEncode({
       'name': name,
       'basePrice': basePrice,
@@ -125,7 +135,7 @@ class StoreService {
       'description': description,
       'imageUrl': imageUrl,
       'isAvailable': true,
-      'customizationOptions': [],
+      'customizationOptions': formattedCustomization,
     });
 
     try {
@@ -145,7 +155,7 @@ class StoreService {
       category: category,
       imageUrl: imageUrl,
       isAvailable: true,
-      customizationOptions: [],
+      customizationOptions: customizationOptions ?? [],
     );
   }
 
@@ -158,8 +168,18 @@ class StoreService {
     required String description,
     required String imageUrl,
     bool? isAvailable,
+    List<CustomizationGroupModel>? customizationOptions,
   }) async {
     final uri = Uri.parse('${ApiConfig.menuItems}/$id');
+    final formattedCustomization = (customizationOptions ?? []).map((g) => {
+      'group': g.group,
+      'required': g.required,
+      'options': g.options.map((o) => {
+        'name': o.name,
+        'extraPrice': o.extraPrice,
+      }).toList(),
+    }).toList();
+
     final body = jsonEncode({
       'name': name,
       'basePrice': basePrice,
@@ -167,7 +187,7 @@ class StoreService {
       'description': description,
       'imageUrl': imageUrl,
       if (isAvailable != null) 'isAvailable': isAvailable,
-      'customizationOptions': [],
+      'customizationOptions': formattedCustomization,
     });
 
     try {
