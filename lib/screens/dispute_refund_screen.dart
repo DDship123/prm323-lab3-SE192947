@@ -20,36 +20,41 @@ class DisputeRefundScreen extends StatefulWidget {
 }
 
 class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
-  int _selectedReasonIndex = 0; // 0: Thiếu món hoặc thiếu topping
-  final Set<int> _selectedDishIndices = {1}; // Món 1: Trà đào 10.000đ được chọn mặc định
+  int _selectedReasonIndex = 0; // 0: Thiếu món / thiếu đồ
+  final Set<int> _selectedDishIndices = {1}; // Món 1: Trà đào 10.000đ
   int _refundMethodIndex = 0; // 0: Ví KTX Food, 1: Bank
   final TextEditingController _descCtrl = TextEditingController(
     text:
-        'Lúc nhận tại bàn 2 mình chỉ có 1 hộp cơm sườn, kiểm tra lại không thấy ly trà đào kèm ống hút. Bác tài xế gom thì bảo quán chỉ đưa 1 hộp...',
+        'Lúc nhận tại Bàn 2 mở túi chỉ có hộp cơm sườn, không thấy ly trà đào kèm ống hút. Em có hỏi tài xế thì bảo quán chỉ đưa 1 hộp.',
   );
 
   bool _hasEvidenceImage = true;
 
-  final List<Map<String, String>> _reasons = [
+  final List<Map<String, dynamic>> _reasons = [
     {
-      'title': 'Thiếu món hoặc thiếu topping',
-      'desc': 'Quán quên không bỏ đủ món hoặc topping vào suất',
+      'title': 'Thiếu món / thiếu đồ',
+      'desc': 'Quán nước, thiếu canh hoặc đồ ăn kèm',
+      'icon': Icons.warning_amber_rounded,
     },
     {
-      'title': 'Đồ ăn bị nghiêng đổ / Hư hỏng',
-      'desc': 'Đồ tràn hộp khi vận chuyển gom tại cổng KTX',
+      'title': 'Đồ ăn bị đổ / Hư hỏng',
+      'desc': 'Tràn hộp do quá trình vận chuyển',
+      'icon': Icons.delete_outline_rounded,
     },
     {
       'title': 'Món ăn sai mô tả / Sai ghi chú',
-      'desc': 'Không làm theo yêu cầu: cay, mỡ hành, nước mắm riêng',
+      'desc': 'Không đúng yêu cầu: cay, mặn, không ớt',
+      'icon': Icons.edit_note_rounded,
     },
     {
       'title': 'Chất lượng không đảm bảo',
-      'desc': 'Nguội ngắt, ôi chua, mùi lạ hoặc có dị vật',
+      'desc': 'Nguội ngắt, ôi chua, chưa chín',
+      'icon': Icons.sentiment_dissatisfied_rounded,
     },
     {
-      'title': 'Không bàn giao / Giao nhầm đơn',
-      'desc': 'Tài xế gom báo đã giao nhưng bàn số 2 không có đơn',
+      'title': 'Giao nhầm đơn / Không nhận được',
+      'desc': 'Đã báo giao nhưng bàn số 2 không có',
+      'icon': Icons.public_rounded,
     },
   ];
 
@@ -83,7 +88,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'Đã gửi yêu cầu khiếu nại thành công! Trưởng bàn gom KTX sẽ xử lý trong 30 phút.',
+          'Đã gửi yêu cầu hoàn tiền thành công! Trưởng bàn gom KTX sẽ xử lý trong 30 phút.',
         ),
         backgroundColor: Color(0xFF059669),
       ),
@@ -115,39 +120,31 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: Stack(
-              clipBehavior: Clip.none,
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Stack(
               children: [
-                const Icon(Icons.notifications_none_rounded, color: Color(0xFF1E293B)),
+                CircleAvatar(
+                  radius: 16,
+                  backgroundImage: const NetworkImage(
+                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+                  ),
+                  backgroundColor: Colors.grey.shade200,
+                ),
                 Positioned(
-                  top: 2,
-                  right: 2,
+                  bottom: 0,
+                  right: 0,
                   child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF521B),
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981),
                       shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
                     ),
                   ),
                 ),
               ],
-            ),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF1E293B)),
-            onPressed: () {},
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: CircleAvatar(
-              radius: 14,
-              backgroundImage: const NetworkImage(
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-              ),
-              backgroundColor: Colors.grey.shade200,
             ),
           ),
         ],
@@ -205,7 +202,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                       ),
                       const SizedBox(height: 2),
                       const Text(
-                        'Hỗ trợ đối soát nhanh • Đảm bảo bữa ăn trọn vẹn',
+                        'Xử lý nhanh bàn giao • Bù tiền thỏa đáng',
                         style: TextStyle(fontSize: 11, color: Color(0xFF047857)),
                       ),
                     ],
@@ -230,24 +227,6 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    RichText(
-                      text: const TextSpan(
-                        children: [
-                          TextSpan(
-                            text: 'Mã đơn hàng ',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                          ),
-                          TextSpan(
-                            text: '#KTX-8829B',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFFFF521B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -255,40 +234,32 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Text(
-                        'Ca Trưa 11:30 – 12:00',
+                        '#KTX-8829B',
                         style: TextStyle(
                           color: Color(0xFFFF521B),
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
                         ),
                       ),
+                    ),
+                    const Text(
+                      'Ca Trưa 11:30 – 12:00',
+                      style: TextStyle(fontSize: 11, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                    ),
+                    const Text(
+                      'Đã nhận 11:42',
+                      style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Quán Cơm Tấm Cô Ba – ĐHQG',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFECFDF5),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'Đã nhận 11:42',
-                        style: TextStyle(color: Color(0xFF059669), fontSize: 9.5, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
+                const Text(
+                  'Quán Cơm Tấm Cô Ba – ĐHQG',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                 ),
                 const SizedBox(height: 2),
                 const Text(
-                  '📍 Bàn số 2 – Cổng KTX Khu B',
+                  '📍 Bàn số 2 • Cổng KTX Khu B',
                   style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 ),
                 const Padding(
@@ -296,13 +267,13 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                   child: Divider(height: 1, color: Color(0xFFF1F5F9)),
                 ),
                 _buildOrderDishRow('1x Cơm Tấm Sườn Bì Chả Đặc Biệt', '35.000đ'),
-                _buildOrderDishRow('1x Trà Đào Cam Sả Tươi (500ml)', '10.000đ'),
+                _buildOrderDishRow('1x Trà Đào Cam Sả Tươi (500ml)', '10.000đ', isHighlighted: true),
                 const SizedBox(height: 6),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Tổng đã thanh toán (VietQR)',
+                      'Tổng đã trả (VietQR):',
                       style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                     ),
                     Text(
@@ -332,8 +303,8 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
                     ),
                     TextSpan(
-                      text: '*',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFE11D48)),
+                      text: '*Bắt buộc',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFE11D48)),
                     ),
                   ],
                 ),
@@ -341,14 +312,9 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
               const Text('Chọn 1 lý do', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
             ],
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Chọn đúng lý do để điều phối viên KTX xử lý nhanh vào ca nhận',
-            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-          ),
           const SizedBox(height: 10),
 
-          // 5 Radio Options
+          // 5 Radio Options với icon chuẩn Figma
           ...List.generate(_reasons.length, (idx) {
             final isSelected = _selectedReasonIndex == idx;
             final r = _reasons[idx];
@@ -369,38 +335,43 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                      color: isSelected ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
-                      size: 18,
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFFFFF7ED) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        r['icon'] as IconData,
+                        size: 18,
+                        color: isSelected ? const Color(0xFFFF521B) : const Color(0xFF64748B),
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                r['title']!,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                  color: const Color(0xFF1E293B),
-                                ),
-                              ),
-                              if (isSelected)
-                                const Icon(Icons.check_circle_rounded, color: Color(0xFFFF521B), size: 16),
-                            ],
+                          Text(
+                            r['title'] as String,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                              color: const Color(0xFF1E293B),
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            r['desc']!,
+                            r['desc'] as String,
                             style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                           ),
                         ],
                       ),
+                    ),
+                    Icon(
+                      isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                      color: isSelected ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
+                      size: 18,
                     ),
                   ],
                 ),
@@ -434,11 +405,6 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 4),
-          const Text(
-            'Tích chọn món bị thiếu hoặc hỏng để tính tiền hoàn:',
-            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-          ),
           const SizedBox(height: 10),
 
           // Checkbox Món 1: Cơm Tấm Sườn Bì Chả Đặc Biệt
@@ -446,7 +412,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
             index: 0,
             name: 'Cơm Tấm Sườn Bì Chả Đặc Biệt',
             price: '35.000đ',
-            subtitle: 'Phần ăn chính (hộp nguyên vẹn)',
+            subtitle: 'Hộp nguyên vẹn',
             warningText: null,
           ),
           const SizedBox(height: 8),
@@ -457,7 +423,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
             name: 'Trà Đào Cam Sả Tươi (500ml)',
             price: '10.000đ',
             subtitle: null,
-            warningText: 'Quán quên bỏ vào túi giao gom tại cổng',
+            warningText: 'Quán quên không kèm vào túi',
           ),
           const SizedBox(height: 10),
 
@@ -465,9 +431,9 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFBF9),
+              color: const Color(0xFFFFFBEB),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFFEDD5)),
+              border: Border.all(color: const Color(0xFFFDE68A)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -481,8 +447,8 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                     ),
                     const SizedBox(height: 2),
                     const Text(
-                      'Tỷ lệ hoàn tiền: 100% giá trị món thiếu',
-                      style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                      '100% giá trị món thiếu (không tính ship)',
+                      style: TextStyle(fontSize: 10, color: Color(0xFF92400E)),
                     ),
                   ],
                 ),
@@ -504,18 +470,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
             'BẰNG CHỨNG & GHI CHÚ',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
           ),
-          const SizedBox(height: 2),
-          const Text(
-            'Ảnh chụp rõ tem niêm phong và món giao, quyết hoàn tiền sau 15–30 phút',
-            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-          ),
-          const SizedBox(height: 10),
-
-          const Text(
-            'Mô tả sự cố bạn gặp phải:',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           TextField(
             controller: _descCtrl,
             maxLines: 3,
@@ -531,20 +486,14 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
           ),
           const SizedBox(height: 12),
 
-          const Text(
-            'Hình ảnh thực tế tại KTX (Tối đa 3 ảnh):',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 8),
-
-          // 2 Khung ảnh: 1 ảnh đã tải lên và 1 nút chụp thêm
+          // 2 Khung ảnh: 1 ảnh đã tải và 1 nút chụp thêm
           Row(
             children: [
               if (_hasEvidenceImage)
                 Stack(
                   children: [
                     Container(
-                      width: 100,
+                      width: 140,
                       height: 100,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
@@ -555,6 +504,21 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                           ),
                           fit: BoxFit.cover,
                         ),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 3),
+                            color: Colors.black.withValues(alpha: 0.6),
+                            child: const Text(
+                              'Tem #8829B_KTX.jpg',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     Positioned(
@@ -567,7 +531,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
-                          '✓ Hợp lệ',
+                          '✓ Đã tải',
                           style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -590,34 +554,35 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                   ],
                 ),
               if (_hasEvidenceImage) const SizedBox(width: 10),
-              InkWell(
-                onTap: _pickImage,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  width: 110,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFFCBD5E1),
-                      style: BorderStyle.solid,
+              Expanded(
+                child: InkWell(
+                  onTap: _pickImage,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFFCBD5E1),
+                        style: BorderStyle.solid,
+                      ),
                     ),
-                  ),
-                  child: const Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.camera_alt_outlined, size: 24, color: Color(0xFFFF521B)),
-                      SizedBox(height: 4),
-                      Text(
-                        'Chụp thêm ảnh',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
-                      ),
-                      Text(
-                        'Tối đa 3/3',
-                        style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
-                      ),
-                    ],
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.camera_alt_outlined, size: 24, color: Color(0xFF94A3B8)),
+                        SizedBox(height: 4),
+                        Text(
+                          'Chụp thêm ảnh',
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+                        ),
+                        Text(
+                          'Hộp cơm / Bill',
+                          style: TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -640,7 +605,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Bao bì giao gom của KTX Food luôn có tem niêm phong nhiệt. Chụp rõ mã nếu đơn để tràn màng ép món với sinh viên cùng bàn.',
+                    'Túi gom có tem niêm phong nhiệt. Chụp rõ tem giúp duyệt hoàn tiền sau 15–30 phút.',
                     style: TextStyle(fontSize: 10.5, color: Color(0xFF92400E), height: 1.35),
                   ),
                 ),
@@ -650,39 +615,23 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
           const SizedBox(height: 16),
 
           // 6. Section: PHƯƠNG THỨC NHẬN TIỀN HOÀN
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'PHƯƠNG THỨC NHẬN TIỀN HOÀN',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  '✓ Miễn phí',
-                  style: TextStyle(color: Color(0xFF059669), fontSize: 9.5, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+          const Text(
+            'PHƯƠNG THỨC NHẬN TIỀN HOÀN',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
           ),
           const SizedBox(height: 10),
 
-          // Option 1: Ví KTX Food
+          // Option 1: Ví KTX Food / Xu Sinh Viên
           InkWell(
             onTap: () => setState(() => _refundMethodIndex = 0),
             borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _refundMethodIndex == 0 ? const Color(0xFFF0FDF4) : Colors.white,
+                color: _refundMethodIndex == 0 ? const Color(0xFFFFFBF9) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _refundMethodIndex == 0 ? const Color(0xFF059669) : const Color(0xFFE2E8F0),
+                  color: _refundMethodIndex == 0 ? const Color(0xFFFF521B) : const Color(0xFFE2E8F0),
                   width: _refundMethodIndex == 0 ? 1.5 : 1,
                 ),
               ),
@@ -693,7 +642,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                     children: [
                       Icon(
                         _refundMethodIndex == 0 ? Icons.radio_button_checked : Icons.radio_button_off,
-                        color: _refundMethodIndex == 0 ? const Color(0xFF059669) : const Color(0xFF94A3B8),
+                        color: _refundMethodIndex == 0 ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
                         size: 18,
                       ),
                       const SizedBox(width: 8),
@@ -709,7 +658,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
-                          'Nhanh nhất • Vào ví',
+                          'Nhanh nhất • Tức thì',
                           style: TextStyle(color: Color(0xFF059669), fontSize: 9, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -718,7 +667,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                   const Padding(
                     padding: EdgeInsets.only(left: 26, top: 2),
                     child: Text(
-                      'Cộng trực tiếp vào ví để dùng ngay khi gửi yêu cầu duyệt.',
+                      'Cộng trực tiếp số dư app ngay khi xét duyệt',
                       style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                     ),
                   ),
@@ -731,9 +680,18 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: const Color(0xFFFFEDD5)),
                     ),
-                    child: const Text(
-                      'Tặng thêm voucher KTX: +5.000đ đơn ca kế tiếp',
-                      style: TextStyle(fontSize: 10, color: Color(0xFFFF521B), fontWeight: FontWeight.bold),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.card_giftcard_rounded, color: Color(0xFFFF521B), size: 14),
+                        SizedBox(width: 4),
+                        Text(
+                          'Tặng thêm Voucher 5.000đ bù bữa trưa',
+                          style: TextStyle(fontSize: 10, color: Color(0xFFFF521B), fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(width: 6),
+                        Text('+5K', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFFFF521B))),
+                      ],
                     ),
                   ),
                 ],
@@ -742,17 +700,17 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
           ),
           const SizedBox(height: 8),
 
-          // Option 2: Tài khoản ngân hàng
+          // Option 2: Chuyển về tài khoản ngân hàng
           InkWell(
             onTap: () => setState(() => _refundMethodIndex = 1),
             borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _refundMethodIndex == 1 ? const Color(0xFFF0FDF4) : Colors.white,
+                color: _refundMethodIndex == 1 ? const Color(0xFFFFFBF9) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: _refundMethodIndex == 1 ? const Color(0xFF059669) : const Color(0xFFE2E8F0),
+                  color: _refundMethodIndex == 1 ? const Color(0xFFFF521B) : const Color(0xFFE2E8F0),
                   width: _refundMethodIndex == 1 ? 1.5 : 1,
                 ),
               ),
@@ -763,7 +721,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                     children: [
                       Icon(
                         _refundMethodIndex == 1 ? Icons.radio_button_checked : Icons.radio_button_off,
-                        color: _refundMethodIndex == 1 ? const Color(0xFF059669) : const Color(0xFF94A3B8),
+                        color: _refundMethodIndex == 1 ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
                         size: 18,
                       ),
                       const SizedBox(width: 8),
@@ -783,11 +741,8 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Ngân hàng thụ hưởng: MB Bank (Quân Đội)', style: TextStyle(fontSize: 10.5, color: Color(0xFF475569))),
-                        Text('Số tài khoản: **** **** 8829', style: TextStyle(fontSize: 10.5, color: Color(0xFF475569))),
-                        Text('Chủ tài khoản: LÊ THÙY LINH', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                        SizedBox(height: 2),
-                        Text('* Hệ thống tự động đồng bộ theo tài khoản sinh viên liên kết KTX App', style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
+                        Text('MB Bank (Quân Đội) • **** 8856', style: TextStyle(fontSize: 10.5, color: Color(0xFF475569))),
+                        Text('LE THUY LINH', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
                       ],
                     ),
                   ),
@@ -810,7 +765,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.schedule_rounded, color: Color(0xFF2563EB), size: 16),
+                    Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 16),
                     SizedBox(width: 6),
                     Text(
                       'Cam kết xử lý trong 30 phút',
@@ -820,21 +775,34 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Quán Cơm Tấm Cô Ba và Điều Phối Viên Bàn Gom KTX Khu B sẽ trực tiếp xem lại camera soạn đơn và giải quyết thỏa đáng.',
+                  'Quán và Trưởng bàn KTX Khu B sẽ trích xuất camera soạn đơn để giải quyết thỏa đáng.',
                   style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), height: 1.35),
                 ),
                 const SizedBox(height: 8),
-                const Row(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.phone_in_talk_rounded, size: 14, color: Color(0xFFFF521B)),
-                    SizedBox(width: 4),
-                    Text(
-                      'Trưởng bàn gom KTX Khu B: ',
-                      style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                    const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Trưởng bàn gom KTX Khu B', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                        Text('Trực ca: 11:00 – 13:00', style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
+                      ],
                     ),
-                    Text(
-                      '1900 68xx (Trực ca 11:30 – 19:00)',
-                      style: TextStyle(fontSize: 10.5, color: Color(0xFFFF521B), fontWeight: FontWeight.bold),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF7ED),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFFFEDD5)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.phone_rounded, size: 12, color: Color(0xFFFF521B)),
+                          SizedBox(width: 4),
+                          Text('1900 68xx', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFFF521B))),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -843,7 +811,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
           ),
           const SizedBox(height: 16),
 
-          // 8. Nút cam Gửi Yêu Cầu Khiếu Nại & Hoàn Tiền
+          // 8. Nút cam Gửi Yêu Cầu Hoàn Tiền (10.000đ)
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -858,17 +826,11 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
               ),
               onPressed: _handleSubmit,
               icon: const Icon(Icons.warning_amber_rounded, size: 18),
-              label: const Text(
-                'Gửi Yêu Cầu Khiếu Nại & Hoàn Tiền',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              label: Text(
+                'Gửi Yêu Cầu Hoàn Tiền (${_formatCurrency(_calculatedRefundAmount)})',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
             ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Hệ thống sẽ tạm giữ tiền món trên của quán và giải ngân phần xác nhận trong vài phút.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
           ),
           const SizedBox(height: 20),
         ],
@@ -876,14 +838,14 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
     );
   }
 
-  Widget _buildOrderDishRow(String name, String price) {
+  Widget _buildOrderDishRow(String name, String price, {bool isHighlighted = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(name, style: const TextStyle(fontSize: 11, color: Color(0xFF475569))),
-          Text(price, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+          Text(name, style: TextStyle(fontSize: 11, color: isHighlighted ? const Color(0xFFFF521B) : const Color(0xFF475569))),
+          Text(price, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isHighlighted ? const Color(0xFFFF521B) : const Color(0xFF1E293B))),
         ],
       ),
     );
@@ -957,23 +919,15 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
             if (warningText != null)
               Padding(
                 padding: const EdgeInsets.only(left: 26, top: 4),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFF7ED),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.warning_amber_rounded, size: 12, color: Color(0xFFFF521B)),
-                      const SizedBox(width: 4),
-                      Text(
-                        warningText,
-                        style: const TextStyle(fontSize: 10, color: Color(0xFFFF521B), fontWeight: FontWeight.w600),
-                      ),
-                    ],
-                  ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber_rounded, size: 12, color: Color(0xFFFF521B)),
+                    const SizedBox(width: 4),
+                    Text(
+                      warningText,
+                      style: const TextStyle(fontSize: 10, color: Color(0xFFFF521B), fontWeight: FontWeight.w600),
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -989,20 +943,33 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
         border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
       ),
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildBottomNavItem(Icons.explore_outlined, 'Khám phá', false),
-          _buildBottomNavItem(Icons.restaurant_outlined, 'Đặt món', false),
-          _buildBottomNavItem(Icons.receipt_long_rounded, 'Thanh toán', false),
-          _buildBottomNavItem(Icons.access_time_rounded, 'Lịch sử', true),
-          _buildBottomNavItem(Icons.person_outline_rounded, 'Tài khoản', false),
+          _BottomNavItem(icon: Icons.home_outlined, label: 'Khám phá', isActive: false),
+          _BottomNavItem(icon: Icons.shopping_bag_outlined, label: 'Đặt món', isActive: false),
+          _BottomNavItem(icon: Icons.receipt_long_outlined, label: 'Thanh toán', isActive: false),
+          _BottomNavItem(icon: Icons.access_time_rounded, label: 'Lịch sử', isActive: true),
+          _BottomNavItem(icon: Icons.person_outline_rounded, label: 'Tài khoản', isActive: false),
         ],
       ),
     );
   }
+}
 
-  Widget _buildBottomNavItem(IconData icon, String label, bool isActive) {
+class _BottomNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+
+  const _BottomNavItem({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
