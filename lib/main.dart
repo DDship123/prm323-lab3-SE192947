@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase/analytics_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -234,14 +235,45 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   bool _manualDemoSignedIn = false;
   UserAppRole _activeRole = UserAppRole.student;
+  bool _isLoadingSession = true;
 
   @override
   void initState() {
     super.initState();
-    // Yêu cầu Lab 3: Web chỉ phục vụ cho Admin; khi mở trên trình duyệt Web lập tức vào Web Admin Portal
-    if (kIsWeb) {
-      _activeRole = UserAppRole.admin;
-      _manualDemoSignedIn = true;
+    _loadSavedSession();
+  }
+
+  Future<void> _loadSavedSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+      final savedRoleName = prefs.getString('saved_user_role');
+      final savedUserId = prefs.getInt('saved_backend_user_id');
+
+      if (isLoggedIn && savedRoleName != null) {
+        if (savedUserId != null) {
+          ApiConfig.currentBackendUserId = savedUserId;
+        }
+        final restoredRole = UserAppRole.values.firstWhere(
+          (r) => r.name == savedRoleName,
+          orElse: () => UserAppRole.student,
+        );
+        if (mounted) {
+          setState(() {
+            _activeRole = restoredRole;
+            _manualDemoSignedIn = true;
+            _isLoadingSession = false;
+          });
+          return;
+        }
+      }
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        _manualDemoSignedIn = false;
+        _isLoadingSession = false;
+      });
     }
   }
 
@@ -254,6 +286,12 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingSession) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -264,7 +302,7 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         final firebaseUser = snapshot.data;
-        if (firebaseUser != null || _manualDemoSignedIn) {
+        if (_manualDemoSignedIn || (firebaseUser != null && _activeRole == UserAppRole.student)) {
           // Điều hướng màn hình giao diện theo đúng vai trò đang chọn (4 Roles)
           switch (_activeRole) {
             case UserAppRole.storeOwner:
@@ -293,7 +331,13 @@ class _AuthGateState extends State<AuthGate> {
         return LoginScreen(
           currentRole: _activeRole,
           onRoleChanged: _onRoleChanged,
-          onRegisteredOrDemoSuccess: () {
+          onRegisteredOrDemoSuccess: () async {
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('is_logged_in', true);
+              await prefs.setString('saved_user_role', UserAppRole.student.name);
+              await prefs.setInt('saved_backend_user_id', 1);
+            } catch (_) {}
             setState(() => _manualDemoSignedIn = true);
           },
         );
@@ -302,6 +346,15 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _signOut() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', false);
+      await prefs.remove('saved_user_role');
+      await prefs.remove('saved_backend_user_id');
+    } catch (_) {}
+
+    ApiConfig.currentBackendUserId = 1;
+
     setState(() {
       _manualDemoSignedIn = false;
       _activeRole = UserAppRole.student;
@@ -399,6 +452,13 @@ class _LoginScreenState extends State<LoginScreen> {
               displayName: user.displayName,
               photoUrl: user.avatarUrl,
             );
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('is_logged_in', true);
+          await prefs.setString('saved_user_role', matchedRole.name);
+          await prefs.setInt('saved_backend_user_id', user.id);
+        } catch (_) {}
+
         widget.onRoleChanged(matchedRole);
         widget.onRegisteredOrDemoSuccess();
       }
@@ -455,6 +515,14 @@ class _LoginScreenState extends State<LoginScreen> {
           campusZone: 'KTX_KHU_B',
           currentScreen: 'S1_Home',
         );
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('is_logged_in', true);
+          await prefs.setString('saved_user_role', UserAppRole.student.name);
+          await prefs.setInt('saved_backend_user_id', 1);
+        } catch (_) {}
+        widget.onRoleChanged(UserAppRole.student);
+        widget.onRegisteredOrDemoSuccess();
       }
     } catch (e) {
       if (mounted) {
@@ -572,7 +640,59 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Đăng nhập tài khoản', style: AppTypography.heading3),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Chọn nhanh tài khoản mẫu 4 vai trò:',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[700], fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ChoiceChip(
+                            label: const Text('🎓 Sinh viên', style: TextStyle(fontSize: 12)),
+                            selected: _emailPhoneController.text == 'student@fpt.edu.vn',
+                            onSelected: (_) {
+                              setState(() {
+                                _emailPhoneController.text = 'student@fpt.edu.vn';
+                                _passwordController.text = '123456';
+                              });
+                            },
+                          ),
+                          ChoiceChip(
+                            label: const Text('🍲 Chủ Quán', style: TextStyle(fontSize: 12)),
+                            selected: _emailPhoneController.text == 'coba.owner@fpt.edu.vn',
+                            onSelected: (_) {
+                              setState(() {
+                                _emailPhoneController.text = 'coba.owner@fpt.edu.vn';
+                                _passwordController.text = '123456';
+                              });
+                            },
+                          ),
+                          ChoiceChip(
+                            label: const Text('🛵 Shipper', style: TextStyle(fontSize: 12)),
+                            selected: _emailPhoneController.text == 'shipper.hung@fpt.edu.vn',
+                            onSelected: (_) {
+                              setState(() {
+                                _emailPhoneController.text = 'shipper.hung@fpt.edu.vn';
+                                _passwordController.text = '123456';
+                              });
+                            },
+                          ),
+                          ChoiceChip(
+                            label: const Text('🏢 Admin BQL', style: TextStyle(fontSize: 12)),
+                            selected: _emailPhoneController.text == 'admin.ktx@fpt.edu.vn',
+                            onSelected: (_) {
+                              setState(() {
+                                _emailPhoneController.text = 'admin.ktx@fpt.edu.vn';
+                                _passwordController.text = '123456';
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
                       TextField(
                         controller: _emailPhoneController,
                         decoration: const InputDecoration(
