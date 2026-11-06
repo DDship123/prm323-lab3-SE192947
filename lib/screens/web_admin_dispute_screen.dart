@@ -265,42 +265,68 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
   void _showZoomImage(String imageUrl) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(AppSpacing.lg),
-        child: Stack(
-          alignment: Alignment.topRight,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.9),
-                borderRadius: AppRadius.roundedLg,
-              ),
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 18),
-                      const SizedBox(width: AppSpacing.sm),
-                      const Text(
+      builder: (ctx) {
+        final screenHeight = MediaQuery.of(ctx).size.height;
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: 850,
+              maxHeight: screenHeight * 0.85,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A), // Chuẩn dark surface #0F172A
+              borderRadius: AppRadius.roundedLg,
+              border: Border.all(color: const Color(0xFF1E293B)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black54,
+                  blurRadius: 24,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.verified_user_rounded,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    const Expanded(
+                      child: Text(
                         'Ảnh bằng chứng độ phân giải cao (Cloud Storage Verified)',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const CircleAvatar(
-                          radius: 14,
-                          backgroundColor: Colors.white24,
-                          child: Icon(Icons.close, color: Colors.white, size: 16),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                         ),
-                        onPressed: () => Navigator.pop(ctx),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  InteractiveViewer(
+                    ),
+                    IconButton(
+                      icon: const CircleAvatar(
+                        radius: 14,
+                        backgroundColor: Colors.white24,
+                        child: Icon(Icons.close, color: Colors.white, size: 16),
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Flexible(
+                  child: InteractiveViewer(
                     panEnabled: true,
                     minScale: 0.5,
                     maxScale: 4.0,
@@ -312,22 +338,28 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                         errorBuilder: (context, error, stackTrace) => Container(
                           padding: const EdgeInsets.all(48),
                           color: const Color(0xFF1E293B),
-                          child: const Text('Không thể tải ảnh bằng chứng', style: TextStyle(color: Colors.white)),
+                          child: const Center(
+                            child: Text(
+                              'Không thể tải ảnh bằng chứng',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Text(
-                    'Dùng cuộn chuột hoặc thao tác kéo để phóng to / thu nhỏ kiểm tra chi tiết bằng chứng',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                const Text(
+                  'Dùng cuộn chuột hoặc thao tác kéo để phóng to / thu nhỏ kiểm tra chi tiết bằng chứng',
+                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
