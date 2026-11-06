@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/menu_item_model.dart';
 import '../models/order_model.dart';
 import '../models/payment_model.dart';
+import '../services/commission_policy_service.dart';
 import '../services/order_service.dart';
 import '../services/payment_service.dart';
 
@@ -114,7 +115,11 @@ class CartCheckoutViewModel extends ChangeNotifier {
     }
   }
 
-  double get deliveryFee => _items.isEmpty ? 0.0 : _customDeliveryFee;
+  double get deliveryFee {
+    if (_items.isEmpty) return 0.0;
+    final policyFee = CommissionPolicyService().deliveryFee;
+    return policyFee >= 0 ? policyFee : _customDeliveryFee;
+  }
 
   double get finalAmount => subtotalAmount + deliveryFee;
 

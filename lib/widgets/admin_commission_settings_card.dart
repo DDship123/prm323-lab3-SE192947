@@ -24,6 +24,7 @@ class AdminCommissionSettingsCard extends StatefulWidget {
 
 class _AdminCommissionSettingsCardState extends State<AdminCommissionSettingsCard> {
   final TextEditingController _rateController = TextEditingController();
+  final TextEditingController _deliveryFeeController = TextEditingController();
   final CommissionPolicyService _policyService = CommissionPolicyService();
   final NumberFormat _currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
   bool _isSaving = false;
@@ -34,6 +35,7 @@ class _AdminCommissionSettingsCardState extends State<AdminCommissionSettingsCar
     _policyService.loadCommissionRate().then((rate) {
       if (mounted) {
         _rateController.text = rate.toStringAsFixed(0);
+        _deliveryFeeController.text = _policyService.deliveryFee.toStringAsFixed(0);
         setState(() {});
       }
     });
@@ -42,12 +44,16 @@ class _AdminCommissionSettingsCardState extends State<AdminCommissionSettingsCar
   @override
   void dispose() {
     _rateController.dispose();
+    _deliveryFeeController.dispose();
     super.dispose();
   }
 
   Future<void> _handleSavePolicy() async {
-    final text = _rateController.text.trim();
-    final newRate = double.tryParse(text);
+    final textRate = _rateController.text.trim();
+    final newRate = double.tryParse(textRate);
+
+    final textFee = _deliveryFeeController.text.trim();
+    final newFee = double.tryParse(textFee) ?? 5000.0;
 
     if (newRate == null || newRate < 0 || newRate > 50) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -59,16 +65,27 @@ class _AdminCommissionSettingsCardState extends State<AdminCommissionSettingsCar
       return;
     }
 
+    if (newFee < 0 || newFee > 30000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng nhập phí ship hợp lệ (từ 0đ đến 30.000đ)'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
-    final ok = await _policyService.updateCommissionRate(newRate);
+    final okRate = await _policyService.updateCommissionRate(newRate);
+    final okFee = await _policyService.updateDeliveryFee(newFee);
     if (!mounted) return;
     setState(() => _isSaving = false);
 
-    if (ok) {
+    if (okRate && okFee) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '✅ Đã cập nhật Tỷ lệ Chiết khấu Sàn thành ${newRate.toStringAsFixed(0)}%! Quán ăn sẽ thực nhận ${(100 - newRate).toStringAsFixed(0)}%.',
+            '✅ Đã lưu chính sách: Chiết khấu ${newRate.toStringAsFixed(0)}% (Quán nhận ${(100 - newRate).toStringAsFixed(0)}%) • Phí ship ${_currencyFormatter.format(newFee)}/đơn.',
           ),
           backgroundColor: AppColors.success,
         ),
@@ -136,7 +153,7 @@ class _AdminCommissionSettingsCardState extends State<AdminCommissionSettingsCar
                   border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  'Đang áp dụng: ${currentRate.toStringAsFixed(0)}%',
+                  'Đang áp dụng: ${currentRate.toStringAsFixed(0)}% sàn • ${_currencyFormatter.format(_policyService.deliveryFee)} ship',
                   style: const TextStyle(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
@@ -150,12 +167,12 @@ class _AdminCommissionSettingsCardState extends State<AdminCommissionSettingsCar
           const Divider(),
           const SizedBox(height: AppSpacing.sm),
 
-          // Khu vực nhập số chiết khấu & Nút lưu
+          // Khu vực nhập số chiết khấu, phí ship & Nút lưu
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                flex: 4,
+                flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -176,6 +193,38 @@ class _AdminCommissionSettingsCardState extends State<AdminCommissionSettingsCar
                         decoration: InputDecoration(
                           hintText: 'Nhập số (VD: 10)',
                           suffixText: '%',
+                          suffixStyle: const TextStyle(fontWeight: FontWeight.bold),
+                          border: OutlineInputBorder(borderRadius: AppRadius.roundedSm),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Phí ship gom đơn (VNĐ):',
+                      style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      height: 44,
+                      child: TextField(
+                        controller: _deliveryFeeController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(5),
+                        ],
+                        decoration: InputDecoration(
+                          hintText: 'VD: 5000',
+                          suffixText: 'đ',
                           suffixStyle: const TextStyle(fontWeight: FontWeight.bold),
                           border: OutlineInputBorder(borderRadius: AppRadius.roundedSm),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
