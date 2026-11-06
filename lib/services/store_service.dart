@@ -47,24 +47,14 @@ class StoreService {
               .map((e) => StoreModel.fromJson(e as Map<String, dynamic>))
               .toList();
         }
+      } else {
+        throw Exception('Máy chủ phản hồi mã lỗi ${response.statusCode}');
       }
-    } catch (_) {
-      // Fallback sang dữ liệu mẫu khớp với DataInitializer của Backend khi mất mạng
+    } catch (e) {
+      throw Exception('Mất kết nối máy chủ. Vui lòng kiểm tra lại kết nối mạng!');
     }
 
-    var fallback = _fallbackStores();
-    if (campusZone != null && campusZone.isNotEmpty && campusZone != 'ALL') {
-      fallback = fallback.where((s) => s.campusZone == campusZone).toList();
-    }
-    if (keyword != null && keyword.trim().isNotEmpty) {
-      final kw = keyword.trim().toLowerCase();
-      fallback = fallback
-          .where((s) =>
-              s.name.toLowerCase().contains(kw) ||
-              (s.description?.toLowerCase().contains(kw) ?? false))
-          .toList();
-    }
-    return fallback;
+    return [];
   }
 
   /// API-004: Lấy thông tin chi tiết quán ăn

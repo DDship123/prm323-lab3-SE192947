@@ -123,9 +123,9 @@ class DisputeService {
         final rawList = (jsonMap['data'] as List?) ?? [];
         return rawList.map((e) => DisputeModel.fromJson(e as Map<String, dynamic>)).toList();
       }
-      return _getMockDisputes();
-    } catch (_) {
-      return _getMockDisputes();
+      throw Exception('Máy chủ phản hồi mã lỗi ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Mất kết nối máy chủ khi tải khiếu nại: $e');
     }
   }
 
@@ -142,17 +142,14 @@ class DisputeService {
         final utf8Body = utf8.decode(response.bodyBytes);
         final jsonMap = jsonDecode(utf8Body) as Map<String, dynamic>;
         final rawList = (jsonMap['data'] as List?) ?? [];
-        final delivered = rawList
+        return rawList
             .map((e) => OrderSummaryModel.fromJson(e as Map<String, dynamic>))
             .where((o) => o.status == 'DELIVERED')
             .toList();
-        if (delivered.isNotEmpty) {
-          return delivered;
-        }
       }
-      return _getMockOrders();
-    } catch (_) {
-      return _getMockOrders();
+      throw Exception('Máy chủ phản hồi mã lỗi ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Mất kết nối máy chủ khi tải đơn hàng: $e');
     }
   }
 
