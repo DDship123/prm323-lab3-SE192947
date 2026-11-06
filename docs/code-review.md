@@ -45,3 +45,4 @@ Theo yêu cầu Lab 3 (Slide 24: Sửa ít nhất 3 phát hiện được chấp
 
 ## 4. Kết Luận
 Toàn bộ mã nguồn đã được rà soát nghiêm ngặt bằng công cụ AI, 5/5 phát hiện chấp nhận đã được sửa đổi và kiểm chứng đạt 100% qua bộ kiểm thử tự động `flutter test` (31/31 unit tests pass).
+
