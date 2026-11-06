@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/server_config_model.dart';
@@ -19,10 +20,11 @@ class ServerConfigService {
       if (raw != null && raw.isNotEmpty) {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         final config = ServerConfigModel.fromJson(map);
-        // Nếu cấu hình lưu cũ trỏ vào 127.0.0.1 hoặc localhost hoặc 10.0.2.2 gây lỗi mạng trên browser:
+        // Nếu cấu hình lưu cũ trỏ vào 127.0.0.1 hoặc localhost hoặc 10.0.2.2 hoặc http:// trên Web:
         if (config.baseUrl.contains('127.0.0.1') ||
             config.baseUrl.contains('localhost') ||
-            config.baseUrl.contains('10.0.2.2')) {
+            config.baseUrl.contains('10.0.2.2') ||
+            (kIsWeb && config.baseUrl.startsWith('http://'))) {
           final def = ServerConfigModel.defaultConfig();
           ApiConfig.setDynamicBaseUrl(def.baseUrl);
           await saveConfig(def);

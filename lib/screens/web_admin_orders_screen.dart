@@ -39,13 +39,13 @@ class _WebAdminOrdersScreenState extends State<WebAdminOrdersScreen> {
       final list = await widget.orderService.fetchAllOrdersForAdmin();
       if (mounted) {
         setState(() {
-          _orders = list.isNotEmpty ? list : _mockOrders();
+          _orders = list;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _orders = _mockOrders();
+          _orders = [];
         });
       }
     } finally {

@@ -927,46 +927,48 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildStoreCard(StoreModel store, BuildContext context) {
     final isFav = _favoriteStoreIds.contains(store.id);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: () => _openStoreDetail(store),
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Ảnh lớn tràn viền trên + Badges
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: SizedBox(
-                    height: 145,
-                    width: double.infinity,
-                    child: store.avatarUrl != null &&
-                            store.avatarUrl!.isNotEmpty
-                        ? Image.network(
-                            store.avatarUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                _buildStorePlaceholder(),
-                          )
-                        : _buildStorePlaceholder(),
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: () => _openStoreDetail(store),
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Ảnh lớn tràn viền trên + Badges
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: SizedBox(
+                      height: 145,
+                      width: double.infinity,
+                      child: store.avatarUrl != null &&
+                              store.avatarUrl!.isNotEmpty
+                          ? Image.network(
+                              store.avatarUrl!,
+                              fit: BoxFit.cover,
+                              cacheWidth: 600,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _buildStorePlaceholder(),
+                            )
+                          : _buildStorePlaceholder(),
+                    ),
                   ),
-                ),
 
                 // Badges góc trên bên trái
                 Positioned(
@@ -1171,8 +1173,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStorePlaceholder() {
     return Container(
