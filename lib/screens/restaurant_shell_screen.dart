@@ -79,7 +79,10 @@ class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
       ),
       RestaurantMenuManagementScreen(ownerId: widget.ownerId),
       RestaurantRevenueScreen(ownerId: widget.ownerId),
-      RestaurantStoreSettingsScreen(ownerId: widget.ownerId),
+      RestaurantStoreSettingsScreen(
+        ownerId: widget.ownerId,
+        onSignOut: widget.onSignOut,
+      ),
     ];
 
     return Scaffold(

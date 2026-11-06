@@ -79,7 +79,10 @@ class _ShipperShellScreenState extends State<ShipperShellScreen> {
       ),
       const ShipperRouteScreen(),
       ShipperWalletScreen(shipperId: widget.shipperId),
-      ShipperShiftRegistrationScreen(shipperId: widget.shipperId),
+      ShipperShiftRegistrationScreen(
+        shipperId: widget.shipperId,
+        onSignOut: widget.onSignOut,
+      ),
     ];
 
     return Scaffold(

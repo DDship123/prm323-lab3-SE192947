@@ -10,8 +10,13 @@ import '../widgets/ktx_button.dart';
 
 class RestaurantStoreSettingsScreen extends StatefulWidget {
   final String ownerId;
+  final VoidCallback? onSignOut;
 
-  const RestaurantStoreSettingsScreen({super.key, required this.ownerId});
+  const RestaurantStoreSettingsScreen({
+    super.key,
+    required this.ownerId,
+    this.onSignOut,
+  });
 
   @override
   State<RestaurantStoreSettingsScreen> createState() => _RestaurantStoreSettingsScreenState();
@@ -339,6 +344,36 @@ class _RestaurantStoreSettingsScreenState extends State<RestaurantStoreSettingsS
                 }
               },
             ),
+            const SizedBox(height: AppSpacing.md),
+            if (widget.onSignOut != null)
+              KtxButton(
+                label: 'Đăng xuất tài khoản Quán ăn',
+                icon: Icons.logout_rounded,
+                variant: KtxButtonVariant.outline,
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Xác nhận đăng xuất'),
+                      content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản Quán không?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('Ở lại'),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            widget.onSignOut?.call();
+                          },
+                          child: const Text('Đăng xuất', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
           ],
         ),
       ),

@@ -7,8 +7,13 @@ import '../widgets/ktx_app_bar.dart';
 
 class ShipperShiftRegistrationScreen extends StatefulWidget {
   final String shipperId;
+  final VoidCallback? onSignOut;
 
-  const ShipperShiftRegistrationScreen({super.key, required this.shipperId});
+  const ShipperShiftRegistrationScreen({
+    super.key,
+    required this.shipperId,
+    this.onSignOut,
+  });
 
   @override
   State<ShipperShiftRegistrationScreen> createState() => _ShipperShiftRegistrationScreenState();
@@ -54,11 +59,44 @@ class _ShipperShiftRegistrationScreenState extends State<ShipperShiftRegistratio
     },
   ];
 
+  void _confirmSignOut(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản Shipper không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Ở lại'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () {
+              Navigator.pop(ctx);
+              widget.onSignOut?.call();
+            },
+            child: const Text('Đăng xuất', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: const KtxAppBar(title: 'Đăng ký Ca & Chuyến gom'),
+      appBar: KtxAppBar(
+        title: 'Đăng ký Ca & Chuyến gom',
+        actions: [
+          IconButton(
+            tooltip: 'Đăng xuất tài khoản',
+            icon: const Icon(Icons.logout_rounded, color: AppColors.error),
+            onPressed: () => _confirmSignOut(context),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
@@ -86,6 +124,21 @@ class _ShipperShiftRegistrationScreenState extends State<ShipperShiftRegistratio
           Text('Danh sách ca gom hôm nay', style: AppTypography.heading2),
           const SizedBox(height: AppSpacing.sm),
           ..._shifts.map((s) => _buildShiftCard(s)),
+          const SizedBox(height: AppSpacing.lg),
+          if (widget.onSignOut != null)
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: AppColors.error,
+                side: const BorderSide(color: AppColors.error),
+                minimumSize: const Size.fromHeight(48),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.logout_rounded, color: AppColors.error),
+              label: const Text('Đăng xuất tài khoản Shipper', style: TextStyle(fontWeight: FontWeight.bold)),
+              onPressed: () => _confirmSignOut(context),
+            ),
+          const SizedBox(height: AppSpacing.xl),
         ],
       ),
     );

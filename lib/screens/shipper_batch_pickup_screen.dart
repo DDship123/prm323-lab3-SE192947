@@ -47,6 +47,30 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
     });
   }
 
+  void _confirmSignOut(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản Shipper không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Ở lại'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () {
+              Navigator.pop(ctx);
+              widget.onSignOut?.call();
+            },
+            child: const Text('Đăng xuất', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<ShipperViewModel>();
@@ -125,18 +149,54 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                     icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B), size: 22),
                     onPressed: () => vm.fetchBatch(shipperId: widget.shipperId),
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFFF521B), width: 1.5),
-                    ),
-                    child: const CircleAvatar(
-                      radius: 16,
-                      backgroundImage: NetworkImage(
-                        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120',
+                  PopupMenuButton<String>(
+                    tooltip: 'Tài khoản & Đăng xuất',
+                    onSelected: (val) {
+                      if (val == 'logout') {
+                        _confirmSignOut(context);
+                      }
+                    },
+                    itemBuilder: (ctx) => [
+                      const PopupMenuItem(
+                        enabled: false,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Nguyễn Hùng (Shipper)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                            Text('shipper.hung@fpt.edu.vn', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'logout',
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
+                            SizedBox(width: 8),
+                            Text('Đăng xuất', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFFF521B), width: 1.5),
+                      ),
+                      child: const CircleAvatar(
+                        radius: 16,
+                        backgroundImage: NetworkImage(
+                          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120',
+                        ),
                       ),
                     ),
+                  ),
+                  IconButton(
+                    tooltip: 'Đăng xuất',
+                    icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
+                    onPressed: () => _confirmSignOut(context),
                   ),
                 ],
               ),
