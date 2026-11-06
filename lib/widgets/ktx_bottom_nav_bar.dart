@@ -16,6 +16,7 @@ class KtxBottomNavBar extends StatelessWidget {
   final ValueChanged<int> onTap;
   final int activeOrderBadgeCount;
   final int notificationBadgeCount;
+  final int cartBadgeCount;
 
   const KtxBottomNavBar({
     super.key,
@@ -23,6 +24,7 @@ class KtxBottomNavBar extends StatelessWidget {
     required this.onTap,
     this.activeOrderBadgeCount = 0,
     this.notificationBadgeCount = 0,
+    this.cartBadgeCount = 0,
   });
 
   Widget _buildTabItem({
@@ -113,9 +115,10 @@ class KtxBottomNavBar extends StatelessWidget {
             ),
             _buildTabItem(
               index: 2,
-              icon: Icons.receipt_long_outlined,
-              activeIcon: Icons.receipt_long_rounded,
-              label: 'Thanh toán',
+              icon: Icons.shopping_bag_outlined,
+              activeIcon: Icons.shopping_bag_rounded,
+              label: 'Giỏ hàng',
+              badgeCount: cartBadgeCount,
             ),
             _buildTabItem(
               index: 3,

@@ -16,6 +16,7 @@ import '../widgets/ktx_error_state.dart';
 import '../widgets/ktx_loading_state.dart';
 import '../widgets/ktx_sticky_cart_bar.dart';
 import '../widgets/screen_state.dart';
+import 'cart_screen.dart';
 import 'food_customization_sheet.dart';
 import 'group_cart_checkout_screen.dart';
 import 'live_order_tracking_screen.dart';
@@ -62,10 +63,22 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     );
   }
 
+  void _navigateToCart() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CartScreen(
+          onProceedToCheckout: _navigateToCheckout,
+          onExploreMenu: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
+
   void _navigateToCheckout() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => GroupCartCheckoutScreen(
+          onBackToMenu: () => Navigator.of(context).pop(),
           onOrderCompleted: (OrderDetailModel order) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
@@ -123,14 +136,14 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               subtitle: 'GIAO ĐẾN',
               title: activeStore.campusZoneLabel,
               cartItemCount: cartVm.totalItemCount,
-              onCartTap: _navigateToCheckout,
+              onCartTap: _navigateToCart,
             ),
       bottomNavigationBar: cartVm.totalItemCount > 0
           ? KtxStickyCartBar(
               itemCount: cartVm.totalItemCount,
               totalAmount: cartVm.subtotalAmount,
               pickupLocation: activeStore.campusZoneLabel,
-              onCheckoutTap: _navigateToCheckout,
+              onCheckoutTap: _navigateToCart,
             )
           : null,
       body: CustomScrollView(

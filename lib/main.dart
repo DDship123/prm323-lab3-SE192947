@@ -16,6 +16,7 @@ import 'firebase_options.dart';
 import 'models/order_model.dart';
 import 'models/store_model.dart';
 import 'models/user_role_enum.dart';
+import 'screens/cart_screen.dart';
 import 'screens/dispute_refund_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/group_cart_checkout_screen.dart';
@@ -787,10 +788,15 @@ class _MainShellScreenState extends State<MainShellScreen> {
     setState(() => _selectedIndex = 4);
   }
 
+  void _openCart() {
+    setState(() => _selectedIndex = 2);
+  }
+
   void _openCheckout() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => GroupCartCheckoutScreen(
+          onBackToMenu: () => Navigator.of(context).maybePop(),
           onOrderCompleted: (OrderDetailModel order) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
@@ -828,7 +834,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
       // Tab 0: Khám phá (Trang chủ gom đơn KTX - Node 462:1932)
       HomeScreen(
         onOpenNotifications: _openNotifications,
-        onOpenCheckout: _openCheckout,
+        onOpenCheckout: _openCart,
         onOpenDispute: _openDispute,
         onOpenProfile: _openProfile,
         onSwitchRole: widget.onSwitchRole,
@@ -848,17 +854,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
           ratingAvg: 4.8,
           ratingCount: 128,
         ),
-        onOpenCheckout: _openCheckout,
+        onOpenCheckout: _openCart,
       ),
-      // Tab 2: Thanh toán (Thanh toán & Đơn gom chuẩn Figma)
-      GroupCartCheckoutScreen(
-        onOrderCompleted: (OrderDetailModel order) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => LiveOrderTrackingScreen(initialOrder: order),
-            ),
-          );
-        },
+      // Tab 2: Giỏ hàng (Màn hình Giỏ Hàng xem & chọn món, topping trước khi sang Thanh toán)
+      CartScreen(
+        onProceedToCheckout: _openCheckout,
+        onExploreMenu: () => setState(() => _selectedIndex = 1),
       ),
       // Tab 3: Lịch sử (Lịch sử đơn hàng - Node 438:3541)
       const OrderHistoryScreen(),
@@ -884,12 +885,13 @@ class _MainShellScreenState extends State<MainShellScreen> {
               itemCount: cartVm.totalItemCount,
               totalAmount: cartVm.subtotalAmount,
               pickupLocation: 'Đơn gom Cổng KTX Khu B',
-              onCheckoutTap: _openCheckout,
+              onCheckoutTap: _openCart,
             ),
-          // Footer Navigation chuẩn 5 tab (Tab 2: Thông báo)
+          // Footer Navigation chuẩn 5 tab (Tab 2: Giỏ hàng)
           KtxBottomNavBar(
             currentIndex: _selectedIndex,
             notificationBadgeCount: unreadNotis,
+            cartBadgeCount: cartVm.totalItemCount,
             onTap: (index) => setState(() => _selectedIndex = index),
           ),
         ],
