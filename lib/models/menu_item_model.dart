@@ -82,4 +82,15 @@ class MenuItemModel {
           .toList(),
     );
   }
+
+  double? get originalPrice {
+    if (name.contains('Cơm Sườn Bì Chả Đặc Biệt')) return 42000.0;
+    return null;
+  }
+
+  String? get promoBadge {
+    if (name.contains('Cơm Sườn Bì Chả Đặc Biệt')) return 'Best Seller';
+    if (name.contains('Muối Ớt')) return 'Cay nhẹ';
+    return null;
+  }
 }

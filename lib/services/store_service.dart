@@ -47,24 +47,14 @@ class StoreService {
               .map((e) => StoreModel.fromJson(e as Map<String, dynamic>))
               .toList();
         }
+      } else {
+        throw Exception('Máy chủ phản hồi mã lỗi ${response.statusCode}');
       }
-    } catch (_) {
-      // Fallback sang dữ liệu mẫu khớp với DataInitializer của Backend khi mất mạng
+    } catch (e) {
+      throw Exception('Mất kết nối máy chủ. Vui lòng kiểm tra lại kết nối mạng!');
     }
 
-    var fallback = _fallbackStores();
-    if (campusZone != null && campusZone.isNotEmpty && campusZone != 'ALL') {
-      fallback = fallback.where((s) => s.campusZone == campusZone).toList();
-    }
-    if (keyword != null && keyword.trim().isNotEmpty) {
-      final kw = keyword.trim().toLowerCase();
-      fallback = fallback
-          .where((s) =>
-              s.name.toLowerCase().contains(kw) ||
-              (s.description?.toLowerCase().contains(kw) ?? false))
-          .toList();
-    }
-    return fallback;
+    return [];
   }
 
   /// API-004: Lấy thông tin chi tiết quán ăn
@@ -202,29 +192,42 @@ class StoreService {
   List<StoreModel> _fallbackStores() => const [
         StoreModel(
           id: 1,
-          name: 'Cơm Tấm Sườn Bì KTX B2',
+          name: 'Cơm Tấm Sườn Bì Khu B - Cổng 3',
           description: 'Cơm tấm sườn nướng mật ong, giao gom đơn tận trụ KTX Khu B',
-          address: 'Cổng B2 KTX ĐHQG TP.HCM',
+          address: 'Cổng 3 KTX (150m)',
           campusZone: 'KTX_KHU_B',
           phoneNumber: '0901234567',
           avatarUrl:
-              'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600',
+              'https://images.unsplash.com/photo-1544025162-d76694265947?w=600',
           isActive: true,
-          ratingAvg: 4.8,
-          ratingCount: 128,
+          ratingAvg: 4.9,
+          ratingCount: 350,
         ),
         StoreModel(
           id: 2,
-          name: 'Bún Bò Huế O Xuân - Khu A',
-          description: 'Bún bò giò heo đậm vị Huế, miễn ship đơn gom ca trưa Khu A',
-          address: 'Đối diện Sảnh Tòa A3 KTX Khu A',
-          campusZone: 'KTX_KHU_A',
+          name: 'Bún Đậu Mắm Tôm Cô Bông KTX',
+          description: 'Bún đậu mắm tôm thập cẩm giòn rụm, giao tới các cổng KTX',
+          address: 'Giao tới: Cổng KTX A & B',
+          campusZone: 'KTX_KHU_B',
           phoneNumber: '0909888777',
           avatarUrl:
               'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600',
           isActive: true,
+          ratingAvg: 4.8,
+          ratingCount: 210,
+        ),
+        StoreModel(
+          id: 3,
+          name: 'Trà Sữa Đậm Vị KTX Khu B',
+          description: 'Trà sữa đậm vị lá trà Bảo Lộc, trân châu hoàng kim',
+          address: 'Sảnh Tòa BA1 KTX Khu B',
+          campusZone: 'KTX_KHU_B',
+          phoneNumber: '0903111222',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1556881286-fc6915169721?w=600',
+          isActive: true,
           ratingAvg: 4.7,
-          ratingCount: 86,
+          ratingCount: 480,
         ),
       ];
 
@@ -268,8 +271,8 @@ class StoreService {
       MenuItemModel(
         id: 1,
         storeId: 1,
-        name: 'Cơm Sườn Nướng Mật Ong Chả Trứng',
-        description: 'Sườn cốt lết ướp mật ong nướng than, kèm chả hấp và canh rong biển',
+        name: 'Cơm Sườn Bì Chả Đặc Biệt',
+        description: 'Sườn nướng than hoa, bì giòn thính thơm, chả trứng hấp béo ngậy',
         imageUrl:
             'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
         basePrice: 35000,
@@ -277,11 +280,11 @@ class StoreService {
         isAvailable: true,
         customizationOptions: [
           CustomizationGroupModel(
-            group: 'Kích cỡ',
+            group: 'Kích cỡ phần ăn',
             required: true,
             options: [
-              CustomizationOptionModel(name: 'Cơm vừa', extraPrice: 0),
-              CustomizationOptionModel(name: 'Cơm nhiều (+Cơm)', extraPrice: 5000),
+              CustomizationOptionModel(name: 'Phần tiêu chuẩn', extraPrice: 0),
+              CustomizationOptionModel(name: 'Thêm cơm (+5.000đ)', extraPrice: 5000),
             ],
           ),
           CustomizationGroupModel(
@@ -289,8 +292,8 @@ class StoreService {
             required: false,
             options: [
               CustomizationOptionModel(name: 'Trứng ốp la lòng đào', extraPrice: 6000),
-              CustomizationOptionModel(name: 'Bì thính', extraPrice: 7000),
-              CustomizationOptionModel(name: 'Lạp xưởng tươi', extraPrice: 10000),
+              CustomizationOptionModel(name: 'Thêm miếng sườn nướng', extraPrice: 15000),
+              CustomizationOptionModel(name: 'Bì thính thêm', extraPrice: 7000),
             ],
           ),
         ],
@@ -298,23 +301,50 @@ class StoreService {
       MenuItemModel(
         id: 2,
         storeId: 1,
-        name: 'Trà Tắc Xí Muội Khổng Lồ (700ml)',
-        description: 'Trà tắc tươi mát lạnh giải nhiệt ca trưa KTX',
+        name: 'Cơm Sườn Nướng Muối Ớt',
+        description: 'Sườn cốt lết ướp muối ớt cay nhẹ, nướng xém cạnh đậm đà',
         imageUrl:
-            'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600',
-        basePrice: 15000,
-        category: 'NUOC',
+            'https://images.unsplash.com/photo-1555126634-323283e090fa?w=600',
+        basePrice: 32000,
+        category: 'COM',
         isAvailable: true,
-        customizationOptions: [
-          CustomizationGroupModel(
-            group: 'Mức đá',
-            required: true,
-            options: [
-              CustomizationOptionModel(name: 'Đá bình thường', extraPrice: 0),
-              CustomizationOptionModel(name: 'Ít đá', extraPrice: 0),
-            ],
-          ),
-        ],
+        customizationOptions: [],
+      ),
+      MenuItemModel(
+        id: 3,
+        storeId: 1,
+        name: 'Cơm Đùi Gà Nướng Teriyaki',
+        description: 'Đùi gà góc tư sốt Teriyaki Nhật Bản thơm lừng, da giòn rụm',
+        imageUrl:
+            'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=600',
+        basePrice: 38000,
+        category: 'COM',
+        isAvailable: true,
+        customizationOptions: [],
+      ),
+      MenuItemModel(
+        id: 4,
+        storeId: 1,
+        name: 'Canh Rong Biển Thịt Bằm',
+        description: 'Canh rong biển nấu thịt nạc bằm thanh mát, bổ dưỡng',
+        imageUrl:
+            'https://images.unsplash.com/photo-1547592180-85f173990554?w=600',
+        basePrice: 8000,
+        category: 'TOPPING',
+        isAvailable: true,
+        customizationOptions: [],
+      ),
+      MenuItemModel(
+        id: 5,
+        storeId: 1,
+        name: 'Trà Đào Cam Sả Tươi 500ml',
+        description: 'Trà đào sả tươi thanh mát kèm miếng đào giòn ngọt',
+        imageUrl:
+            'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600',
+        basePrice: 15000,
+        category: 'TOPPING',
+        isAvailable: true,
+        customizationOptions: [],
       ),
     ];
   }

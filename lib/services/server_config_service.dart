@@ -19,6 +19,15 @@ class ServerConfigService {
       if (raw != null && raw.isNotEmpty) {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         final config = ServerConfigModel.fromJson(map);
+        // Nếu cấu hình lưu cũ trỏ vào 127.0.0.1 hoặc localhost hoặc 10.0.2.2 gây lỗi mạng trên browser:
+        if (config.baseUrl.contains('127.0.0.1') ||
+            config.baseUrl.contains('localhost') ||
+            config.baseUrl.contains('10.0.2.2')) {
+          final def = ServerConfigModel.defaultConfig();
+          ApiConfig.setDynamicBaseUrl(def.baseUrl);
+          await saveConfig(def);
+          return def;
+        }
         ApiConfig.setDynamicBaseUrl(config.baseUrl);
         return config;
       }

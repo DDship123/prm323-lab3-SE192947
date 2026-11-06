@@ -223,17 +223,6 @@ class WebAdminSidebar extends StatelessWidget {
                         side: const BorderSide(color: AppColors.border),
                       ),
                       itemBuilder: (ctx) => [
-                        if (onSwitchRole != null)
-                          const PopupMenuItem(
-                            value: 'role',
-                            child: Row(
-                              children: [
-                                Icon(Icons.swap_horiz_rounded, size: 16, color: AppColors.primary),
-                                SizedBox(width: 8),
-                                Text('Đổi vai trò', style: TextStyle(color: AppColors.textPrimary, fontSize: 13)),
-                              ],
-                            ),
-                          ),
                         const PopupMenuItem(
                           value: 'logout',
                           child: Row(
@@ -246,7 +235,6 @@ class WebAdminSidebar extends StatelessWidget {
                         ),
                       ],
                       onSelected: (val) {
-                        if (val == 'role') onSwitchRole?.call();
                         if (val == 'logout') onSignOut();
                       },
                       child: Container(
@@ -330,32 +318,6 @@ class WebAdminSidebar extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            if (onSwitchRole != null)
-                              Expanded(
-                                child: InkWell(
-                                  onTap: onSwitchRole,
-                                  borderRadius: AppRadius.roundedSm,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 4),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(Icons.swap_horiz_rounded, size: 14, color: AppColors.textSecondary),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Đổi vai trò',
-                                          style: AppTypography.caption.copyWith(
-                                            color: AppColors.textPrimary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            if (onSwitchRole != null)
-                              Container(width: 1, height: 14, color: AppColors.border),
                             Expanded(
                               child: InkWell(
                                 onTap: onSignOut,

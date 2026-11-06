@@ -100,35 +100,34 @@ class _AdminCommissionSettingsCardState extends State<AdminCommissionSettingsCar
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: AppRadius.roundedSm,
-                    ),
-                    child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Chính Sách Chiết Khấu Sàn KTX Food',
-                        style: AppTypography.heading3.copyWith(fontSize: 16),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Cấu hình tỷ lệ hoa hồng nền tảng thu từ các Quán ăn khi bán đơn online',
-                        style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: AppRadius.roundedSm,
+                ),
+                child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 20),
               ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Chính Sách Chiết Khấu Sàn KTX Food',
+                      style: AppTypography.heading3.copyWith(fontSize: 16),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Cấu hình tỷ lệ hoa hồng nền tảng thu từ các Quán ăn khi bán đơn online',
+                      style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(

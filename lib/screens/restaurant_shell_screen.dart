@@ -26,6 +26,49 @@ class RestaurantShellScreen extends StatefulWidget {
 class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
   int _currentIndex = 0;
 
+  Widget _buildTabItem({
+    required int index,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+  }) {
+    final isSelected = _currentIndex == index;
+    final color = isSelected ? const Color(0xFFFF521B) : const Color(0xFF94A3B8);
+
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => setState(() => _currentIndex = index),
+          child: SizedBox(
+            height: 56,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  isSelected ? activeIcon : icon,
+                  size: 22,
+                  color: color,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: color,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screens = [
@@ -40,39 +83,57 @@ class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8FAFC),
       body: IndexedStack(
         index: _currentIndex,
         children: screens,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
-        backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.primaryLight.withValues(alpha: 0.45),
-        elevation: 8,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.soup_kitchen_outlined),
-            selectedIcon: Icon(Icons.soup_kitchen_rounded, color: AppColors.primary),
-            label: 'Vận hành Bếp',
+      bottomNavigationBar: Container(
+        height: 56.0,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: BorderSide(color: Color(0xFFF1F5F9), width: 1.0),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.restaurant_menu_outlined),
-            selectedIcon: Icon(Icons.restaurant_menu_rounded, color: AppColors.primary),
-            label: 'Thực đơn',
+          boxShadow: [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.04),
+              offset: Offset(0, -1),
+              blurRadius: 4,
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            children: [
+              _buildTabItem(
+                index: 0,
+                icon: Icons.soup_kitchen_outlined,
+                activeIcon: Icons.soup_kitchen_rounded,
+                label: 'Bếp & Gom ca',
+              ),
+              _buildTabItem(
+                index: 1,
+                icon: Icons.restaurant_menu_outlined,
+                activeIcon: Icons.restaurant_menu_rounded,
+                label: 'Thực đơn',
+              ),
+              _buildTabItem(
+                index: 2,
+                icon: Icons.bar_chart_outlined,
+                activeIcon: Icons.bar_chart_rounded,
+                label: 'Doanh thu & COD',
+              ),
+              _buildTabItem(
+                index: 3,
+                icon: Icons.store_outlined,
+                activeIcon: Icons.store_rounded,
+                label: 'Cài đặt quán',
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart_rounded, color: AppColors.primary),
-            label: 'Doanh thu',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.store_outlined),
-            selectedIcon: Icon(Icons.store_rounded, color: AppColors.primary),
-            label: 'Cài đặt quán',
-          ),
-        ],
+        ),
       ),
     );
   }

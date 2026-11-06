@@ -153,10 +153,15 @@ class OrderService {
             .map((e) => OrderDetailModel.fromJson(e as Map<String, dynamic>))
             .toList();
         return list;
+      } else {
+        throw Exception('Máy chủ phản hồi mã lỗi ${response.statusCode}');
       }
-    } catch (_) {}
-
-    return List<OrderDetailModel>.from(_localOrders);
+    } catch (e) {
+      if (_localOrders.isNotEmpty) {
+        return List<OrderDetailModel>.from(_localOrders);
+      }
+      throw Exception('Mất kết nối máy chủ: $e');
+    }
   }
 
   /// API-009: Sinh viên hủy đơn hàng khi trạng thái đang là PENDING

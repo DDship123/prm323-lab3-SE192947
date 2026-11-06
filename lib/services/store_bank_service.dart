@@ -25,10 +25,10 @@ class StoreBankService {
   ];
 
   String _bankCode = 'MB';
-  String _bankName = 'MBBank (Quân Đội)';
+  String _bankName = 'MB Bank (Quân Đội)';
   String _bankBin = '970422';
-  String _accountNumber = '0908888999';
-  String _accountName = 'TRAN THI BA'; // Chủ Quán Cơm Tấm Cô Ba
+  String _accountNumber = '03889298829';
+  String _accountName = 'QUAN COM TAM CO BA - DHQG';
 
   String get bankCode => _bankCode;
   String get bankName => _bankName;

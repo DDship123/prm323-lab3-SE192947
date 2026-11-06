@@ -16,6 +16,7 @@ class KtxBottomNavBar extends StatelessWidget {
   final ValueChanged<int> onTap;
   final int activeOrderBadgeCount;
   final int notificationBadgeCount;
+  final int cartBadgeCount;
 
   const KtxBottomNavBar({
     super.key,
@@ -23,6 +24,7 @@ class KtxBottomNavBar extends StatelessWidget {
     required this.onTap,
     this.activeOrderBadgeCount = 0,
     this.notificationBadgeCount = 0,
+    this.cartBadgeCount = 0,
   });
 
   Widget _buildTabItem({
@@ -107,22 +109,23 @@ class KtxBottomNavBar extends StatelessWidget {
             ),
             _buildTabItem(
               index: 1,
-              icon: Icons.restaurant_menu_outlined,
-              activeIcon: Icons.restaurant_menu,
+              icon: Icons.restaurant_outlined,
+              activeIcon: Icons.restaurant,
               label: 'Đặt món',
             ),
             _buildTabItem(
               index: 2,
-              icon: Icons.notifications_none_rounded,
-              activeIcon: Icons.notifications_rounded,
-              label: 'Thông báo',
-              badgeCount: notificationBadgeCount > 0 ? notificationBadgeCount : activeOrderBadgeCount,
+              icon: Icons.shopping_bag_outlined,
+              activeIcon: Icons.shopping_bag_rounded,
+              label: 'Giỏ hàng',
+              badgeCount: cartBadgeCount,
             ),
             _buildTabItem(
               index: 3,
-              icon: Icons.history_rounded,
-              activeIcon: Icons.history_rounded,
+              icon: Icons.access_time_rounded,
+              activeIcon: Icons.access_time_filled_rounded,
               label: 'Lịch sử',
+              badgeCount: activeOrderBadgeCount,
             ),
             _buildTabItem(
               index: 4,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/menu_item_model.dart';
 import '../models/order_model.dart';
@@ -12,15 +13,15 @@ import '../viewmodels/store_detail_vm.dart';
 import '../widgets/ktx_app_bar.dart';
 import '../widgets/ktx_empty_state.dart';
 import '../widgets/ktx_error_state.dart';
-import '../widgets/ktx_food_item_card.dart';
 import '../widgets/ktx_loading_state.dart';
 import '../widgets/ktx_sticky_cart_bar.dart';
 import '../widgets/screen_state.dart';
+import 'cart_screen.dart';
 import 'food_customization_sheet.dart';
 import 'group_cart_checkout_screen.dart';
 import 'live_order_tracking_screen.dart';
 
-/// Màn hình S2: Chi tiết Quán ăn, Thực đơn & Đánh giá của Sinh viên
+/// Màn hình S2: Chi tiết Quán ăn & Thực đơn Đặt món Sinh viên chuẩn Figma
 class StoreDetailScreen extends StatefulWidget {
   final StoreModel store;
   final VoidCallback onOpenCheckout;
@@ -36,11 +37,13 @@ class StoreDetailScreen extends StatefulWidget {
 }
 
 class _StoreDetailScreenState extends State<StoreDetailScreen> {
+  bool _isFavorite = false;
+
   static const _categories = [
     {'code': 'ALL', 'label': 'Tất cả'},
-    {'code': 'COM', 'label': 'Cơm KTX'},
-    {'code': 'BUN_PHO', 'label': 'Bún / Phở'},
-    {'code': 'NUOC', 'label': 'Giải khát'},
+    {'code': 'BEST_SELLER', 'label': 'Món Bán Chạy 🔥'},
+    {'code': 'COM', 'label': 'Cơm Tấm'},
+    {'code': 'TOPPING', 'label': 'Món Thêm'},
   ];
 
   @override
@@ -60,10 +63,22 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     );
   }
 
+  void _navigateToCart() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CartScreen(
+          onProceedToCheckout: _navigateToCheckout,
+          onExploreMenu: () => Navigator.of(context).pop(),
+        ),
+      ),
+    );
+  }
+
   void _navigateToCheckout() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => GroupCartCheckoutScreen(
+          onBackToMenu: () => Navigator.of(context).pop(),
           onOrderCompleted: (OrderDetailModel order) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
@@ -85,31 +100,63 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: KtxAppBar(
-        title: activeStore.name,
-        subtitle: activeStore.campusZoneLabel,
-        cartItemCount: cartVm.totalItemCount,
-        onCartTap: _navigateToCheckout,
-      ),
-      bottomNavigationBar: canPop
+      appBar: canPop
+          ? AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1E293B)),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              title: Text(
+                activeStore.name,
+                style: const TextStyle(
+                  color: Color(0xFF1E293B),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.share_outlined, color: Color(0xFF1E293B)),
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Đã sao chép liên kết quán ăn!'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            )
+          : KtxAppBar(
+              variant: KtxAppBarVariant.homeHeader,
+              subtitle: 'GIAO ĐẾN',
+              title: activeStore.campusZoneLabel,
+              cartItemCount: cartVm.totalItemCount,
+              onCartTap: _navigateToCart,
+            ),
+      bottomNavigationBar: cartVm.totalItemCount > 0
           ? KtxStickyCartBar(
               itemCount: cartVm.totalItemCount,
               totalAmount: cartVm.subtotalAmount,
               pickupLocation: activeStore.campusZoneLabel,
-              onCheckoutTap: _navigateToCheckout,
+              onCheckoutTap: _navigateToCart,
             )
           : null,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: _buildStoreBanner(activeStore, storeVm),
+            child: _buildStoreBanner(activeStore, storeVm, canPop),
           ),
           SliverToBoxAdapter(
             child: _buildCategorySelector(storeVm),
           ),
           SliverPadding(
             padding: const EdgeInsets.all(AppSpacing.md),
-            sliver: _buildMenuSliver(storeVm, activeStore),
+            sliver: _buildMenuSliver(storeVm, activeStore, cartVm),
           ),
           if (storeVm.reviews.isNotEmpty)
             SliverToBoxAdapter(
@@ -120,69 +167,381 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     );
   }
 
-  Widget _buildStoreBanner(StoreModel store, StoreDetailViewModel vm) {
-    return Container(
-      margin: const EdgeInsets.all(AppSpacing.md),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.roundedMd,
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  Widget _buildStoreBanner(StoreModel store, StoreDetailViewModel vm, bool canPop) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 1. Ảnh bìa Hero của Quán + Các nút Overlays
+        Stack(
+          children: [
+            SizedBox(
+              height: 175,
+              width: double.infinity,
+              child: store.avatarUrl != null && store.avatarUrl!.isNotEmpty
+                  ? Image.network(
+                      store.avatarUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _buildHeroPlaceholder(),
+                    )
+                  : _buildHeroPlaceholder(),
+            ),
+
+            // Nút Back, Heart, Share trên ảnh
+            Positioned(
+              top: 12,
+              left: 12,
+              right: 12,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (canPop)
+                    InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.45),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  Row(
+                    children: [
+                      InkWell(
+                        onTap: () {
+                          setState(() {
+                            _isFavorite = !_isFavorite;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _isFavorite
+                                ? Icons.favorite_rounded
+                                : Icons.favorite_border_rounded,
+                            color: _isFavorite
+                                ? const Color(0xFFEF4444)
+                                : Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Đã sao chép liên kết quán ăn!'),
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.share_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Nhãn địa điểm và khoảng cách góc dưới ảnh
+            Positioned(
+              bottom: 10,
+              left: 12,
+              right: 12,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      store.campusZone == 'KTX_KHU_A'
+                          ? 'KTX Khu A (Sảnh A3)'
+                          : 'KTX Khu B (Cổng 2)',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.65),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.near_me_rounded, color: Colors.white, size: 12),
+                        SizedBox(width: 4),
+                        Text(
+                          'Cách 600m',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+
+        // 2. Thông tin quán: Tên, tích xanh, freeship, giờ
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        store.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Icon(
+                        Icons.verified_rounded,
+                        color: Color(0xFF0284C7),
+                        size: 18,
+                      ),
+                    ],
+                  ),
+                  const Text(
+                    'Cổng KTX',
+                    style: TextStyle(
+                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${store.campusZoneLabel} • ĐHQG',
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 16),
+                  const SizedBox(width: 3),
+                  Text(
+                    store.ratingAvg.toStringAsFixed(1),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Icon(Icons.local_shipping_outlined, color: Color(0xFF059669), size: 16),
+                  const SizedBox(width: 4),
+                  const Text(
+                    'Freeship',
+                    style: TextStyle(
+                      color: Color(0xFF059669),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Icon(Icons.schedule_rounded, color: Color(0xFF64748B), size: 16),
+                  const SizedBox(width: 4),
+                  const Text(
+                    '11:30',
+                    style: TextStyle(
+                      color: Color(0xFF64748B),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        // 3. Thẻ Ca gom đơn đếm ngược
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryLight.withValues(alpha: 0.4),
-                  borderRadius: AppRadius.roundedSm,
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  store.campusZoneLabel,
-                  style: AppTypography.bodySmall.copyWith(
-                    color: AppColors.primaryDark,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: const Icon(
+                  Icons.access_time_rounded,
+                  color: Color(0xFF475569),
+                  size: 20,
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
-              const SizedBox(width: 4),
-              Text(
-                '${store.ratingAvg.toStringAsFixed(1)} (${store.ratingCount} đánh giá)',
-                style: AppTypography.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Đang nhận đơn Ca Trưa',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    Text(
+                      'Giao 11:30 Cổng B',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '24:59',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  Text(
+                    'CHỐT ĐƠN',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF64748B),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(store.name, style: AppTypography.heading2),
-          if (store.description != null && store.description!.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(store.description!, style: AppTypography.bodySmall),
-          ],
-          const SizedBox(height: AppSpacing.xs),
-          Row(
+        ),
+
+        // 4. Bảng tin Cô Ba hôm nay
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF7ED),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFFEDD5)),
+          ),
+          child: Row(
             children: [
               const Icon(
-                Icons.place_outlined,
-                size: 16,
-                color: AppColors.textSecondary,
+                Icons.campaign_rounded,
+                color: Color(0xFFFF521B),
+                size: 20,
               ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  store.address,
-                  style: AppTypography.bodySmall,
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'BẢNG TIN CÔ BA HÔM NAY',
+                      style: TextStyle(
+                        color: Color(0xFFFF521B),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    SizedBox(height: 1),
+                    Text(
+                      'Tặng trà đá cho nhóm từ 3 phần',
+                      style: TextStyle(
+                        color: Color(0xFF475569),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ],
+        ),
+        const SizedBox(height: 6),
+      ],
+    );
+  }
+
+  Widget _buildHeroPlaceholder() {
+    return Container(
+      color: const Color(0xFFF1F5F9),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.restaurant_rounded,
+        color: Color(0xFFFF521B),
+        size: 50,
       ),
     );
   }
@@ -213,7 +572,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     );
   }
 
-  Widget _buildMenuSliver(StoreDetailViewModel vm, StoreModel store) {
+  Widget _buildMenuSliver(
+    StoreDetailViewModel vm,
+    StoreModel store,
+    CartCheckoutViewModel cartVm,
+  ) {
     final state = vm.menuState;
     return switch (state) {
       StateInitial() || StateLoading() => const SliverToBoxAdapter(
@@ -238,24 +601,318 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 message: 'Chưa có món ăn nào trong danh mục này.',
               ),
             )
-          : SliverList.separated(
-              itemCount: vm.filteredMenuItems.length,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(height: AppSpacing.sm + 4),
-              itemBuilder: (_, idx) {
-                final item = vm.filteredMenuItems[idx];
-                return KtxFoodItemCard(
-                  title: item.name,
-                  subtitle: item.description,
-                  price: item.basePrice,
-                  imageUrl: item.imageUrl,
-                  isAvailable: item.isAvailable,
-                  onTap: () => _openFoodSheet(item, store),
-                  onAddTap: () => _openFoodSheet(item, store),
-                );
-              },
+          : SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, idx) {
+                  final item = vm.filteredMenuItems[idx];
+                  final isFirstTopping = item.category == 'TOPPING' &&
+                      (idx == 0 ||
+                          vm.filteredMenuItems[idx - 1].category != 'TOPPING');
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (isFirstTopping) ...[
+                        const SizedBox(height: 12),
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Topping & Món Canh Thêm',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                              Text(
+                                'Tiết kiệm gom chung',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Color(0xFF059669),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      _buildFoodItemCard(
+                        item: item,
+                        store: store,
+                        cartVm: cartVm,
+                      ),
+                    ],
+                  );
+                },
+                childCount: vm.filteredMenuItems.length,
+              ),
             ),
     };
+  }
+
+  Widget _buildFoodItemCard({
+    required MenuItemModel item,
+    required StoreModel store,
+    required CartCheckoutViewModel cartVm,
+  }) {
+    final cartItems =
+        cartVm.items.where((i) => i.menuItemId == item.id).toList();
+    final totalQty = cartItems.fold(0, (sum, i) => sum + i.quantity);
+    final hasCustomization = item.customizationOptions.isNotEmpty;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm + 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Ảnh món vuông bo góc 12px + Badge (Best Seller, Cay nhẹ)
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  width: 72,
+                  height: 72,
+                  child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                      ? Image.network(
+                          item.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              _buildItemPlaceholder(),
+                        )
+                      : _buildItemPlaceholder(),
+                ),
+              ),
+              if (item.promoBadge != null)
+                Positioned(
+                  top: 4,
+                  left: 4,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: item.promoBadge == 'Best Seller'
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFFF521B),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      item.promoBadge!,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 12),
+
+          // Tên món + Giá (kèm giá gạch nếu có)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Color(0xFF1E293B),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Text(
+                      '${NumberFormat('#,###', 'vi_VN').format(item.basePrice)}đ',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        color: Color(0xFFFF521B),
+                      ),
+                    ),
+                    if (item.originalPrice != null) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        '${NumberFormat('#,###', 'vi_VN').format(item.originalPrice)}đ',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF94A3B8),
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Nút hành động: [Tùy biến] hoặc [- 1 +] hoặc [+]
+          if (hasCustomization && totalQty == 0)
+            InkWell(
+              onTap: () => _openFoodSheet(item, store),
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.tune_rounded,
+                        size: 14, color: Color(0xFF475569)),
+                    SizedBox(width: 4),
+                    Text(
+                      'Tùy biến',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF334155),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else if (totalQty > 0)
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      final idx = cartVm.items
+                          .indexWhere((i) => i.menuItemId == item.id);
+                      if (idx != -1) cartVm.updateQuantity(idx, -1);
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: const Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child: Icon(Icons.remove,
+                          size: 14, color: Color(0xFF475569)),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      '$totalQty',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      if (hasCustomization) {
+                        _openFoodSheet(item, store);
+                      } else {
+                        final idx = cartVm.items
+                            .indexWhere((i) => i.menuItemId == item.id);
+                        if (idx != -1) {
+                          cartVm.updateQuantity(idx, 1);
+                        } else {
+                          cartVm.addItemToCart(
+                            storeId: store.id,
+                            storeName: store.name,
+                            menuItem: item,
+                            quantity: 1,
+                            selectedOptions: [],
+                          );
+                        }
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: const Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      child:
+                          Icon(Icons.add, size: 14, color: Color(0xFFFF521B)),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            InkWell(
+              onTap: () {
+                if (hasCustomization) {
+                  _openFoodSheet(item, store);
+                } else {
+                  cartVm.addItemToCart(
+                    storeId: store.id,
+                    storeName: store.name,
+                    menuItem: item,
+                    quantity: 1,
+                    selectedOptions: [],
+                  );
+                }
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF4EC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFFFD8BF)),
+                ),
+                child: const Icon(
+                  Icons.add,
+                  size: 18,
+                  color: Color(0xFFFF521B),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildItemPlaceholder() {
+    return Container(
+      color: const Color(0xFFF1F5F9),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.fastfood_rounded,
+        color: Color(0xFFFF521B),
+        size: 26,
+      ),
+    );
   }
 
   Widget _buildReviewsSection(StoreDetailViewModel vm) {
@@ -322,3 +979,4 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     );
   }
 }
+
