@@ -307,7 +307,7 @@ class _AuthGateState extends State<AuthGate> {
           switch (_activeRole) {
             case UserAppRole.storeOwner:
               return RestaurantShellScreen(
-                ownerId: '2',
+                ownerId: '1', // Quán Cơm Tấm Ngô Quyền của Cô Ba (Store ID: 1)
                 onSignOut: _signOut,
               );
             case UserAppRole.shipper:

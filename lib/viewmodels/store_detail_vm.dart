@@ -69,14 +69,19 @@ class StoreDetailViewModel extends ChangeNotifier {
   List<MenuItemModel> get filteredMenuItems {
     final current = _menuState;
     if (current is! StateSuccess<List<MenuItemModel>>) return const [];
-    if (_selectedCategory == 'ALL') return current.data;
-    if (_selectedCategory == 'BEST_SELLER') {
+    final selectedUpper = _selectedCategory.trim().toUpperCase();
+    if (selectedUpper == 'ALL') return current.data;
+    if (selectedUpper == 'BEST_SELLER') {
       return current.data
           .where((item) => item.promoBadge != null || item.id == 1)
           .toList();
     }
-    return current.data
-        .where((item) => item.category == _selectedCategory)
-        .toList();
+    return current.data.where((item) {
+      final itemCat = item.category.trim().toUpperCase();
+      if (selectedUpper == 'DO_UONG' || selectedUpper == 'NUOC') {
+        return itemCat == 'DO_UONG' || itemCat == 'NUOC';
+      }
+      return itemCat == selectedUpper;
+    }).toList();
   }
 }
