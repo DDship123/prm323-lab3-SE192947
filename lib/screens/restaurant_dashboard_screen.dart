@@ -129,9 +129,13 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Text(
-                              'Đang mở Bếp ca trưa 11:30 • KTX Khu B',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                            const Expanded(
+                              child: Text(
+                                'Đang mở Bếp ca trưa 11:30 • KTX Khu B',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -261,18 +265,25 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.access_time_rounded, size: 18, color: Color(0xFFFF521B)),
-                  SizedBox(width: 6),
-                  Text(
-                    'Ca gom trưa (11:30 - 12:00)',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
-                  ),
-                ],
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.access_time_rounded, size: 18, color: Color(0xFFFF521B)),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Ca gom trưa (11:30 - 12:00)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFECFDF5),
                   borderRadius: BorderRadius.circular(20),
@@ -500,29 +511,34 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isPending
-                      ? const Color(0xFFFFFBEB)
-                      : (isPreparing ? const Color(0xFFEFF6FF) : const Color(0xFFECFDF5)),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
+              const SizedBox(width: 8),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
                     color: isPending
-                        ? const Color(0xFFFDE68A)
-                        : (isPreparing ? const Color(0xFFBFDBFE) : const Color(0xFFA7F3D0)),
+                        ? const Color(0xFFFFFBEB)
+                        : (isPreparing ? const Color(0xFFEFF6FF) : const Color(0xFFECFDF5)),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isPending
+                          ? const Color(0xFFFDE68A)
+                          : (isPreparing ? const Color(0xFFBFDBFE) : const Color(0xFFA7F3D0)),
+                    ),
                   ),
-                ),
-                child: Text(
-                  isPending
-                      ? 'Chờ Bếp nhận đơn'
-                      : (isPreparing ? 'Bếp đang nấu' : (isReady ? 'Sẵn sàng giao Shipper' : order.status)),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: isPending
-                        ? const Color(0xFFB45309)
-                        : (isPreparing ? const Color(0xFF1D4ED8) : const Color(0xFF047857)),
+                  child: Text(
+                    isPending
+                        ? 'Chờ Bếp nhận đơn'
+                        : (isPreparing ? 'Bếp đang nấu' : (isReady ? 'Sẵn sàng giao' : order.status)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isPending
+                          ? const Color(0xFFB45309)
+                          : (isPreparing ? const Color(0xFF1D4ED8) : const Color(0xFF047857)),
+                    ),
                   ),
                 ),
               ),

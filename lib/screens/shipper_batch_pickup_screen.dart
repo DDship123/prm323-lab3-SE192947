@@ -130,9 +130,13 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Text(
-                              'Trực Bàn số 2 • Cổng KTX Khu B (Ca Trưa)',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                            const Expanded(
+                              child: Text(
+                                'Trực Bàn số 2 • Cổng KTX Khu B (Ca Trưa)',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -254,16 +258,23 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.access_time_rounded, size: 18, color: Color(0xFFFF521B)),
-                  SizedBox(width: 6),
-                  Text(
-                    'Chuyến gom Ca Trưa 11:30',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
-                  ),
-                ],
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.access_time_rounded, size: 18, color: Color(0xFFFF521B)),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Chuyến gom Ca Trưa 11:30',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(

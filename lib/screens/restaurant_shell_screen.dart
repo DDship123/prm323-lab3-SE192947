@@ -40,29 +40,27 @@ class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => setState(() => _currentIndex = index),
-          child: SizedBox(
-            height: 56,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  isSelected ? activeIcon : icon,
-                  size: 22,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isSelected ? activeIcon : icon,
+                size: 22,
+                color: color,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
                   color: color,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: color,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
@@ -92,7 +90,6 @@ class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
         children: screens,
       ),
       bottomNavigationBar: Container(
-        height: 56.0,
         decoration: const BoxDecoration(
           color: Colors.white,
           border: Border(
@@ -108,33 +105,36 @@ class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
         ),
         child: SafeArea(
           top: false,
-          child: Row(
-            children: [
-              _buildTabItem(
-                index: 0,
-                icon: Icons.soup_kitchen_outlined,
-                activeIcon: Icons.soup_kitchen_rounded,
-                label: 'Bếp & Gom ca',
-              ),
-              _buildTabItem(
-                index: 1,
-                icon: Icons.restaurant_menu_outlined,
-                activeIcon: Icons.restaurant_menu_rounded,
-                label: 'Thực đơn',
-              ),
-              _buildTabItem(
-                index: 2,
-                icon: Icons.bar_chart_outlined,
-                activeIcon: Icons.bar_chart_rounded,
-                label: 'Doanh thu & COD',
-              ),
-              _buildTabItem(
-                index: 3,
-                icon: Icons.store_outlined,
-                activeIcon: Icons.store_rounded,
-                label: 'Cài đặt quán',
-              ),
-            ],
+          child: SizedBox(
+            height: 56.0,
+            child: Row(
+              children: [
+                _buildTabItem(
+                  index: 0,
+                  icon: Icons.soup_kitchen_outlined,
+                  activeIcon: Icons.soup_kitchen_rounded,
+                  label: 'Bếp & Gom ca',
+                ),
+                _buildTabItem(
+                  index: 1,
+                  icon: Icons.restaurant_menu_outlined,
+                  activeIcon: Icons.restaurant_menu_rounded,
+                  label: 'Thực đơn',
+                ),
+                _buildTabItem(
+                  index: 2,
+                  icon: Icons.bar_chart_outlined,
+                  activeIcon: Icons.bar_chart_rounded,
+                  label: 'Doanh thu & COD',
+                ),
+                _buildTabItem(
+                  index: 3,
+                  icon: Icons.store_outlined,
+                  activeIcon: Icons.store_rounded,
+                  label: 'Cài đặt quán',
+                ),
+              ],
+            ),
           ),
         ),
       ),
