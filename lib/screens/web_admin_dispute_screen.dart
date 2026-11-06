@@ -88,48 +88,6 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
     }
   }
 
-  List<DisputeModel> _mockDisputes() {
-    return [
-      DisputeModel(
-        id: 101,
-        orderId: 101,
-        storeName: 'Cơm Tấm Cô Ba KTX - Khu B',
-        reason: 'Món ăn có dị vật / Hỏng vị',
-        description:
-            'Món cơm sườn bị chua bốc mùi, nước mắm bị đổ bung nắp ra ngoài túi đựng khi shipper giao tới sảnh KTX BA1. Sinh viên yêu cầu hoàn tiền món cơm sườn.',
-        evidenceImageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900',
-        requestedRefundAmount: 45000,
-        status: DisputeStatus.pending,
-        createdAt: DateTime.now().subtract(const Duration(minutes: 35)),
-      ),
-      DisputeModel(
-        id: 102,
-        orderId: 102,
-        storeName: 'Bún Bò Huế O Phượng - KTX Khu A',
-        reason: 'Giao nhầm món ăn so với hóa đơn',
-        description:
-            'Đặt Bún bò gân đặc biệt nhưng nhận được bún chả cua thường, phần nước dùng bị nguội lạnh hoàn toàn.',
-        evidenceImageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=900',
-        requestedRefundAmount: 50000,
-        status: DisputeStatus.pending,
-        createdAt: DateTime.now().subtract(const Duration(hours: 1, minutes: 20)),
-      ),
-      DisputeModel(
-        id: 100,
-        orderId: 98,
-        storeName: 'Trà Sữa KTX Corner',
-        reason: 'Thiếu món trong đơn gom',
-        description: 'Đơn 3 ly trà sữa nhưng shipper chỉ bàn giao 2 ly. Quán xác nhận có quên đóng gói ly còn lại.',
-        evidenceImageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=900',
-        requestedRefundAmount: 28000,
-        approvedRefundAmount: 28000,
-        status: DisputeStatus.approved,
-        adminNote: 'Admin BQL xác minh với quán: Đã hoàn 28.000đ vào ví KTX Pay của Sinh viên.',
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-    ];
-  }
-
   List<DisputeModel> get _filteredDisputes {
     if (_statusFilter == 'ALL') return _disputes;
     if (_statusFilter == 'PENDING') {
