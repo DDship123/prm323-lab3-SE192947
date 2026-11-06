@@ -20,42 +20,44 @@ class AuthApiService {
       'password': password,
     };
 
+    final http.Response response;
     try {
-      final response = await _client
+      response = await _client
           .post(
             url,
             headers: ApiConfig.headers(),
             body: jsonEncode(payload),
           )
           .timeout(const Duration(seconds: 8));
+    } catch (e) {
+      throw Exception('Không thể kết nối đến máy chủ Backend ($e)');
+    }
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final jsonMap =
-            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-        final data = jsonMap['data'] as Map<String, dynamic>?;
-        if (data != null) {
-          final user = UserModel.fromJson(data);
-          ApiConfig.currentBackendUserId = user.id;
-          return user;
+    final Map<String, dynamic> jsonMap;
+    try {
+      jsonMap = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    } catch (_) {
+      throw Exception('Phản hồi từ máy chủ không hợp lệ (Mã: ${response.statusCode})');
+    }
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final data = jsonMap['data'] as Map<String, dynamic>?;
+      if (data != null) {
+        // Kiểm tra mật khẩu tài khoản (hệ thống lưu mật khẩu chuẩn là 123456)
+        if (password.trim() != '123456') {
+          throw Exception('Mật khẩu không chính xác! Vui lòng kiểm tra lại');
         }
-      }
-    } catch (_) {}
 
-    return UserModel(
-      id: ApiConfig.currentBackendUserId,
-      firebaseUid: 'quick_uid_${emailOrPhone.split('@').first}',
-      email: emailOrPhone,
-      displayName: emailOrPhone.contains('coba')
-          ? 'Cô Ba (Chủ Quán Cơm Tấm)'
-          : emailOrPhone.contains('shipper')
-              ? 'Nguyễn Hùng (Shipper Đội Gom)'
-              : emailOrPhone.contains('admin')
-                  ? 'Ban Quản Lý KTX (Admin)'
-                  : 'Ngô Trường Đạt (Sinh viên)',
-      phone: '0981234567',
-      ktxBuilding: 'Khu B - Tòa BA1',
-      ktxRoom: '312',
-    );
+        final user = UserModel.fromJson(data);
+        ApiConfig.currentBackendUserId = user.id;
+        return user;
+      }
+      throw Exception('Không tìm thấy dữ liệu hồ sơ người dùng trong phản hồi');
+    } else {
+      // Backend trả về lỗi (404 USER_NOT_FOUND, v.v.)
+      final errorMsg = jsonMap['message'] as String? ?? 'Tài khoản hoặc mật khẩu không chính xác';
+      throw Exception(errorMsg);
+    }
   }
 
   /// API-001: Đồng bộ tài khoản Google / OTP xuống MySQL Backend
