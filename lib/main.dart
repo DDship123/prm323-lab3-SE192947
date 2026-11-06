@@ -59,7 +59,6 @@ import 'viewmodels/store_detail_vm.dart';
 import 'widgets/ktx_bottom_nav_bar.dart';
 import 'widgets/ktx_button.dart';
 import 'widgets/ktx_sticky_cart_bar.dart';
-import 'widgets/role_selection_sheet.dart';
 import 'services/server_config_service.dart';
 import 'widgets/server_config_dialog.dart';
 
@@ -270,25 +269,21 @@ class _AuthGateState extends State<AuthGate> {
             case UserAppRole.storeOwner:
               return RestaurantShellScreen(
                 ownerId: '2',
-                onSwitchRole: () => _openRoleSwitcher(context),
                 onSignOut: _signOut,
               );
             case UserAppRole.shipper:
               return ShipperShellScreen(
                 shipperId: '3',
-                onSwitchRole: () => _openRoleSwitcher(context),
                 onSignOut: _signOut,
               );
             case UserAppRole.admin:
               return WebAdminShellScreen(
                 onSignOut: _signOut,
-                onSwitchRole: () => _openRoleSwitcher(context),
               );
             case UserAppRole.student:
               return MainShellScreen(
                 firebaseUser: firebaseUser,
                 currentRole: _activeRole,
-                onSwitchRole: () => _openRoleSwitcher(context),
                 onSignOut: _signOut,
               );
           }
@@ -303,30 +298,6 @@ class _AuthGateState extends State<AuthGate> {
         );
       },
     );
-  }
-
-  void _openRoleSwitcher(BuildContext context) async {
-    final selected = await RoleSelectionBottomSheet.show(context, currentRole: _activeRole);
-    if (selected != null) {
-      setState(() {
-        _activeRole = selected;
-        _manualDemoSignedIn = true;
-        switch (selected) {
-          case UserAppRole.student:
-            ApiConfig.currentBackendUserId = 1;
-            break;
-          case UserAppRole.storeOwner:
-            ApiConfig.currentBackendUserId = 2;
-            break;
-          case UserAppRole.shipper:
-            ApiConfig.currentBackendUserId = 3;
-            break;
-          case UserAppRole.admin:
-            ApiConfig.currentBackendUserId = 4;
-            break;
-        }
-      });
-    }
   }
 
   Future<void> _signOut() async {
@@ -360,14 +331,12 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
-  late UserAppRole _selectedRole;
   final _emailPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _selectedRole = widget.currentRole;
   }
 
   @override
@@ -692,14 +661,14 @@ class _LoginScreenState extends State<LoginScreen> {
 class MainShellScreen extends StatefulWidget {
   final User? firebaseUser;
   final UserAppRole currentRole;
-  final VoidCallback onSwitchRole;
+  final VoidCallback? onSwitchRole;
   final VoidCallback onSignOut;
 
   const MainShellScreen({
     super.key,
     required this.firebaseUser,
     required this.currentRole,
-    required this.onSwitchRole,
+    this.onSwitchRole,
     required this.onSignOut,
   });
 

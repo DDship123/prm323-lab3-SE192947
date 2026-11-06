@@ -119,24 +119,19 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
                     icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B), size: 22),
                     onPressed: () => vm.fetchKitchenOrders(ownerId: widget.ownerId),
                   ),
-                  if (widget.onSwitchRole != null)
-                    InkWell(
-                      onTap: widget.onSwitchRole,
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFFF521B), width: 1.5),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 16,
-                          backgroundImage: NetworkImage(
-                            'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120',
-                          ),
-                        ),
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFFF521B), width: 1.5),
+                    ),
+                    child: const CircleAvatar(
+                      radius: 16,
+                      backgroundImage: NetworkImage(
+                        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120',
                       ),
                     ),
+                  ),
                 ],
               ),
             ),

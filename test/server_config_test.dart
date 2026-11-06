@@ -6,7 +6,7 @@ void main() {
   group('ServerConfigModel & ApiConfig Tests', () {
     test('Khởi tạo cấu hình mặc định chính xác theo preset', () {
       final config = ServerConfigModel.defaultConfig();
-      expect(config.preset, ServerEnvironmentPreset.emulator);
+      expect(config.preset, ServerEnvironmentPreset.vpsServer);
       expect(config.baseUrl.isNotEmpty, isTrue);
       expect(config.baseUrl.endsWith('/'), isFalse);
     });

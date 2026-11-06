@@ -82,13 +82,6 @@ class WebAdminHeader extends StatelessWidget {
           // Profile & Actions
           Row(
             children: [
-              if (onSwitchRole != null)
-                TextButton.icon(
-                  onPressed: onSwitchRole,
-                  icon: const Icon(Icons.swap_horiz_rounded, size: 18),
-                  label: const Text('Đổi vai trò', style: TextStyle(fontSize: 13)),
-                ),
-              const SizedBox(width: 12),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(

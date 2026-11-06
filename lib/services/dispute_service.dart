@@ -152,44 +152,5 @@ class DisputeService {
       throw Exception('Mất kết nối máy chủ khi tải đơn hàng: $e');
     }
   }
-
-  List<OrderSummaryModel> _getMockOrders() {
-    return [
-      OrderSummaryModel(
-        id: 101,
-        storeName: 'Cơm tấm Đêm Sài Gòn - KTX Khu B',
-        totalPrice: 45000,
-        status: 'DELIVERED',
-        pickupLocation: 'KTX Khu B - Trụ A1-A2 (Cổng B2)',
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      OrderSummaryModel(
-        id: 102,
-        storeName: 'Trà sữa Gong Cha Gom Ca Trưa',
-        totalPrice: 38000,
-        status: 'DELIVERED',
-        pickupLocation: 'KTX Khu A - Cổng 1 (Bàn số 3)',
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-    ];
-  }
-
-  List<DisputeModel> _getMockDisputes() {
-    return [
-      DisputeModel(
-        id: 1,
-        orderId: 101,
-        storeName: 'Cơm tấm Đêm Sài Gòn - KTX Khu B',
-        reason: 'Món ăn có dị vật / Hỏng vị',
-        description: 'Thức ăn bị chua và thiếu canh rong biển đi kèm.',
-        evidenceImageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
-        requestedRefundAmount: 45000,
-        approvedRefundAmount: 45000,
-        status: DisputeStatus.approved,
-        adminNote: 'Đã hoàn tiền vào tài khoản sinh viên',
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-    ];
-  }
 }
 

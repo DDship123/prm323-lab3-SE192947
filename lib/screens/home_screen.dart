@@ -133,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onNotificationTap: widget.onOpenNotifications,
         cartItemCount: cartVm.totalItemCount,
         onCartTap: widget.onOpenCheckout,
-        onAvatarTap: widget.onOpenProfile ?? widget.onSwitchRole,
+        onAvatarTap: widget.onOpenProfile,
       ),
       body: RefreshIndicator(
         onRefresh: () async {

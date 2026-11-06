@@ -125,24 +125,19 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                     icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B), size: 22),
                     onPressed: () => vm.fetchBatch(shipperId: widget.shipperId),
                   ),
-                  if (widget.onSwitchRole != null)
-                    InkWell(
-                      onTap: widget.onSwitchRole,
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFFF521B), width: 1.5),
-                        ),
-                        child: const CircleAvatar(
-                          radius: 16,
-                          backgroundImage: NetworkImage(
-                            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120',
-                          ),
-                        ),
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFFF521B), width: 1.5),
+                    ),
+                    child: const CircleAvatar(
+                      radius: 16,
+                      backgroundImage: NetworkImage(
+                        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120',
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
