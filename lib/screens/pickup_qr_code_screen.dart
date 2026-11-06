@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../models/order_model.dart';
 import '../services/order_service.dart';
+import '../services/delivery_handshake_service.dart';
 import '../viewmodels/order_tracking_vm.dart';
 import 'dispute_refund_screen.dart';
 import 'live_order_tracking_screen.dart';
@@ -25,6 +26,10 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
   bool _isMaxBrightness = false;
 
   Future<void> _handleConfirmPickup() async {
+    final handshake = context.read<DeliveryHandshakeService>();
+    handshake.confirmByStudent(widget.order.id);
+    await handshake.saveToStorage();
+
     final vm = context.read<OrderTrackingViewModel>();
     final ok = await vm.confirmPickupAtGate(
       order: widget.order,
