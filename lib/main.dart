@@ -44,6 +44,7 @@ import 'services/payment_service.dart';
 import 'services/review_service.dart';
 import 'services/shipper_api_service.dart';
 import 'services/store_service.dart';
+import 'services/voucher_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_spacing.dart';
 import 'theme/app_typography.dart';
@@ -79,6 +80,7 @@ void main() async {
   try {
     await ServerConfigService().loadConfig();
     await CommissionPolicyService().loadCommissionRate();
+    await VoucherService().loadVouchers();
   } catch (_) {}
 
   // Cấu hình bắt lỗi Fatal và chuyển tiếp tới Firebase Crashlytics (chỉ áp dụng Native Android/iOS, Web không hỗ trợ Crashlytics)
@@ -142,7 +144,9 @@ class AppBootstrap extends StatelessWidget {
         Provider<OwnerApiService>(create: (_) => OwnerApiService()),
         Provider<ShipperApiService>(create: (_) => ShipperApiService()),
         Provider<AdminApiService>(create: (_) => AdminApiService()),
-        Provider<CrashlyticsService>(create: (_) => CrashlyticsService()),
+        ChangeNotifierProvider<VoucherService>.value(
+          value: VoucherService(),
+        ),
         ChangeNotifierProvider<AuthViewModel>(
           create: (ctx) =>
               AuthViewModel(authApiService: ctx.read<AuthApiService>()),
