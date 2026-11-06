@@ -14,6 +14,7 @@ class StoreService {
   Future<List<StoreModel>> fetchStores({
     String? keyword,
     String? campusZone,
+    bool onlyActive = true,
   }) async {
     final queryParams = <String, String>{};
     if (keyword != null && keyword.trim().isNotEmpty) {
@@ -23,6 +24,9 @@ class StoreService {
         campusZone.isNotEmpty &&
         campusZone != 'ALL') {
       queryParams['campusZone'] = campusZone;
+    }
+    if (onlyActive) {
+      queryParams['isActive'] = 'true';
     }
 
     final uri = Uri.parse(ApiConfig.stores).replace(
@@ -187,6 +191,38 @@ class StoreService {
       }
     } catch (_) {}
     return false;
+  }
+
+  /// API Cập nhật thông tin cửa hàng (PUT /api/v1/stores/{id})
+  Future<StoreModel?> updateStore({
+    required int id,
+    required String name,
+    required String address,
+    required String phoneNumber,
+    required String description,
+    required String avatarUrl,
+    required String campusZone,
+    bool isActive = true,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.stores}/$id');
+    final body = jsonEncode({
+      'name': name,
+      'address': address,
+      'phoneNumber': phoneNumber,
+      'description': description,
+      'avatarUrl': avatarUrl,
+      'campusZone': campusZone,
+      'isActive': isActive,
+    });
+    try {
+      final response = await _client.put(uri, headers: ApiConfig.headers(), body: body).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final jsonMap = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final data = jsonMap['data'] as Map<String, dynamic>;
+        return StoreModel.fromJson(data);
+      }
+    } catch (_) {}
+    return null;
   }
 
   List<StoreModel> _fallbackStores() => const [

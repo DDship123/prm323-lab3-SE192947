@@ -51,36 +51,27 @@ class StoreModel {
   }
 
   String get priceRange {
-    if (name.contains('Cơm Tấm')) return '28.000đ - 45.000đ';
-    if (name.contains('Bún')) return 'Từ 35.000đ';
-    if (name.contains('Trà Sữa')) return 'Từ 18.000đ';
-    return '25.000đ - 50.000đ';
+    return 'Thực đơn KTX';
   }
 
   String get priceSubtitle {
-    if (name.contains('Cơm Tấm')) return 'Mức giá sinh viên';
-    if (name.contains('Bún')) return 'Phần tiêu chuẩn';
-    if (name.contains('Trà Sữa')) return 'Giá học sinh sinh viên';
-    return 'Mức giá sinh viên';
+    return campusZone == 'KTX_KHU_A' ? 'Phục vụ KTX Khu A' : 'Phục vụ KTX Khu B';
   }
 
   List<String> get promoBadges {
-    if (name.contains('Cơm Tấm')) return ['🔥 Bán chạy', '🌿 Freeship theo ca'];
-    if (name.contains('Bún')) return ['Đang nhận ca trưa'];
-    if (name.contains('Trà Sữa')) return ['🔖 Mua 2 tặng 1 topping'];
-    return ['🔥 Bán chạy', '🌿 Freeship theo ca'];
+    final badges = <String>[];
+    if (isActive) {
+      badges.add('🌿 Đang mở bếp');
+    }
+    badges.add(campusZone == 'KTX_KHU_A' ? 'Cổng Khu A' : 'Cổng Khu B');
+    return badges;
   }
 
   String get overlayInfo {
-    if (name.contains('Cơm Tấm')) return '🕒 Chốt 10:45';
-    if (name.contains('Bún')) return 'Giao tới: Cổng KTX A & B';
-    return '';
+    return isActive ? 'Đang nhận đơn gom' : 'Tạm đóng cửa';
   }
 
   String get distanceOrTime {
-    if (name.contains('Cơm Tấm')) return '🚀 Cổng 3 KTX (150m)';
-    if (name.contains('Bún')) return 'Nhanh 15-20p';
-    if (name.contains('Trà Sữa')) return 'Trà đậm, ít ngọt';
-    return address.isNotEmpty ? address : 'Khu vực KTX';
+    return address.isNotEmpty ? address : (campusZone == 'KTX_KHU_A' ? 'KTX Khu A' : 'KTX Khu B');
   }
 }
