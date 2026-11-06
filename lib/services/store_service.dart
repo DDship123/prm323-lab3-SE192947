@@ -101,7 +101,7 @@ class StoreService {
       }
     } catch (_) {}
 
-    return _fallbackMenuItems(storeId);
+    return [];
   }
 
   /// API Thêm món ăn mới vào thực đơn quán (POST /api/v1/stores/{storeId}/menu-items)
