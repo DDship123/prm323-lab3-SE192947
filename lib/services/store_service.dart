@@ -14,6 +14,7 @@ class StoreService {
   Future<List<StoreModel>> fetchStores({
     String? keyword,
     String? campusZone,
+    bool onlyActive = true,
   }) async {
     final queryParams = <String, String>{};
     if (keyword != null && keyword.trim().isNotEmpty) {
@@ -23,6 +24,9 @@ class StoreService {
         campusZone.isNotEmpty &&
         campusZone != 'ALL') {
       queryParams['campusZone'] = campusZone;
+    }
+    if (onlyActive) {
+      queryParams['isActive'] = 'true';
     }
 
     final uri = Uri.parse(ApiConfig.stores).replace(
@@ -47,24 +51,14 @@ class StoreService {
               .map((e) => StoreModel.fromJson(e as Map<String, dynamic>))
               .toList();
         }
+      } else {
+        throw Exception('Máy chủ phản hồi mã lỗi ${response.statusCode}');
       }
-    } catch (_) {
-      // Fallback sang dữ liệu mẫu khớp với DataInitializer của Backend khi mất mạng
+    } catch (e) {
+      throw Exception('Mất kết nối máy chủ. Vui lòng kiểm tra lại kết nối mạng!');
     }
 
-    var fallback = _fallbackStores();
-    if (campusZone != null && campusZone.isNotEmpty && campusZone != 'ALL') {
-      fallback = fallback.where((s) => s.campusZone == campusZone).toList();
-    }
-    if (keyword != null && keyword.trim().isNotEmpty) {
-      final kw = keyword.trim().toLowerCase();
-      fallback = fallback
-          .where((s) =>
-              s.name.toLowerCase().contains(kw) ||
-              (s.description?.toLowerCase().contains(kw) ?? false))
-          .toList();
-    }
-    return fallback;
+    return [];
   }
 
   /// API-004: Lấy thông tin chi tiết quán ăn
@@ -111,7 +105,7 @@ class StoreService {
       }
     } catch (_) {}
 
-    return _fallbackMenuItems(storeId);
+    return [];
   }
 
   /// API Thêm món ăn mới vào thực đơn quán (POST /api/v1/stores/{storeId}/menu-items)
@@ -122,8 +116,18 @@ class StoreService {
     required String category,
     required String description,
     required String imageUrl,
+    List<CustomizationGroupModel>? customizationOptions,
   }) async {
     final uri = Uri.parse('${ApiConfig.stores}/$storeId/menu-items');
+    final formattedCustomization = (customizationOptions ?? []).map((g) => {
+      'group': g.group,
+      'required': g.required,
+      'options': g.options.map((o) => {
+        'name': o.name,
+        'extraPrice': o.extraPrice,
+      }).toList(),
+    }).toList();
+
     final body = jsonEncode({
       'name': name,
       'basePrice': basePrice,
@@ -131,7 +135,7 @@ class StoreService {
       'description': description,
       'imageUrl': imageUrl,
       'isAvailable': true,
-      'customizationOptions': [],
+      'customizationOptions': formattedCustomization,
     });
 
     try {
@@ -151,7 +155,7 @@ class StoreService {
       category: category,
       imageUrl: imageUrl,
       isAvailable: true,
-      customizationOptions: [],
+      customizationOptions: customizationOptions ?? [],
     );
   }
 
@@ -164,8 +168,18 @@ class StoreService {
     required String description,
     required String imageUrl,
     bool? isAvailable,
+    List<CustomizationGroupModel>? customizationOptions,
   }) async {
     final uri = Uri.parse('${ApiConfig.menuItems}/$id');
+    final formattedCustomization = (customizationOptions ?? []).map((g) => {
+      'group': g.group,
+      'required': g.required,
+      'options': g.options.map((o) => {
+        'name': o.name,
+        'extraPrice': o.extraPrice,
+      }).toList(),
+    }).toList();
+
     final body = jsonEncode({
       'name': name,
       'basePrice': basePrice,
@@ -173,7 +187,7 @@ class StoreService {
       'description': description,
       'imageUrl': imageUrl,
       if (isAvailable != null) 'isAvailable': isAvailable,
-      'customizationOptions': [],
+      'customizationOptions': formattedCustomization,
     });
 
     try {
@@ -197,6 +211,38 @@ class StoreService {
       }
     } catch (_) {}
     return false;
+  }
+
+  /// API Cập nhật thông tin cửa hàng (PUT /api/v1/stores/{id})
+  Future<StoreModel?> updateStore({
+    required int id,
+    required String name,
+    required String address,
+    required String phoneNumber,
+    required String description,
+    required String avatarUrl,
+    required String campusZone,
+    bool isActive = true,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.stores}/$id');
+    final body = jsonEncode({
+      'name': name,
+      'address': address,
+      'phoneNumber': phoneNumber,
+      'description': description,
+      'avatarUrl': avatarUrl,
+      'campusZone': campusZone,
+      'isActive': isActive,
+    });
+    try {
+      final response = await _client.put(uri, headers: ApiConfig.headers(), body: body).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final jsonMap = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final data = jsonMap['data'] as Map<String, dynamic>;
+        return StoreModel.fromJson(data);
+      }
+    } catch (_) {}
+    return null;
   }
 
   List<StoreModel> _fallbackStores() => const [

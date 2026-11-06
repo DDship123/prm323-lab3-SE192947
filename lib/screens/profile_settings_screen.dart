@@ -101,15 +101,6 @@ class ProfileSettingsScreen extends StatelessWidget {
           _buildDisputeCard(context),
           const SizedBox(height: AppSpacing.md),
           _buildFirebaseDemoCard(context, demoVm),
-          if (onSwitchRole != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            KtxButton(
-              label: 'Đổi vai trò người dùng (Demo)',
-              variant: KtxButtonVariant.outline,
-              icon: Icons.swap_horiz_rounded,
-              onPressed: onSwitchRole,
-            ),
-          ],
           const SizedBox(height: AppSpacing.md),
           KtxButton(
             label: 'Đăng xuất tài khoản',

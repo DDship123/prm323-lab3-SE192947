@@ -16,6 +16,7 @@ class KtxBottomNavBar extends StatelessWidget {
   final ValueChanged<int> onTap;
   final int activeOrderBadgeCount;
   final int notificationBadgeCount;
+  final int cartBadgeCount;
 
   const KtxBottomNavBar({
     super.key,
@@ -23,6 +24,7 @@ class KtxBottomNavBar extends StatelessWidget {
     required this.onTap,
     this.activeOrderBadgeCount = 0,
     this.notificationBadgeCount = 0,
+    this.cartBadgeCount = 0,
   });
 
   Widget _buildTabItem({
@@ -54,24 +56,22 @@ class KtxBottomNavBar extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => onTap(index),
-          child: SizedBox(
-            height: 56,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                iconWidget,
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: AppTypography.chipLabel.copyWith(
-                    color: color,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              iconWidget,
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: AppTypography.chipLabel.copyWith(
+                  color: color,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 ),
-              ],
-            ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
@@ -81,7 +81,6 @@ class KtxBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 56.0,
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(
@@ -97,7 +96,9 @@ class KtxBottomNavBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Row(
+        child: SizedBox(
+          height: 56.0,
+          child: Row(
           children: [
             _buildTabItem(
               index: 0,
@@ -113,9 +114,10 @@ class KtxBottomNavBar extends StatelessWidget {
             ),
             _buildTabItem(
               index: 2,
-              icon: Icons.receipt_long_outlined,
-              activeIcon: Icons.receipt_long_rounded,
-              label: 'Thanh toán',
+              icon: Icons.shopping_bag_outlined,
+              activeIcon: Icons.shopping_bag_rounded,
+              label: 'Giỏ hàng',
+              badgeCount: cartBadgeCount,
             ),
             _buildTabItem(
               index: 3,
@@ -133,6 +135,7 @@ class KtxBottomNavBar extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

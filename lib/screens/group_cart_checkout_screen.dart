@@ -1325,25 +1325,4 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
     );
   }
 
-  Widget _buildBottomNavItem(IconData icon, String label, bool isActive) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: isActive ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-            color: isActive ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
-          ),
-        ),
-      ],
-    );
-  }
 }

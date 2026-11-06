@@ -2,7 +2,12 @@
 class ApiConfig {
   ApiConfig._();
 
-  static String _dynamicBaseUrl = 'http://10.0.2.2:8080/api/v1';
+  static const String _envBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://dennis-walter-institution-appropriate.trycloudflare.com/api/v1',
+  );
+
+  static String _dynamicBaseUrl = _envBaseUrl;
 
   /// Địa chỉ Base URL kết nối Backend
   static String get baseUrl => _dynamicBaseUrl;

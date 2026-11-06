@@ -66,6 +66,43 @@ class CartCheckoutViewModel extends ChangeNotifier {
   double get subtotalAmount =>
       _items.fold(0.0, (sum, element) => sum + element.totalPrice);
 
+  List<CartItemModel> get selectedItems =>
+      _items.where((e) => e.isSelected).toList();
+
+  int get selectedItemCount =>
+      _items.where((e) => e.isSelected).fold(0, (sum, element) => sum + element.quantity);
+
+  double get selectedSubtotalAmount =>
+      _items.where((e) => e.isSelected).fold(0.0, (sum, element) => sum + element.totalPrice);
+
+  bool get isAllSelected =>
+      _items.isNotEmpty && _items.every((e) => e.isSelected);
+
+  void toggleItemSelection(int index) {
+    if (index >= 0 && index < _items.length) {
+      _items[index].isSelected = !_items[index].isSelected;
+      notifyListeners();
+    }
+  }
+
+  void toggleSelectAll(bool selectAll) {
+    for (final item in _items) {
+      item.isSelected = selectAll;
+    }
+    notifyListeners();
+  }
+
+  void removeItem(int index) {
+    if (index >= 0 && index < _items.length) {
+      _items.removeAt(index);
+      if (_items.isEmpty) {
+        _storeId = null;
+        _storeName = '';
+      }
+      notifyListeners();
+    }
+  }
+
   /// Phí giao hàng gom đơn KTX theo BR-ORD-03 (5.000đ khi đặt theo ca gom đơn)
   double _customDeliveryFee = 5000.0;
 
@@ -165,6 +202,7 @@ class CartCheckoutViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final itemsToOrder = selectedItems.isNotEmpty ? selectedItems : _items;
       final order = await _orderService.createOrder(
         storeId: _storeId!,
         storeName: _storeName,
@@ -172,7 +210,7 @@ class CartCheckoutViewModel extends ChangeNotifier {
         pickupLocation: _selectedPickupLocation,
         paymentMethod: _selectedPaymentMethod,
         note: _note,
-        items: _items,
+        items: itemsToOrder,
       );
       _createdOrder = order;
 

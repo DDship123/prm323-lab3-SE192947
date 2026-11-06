@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase/analytics_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -16,6 +17,7 @@ import 'firebase_options.dart';
 import 'models/order_model.dart';
 import 'models/store_model.dart';
 import 'models/user_role_enum.dart';
+import 'screens/cart_screen.dart';
 import 'screens/dispute_refund_screen.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/group_cart_checkout_screen.dart';
@@ -59,7 +61,6 @@ import 'viewmodels/store_detail_vm.dart';
 import 'widgets/ktx_bottom_nav_bar.dart';
 import 'widgets/ktx_button.dart';
 import 'widgets/ktx_sticky_cart_bar.dart';
-import 'widgets/role_selection_sheet.dart';
 import 'services/server_config_service.dart';
 import 'widgets/server_config_dialog.dart';
 
@@ -234,14 +235,45 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   bool _manualDemoSignedIn = false;
   UserAppRole _activeRole = UserAppRole.student;
+  bool _isLoadingSession = true;
 
   @override
   void initState() {
     super.initState();
-    // Yêu cầu Lab 3: Web chỉ phục vụ cho Admin; khi mở trên trình duyệt Web lập tức vào Web Admin Portal
-    if (kIsWeb) {
-      _activeRole = UserAppRole.admin;
-      _manualDemoSignedIn = true;
+    _loadSavedSession();
+  }
+
+  Future<void> _loadSavedSession() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+      final savedRoleName = prefs.getString('saved_user_role');
+      final savedUserId = prefs.getInt('saved_backend_user_id');
+
+      if (isLoggedIn && savedRoleName != null) {
+        if (savedUserId != null) {
+          ApiConfig.currentBackendUserId = savedUserId;
+        }
+        final restoredRole = UserAppRole.values.firstWhere(
+          (r) => r.name == savedRoleName,
+          orElse: () => UserAppRole.student,
+        );
+        if (mounted) {
+          setState(() {
+            _activeRole = restoredRole;
+            _manualDemoSignedIn = true;
+            _isLoadingSession = false;
+          });
+          return;
+        }
+      }
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        _manualDemoSignedIn = false;
+        _isLoadingSession = false;
+      });
     }
   }
 
@@ -254,6 +286,12 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingSession) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
@@ -264,31 +302,27 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         final firebaseUser = snapshot.data;
-        if (firebaseUser != null || _manualDemoSignedIn) {
+        if (_manualDemoSignedIn || (firebaseUser != null && _activeRole == UserAppRole.student)) {
           // Điều hướng màn hình giao diện theo đúng vai trò đang chọn (4 Roles)
           switch (_activeRole) {
             case UserAppRole.storeOwner:
               return RestaurantShellScreen(
                 ownerId: '2',
-                onSwitchRole: () => _openRoleSwitcher(context),
                 onSignOut: _signOut,
               );
             case UserAppRole.shipper:
               return ShipperShellScreen(
                 shipperId: '3',
-                onSwitchRole: () => _openRoleSwitcher(context),
                 onSignOut: _signOut,
               );
             case UserAppRole.admin:
               return WebAdminShellScreen(
                 onSignOut: _signOut,
-                onSwitchRole: () => _openRoleSwitcher(context),
               );
             case UserAppRole.student:
               return MainShellScreen(
                 firebaseUser: firebaseUser,
                 currentRole: _activeRole,
-                onSwitchRole: () => _openRoleSwitcher(context),
                 onSignOut: _signOut,
               );
           }
@@ -297,7 +331,13 @@ class _AuthGateState extends State<AuthGate> {
         return LoginScreen(
           currentRole: _activeRole,
           onRoleChanged: _onRoleChanged,
-          onRegisteredOrDemoSuccess: () {
+          onRegisteredOrDemoSuccess: () async {
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('is_logged_in', true);
+              await prefs.setString('saved_user_role', UserAppRole.student.name);
+              await prefs.setInt('saved_backend_user_id', 1);
+            } catch (_) {}
             setState(() => _manualDemoSignedIn = true);
           },
         );
@@ -305,31 +345,16 @@ class _AuthGateState extends State<AuthGate> {
     );
   }
 
-  void _openRoleSwitcher(BuildContext context) async {
-    final selected = await RoleSelectionBottomSheet.show(context, currentRole: _activeRole);
-    if (selected != null) {
-      setState(() {
-        _activeRole = selected;
-        _manualDemoSignedIn = true;
-        switch (selected) {
-          case UserAppRole.student:
-            ApiConfig.currentBackendUserId = 1;
-            break;
-          case UserAppRole.storeOwner:
-            ApiConfig.currentBackendUserId = 2;
-            break;
-          case UserAppRole.shipper:
-            ApiConfig.currentBackendUserId = 3;
-            break;
-          case UserAppRole.admin:
-            ApiConfig.currentBackendUserId = 4;
-            break;
-        }
-      });
-    }
-  }
-
   Future<void> _signOut() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', false);
+      await prefs.remove('saved_user_role');
+      await prefs.remove('saved_backend_user_id');
+    } catch (_) {}
+
+    ApiConfig.currentBackendUserId = 1;
+
     setState(() {
       _manualDemoSignedIn = false;
       _activeRole = UserAppRole.student;
@@ -360,15 +385,12 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
-  late UserAppRole _selectedRole;
   final _emailPhoneController = TextEditingController();
-  final _passwordController = TextEditingController(text: '123456');
+  final _passwordController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _selectedRole = widget.currentRole;
-    _emailPhoneController.text = _selectedRole.defaultEmail;
   }
 
   @override
@@ -378,19 +400,51 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _quickLogin(UserAppRole role, String email, String name, String phone) async {
-    setState(() {
-      _isLoading = true;
-      _selectedRole = role;
-      _emailPhoneController.text = email;
-    });
+  Future<void> _handleDirectLogin() async {
+    final emailOrPhone = _emailPhoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (emailOrPhone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng nhập Email hoặc Số điện thoại'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+    if (password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng nhập Mật khẩu'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
     try {
       final authApi = context.read<AuthApiService>();
       final user = await authApi.loginWithPassword(
-        emailOrPhone: email,
-        password: '123456',
+        emailOrPhone: emailOrPhone,
+        password: password,
       );
       ApiConfig.currentBackendUserId = user.id;
+
+      // Xác định Role trả về từ Backend Aiven MySQL
+      UserAppRole matchedRole = UserAppRole.student;
+      final upperRole = user.role.toUpperCase();
+      if (upperRole.contains('OWNER') || upperRole.contains('STORE')) {
+        matchedRole = UserAppRole.storeOwner;
+      } else if (upperRole.contains('SHIPPER')) {
+        matchedRole = UserAppRole.shipper;
+      } else if (upperRole.contains('ADMIN')) {
+        matchedRole = UserAppRole.admin;
+      } else {
+        matchedRole = UserAppRole.student;
+      }
+
       if (mounted) {
         await context.read<AuthViewModel>().syncFirebaseUser(
               uid: user.firebaseUid,
@@ -398,34 +452,27 @@ class _LoginScreenState extends State<LoginScreen> {
               displayName: user.displayName,
               photoUrl: user.avatarUrl,
             );
-        widget.onRoleChanged(role);
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('is_logged_in', true);
+          await prefs.setString('saved_user_role', matchedRole.name);
+          await prefs.setInt('saved_backend_user_id', user.id);
+        } catch (_) {}
+
+        widget.onRoleChanged(matchedRole);
         widget.onRegisteredOrDemoSuccess();
       }
-    } catch (_) {
-      ApiConfig.currentBackendUserId = role == UserAppRole.storeOwner
-          ? 2
-          : (role == UserAppRole.shipper ? 3 : (role == UserAppRole.admin ? 4 : 1));
+    } catch (e) {
       if (mounted) {
-        widget.onRoleChanged(role);
-        widget.onRegisteredOrDemoSuccess();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đăng nhập thất bại: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _handleDirectLogin() {
-    final input = _emailPhoneController.text.trim().toLowerCase();
-    if (input.contains('owner') || input.contains('coba')) {
-      _quickLogin(UserAppRole.storeOwner, 'coba.owner@fpt.edu.vn', 'Cô Ba (Chủ Quán Cơm Tấm)', '0908888999');
-    } else if (input.contains('shipper') || input.contains('hung')) {
-      _quickLogin(UserAppRole.shipper, 'shipper.hung@fpt.edu.vn', 'Nguyễn Hùng (Shipper Đội Gom)', '0918765432');
-    } else if (input.contains('admin')) {
-      _quickLogin(UserAppRole.admin, 'admin.ktx@fpt.edu.vn', 'Ban Quản Lý KTX ĐHQG (Admin)', '0999000111');
-    } else if (input.contains('student') || input.contains('dat')) {
-      _quickLogin(UserAppRole.student, 'student@fpt.edu.vn', 'Ngô Trường Đạt (Sinh viên)', '0981234567');
-    } else {
-      _quickLogin(_selectedRole, input.isNotEmpty ? input : _selectedRole.defaultEmail, 'Người dùng KTX', '0981234567');
     }
   }
 
@@ -468,6 +515,14 @@ class _LoginScreenState extends State<LoginScreen> {
           campusZone: 'KTX_KHU_B',
           currentScreen: 'S1_Home',
         );
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('is_logged_in', true);
+          await prefs.setString('saved_user_role', UserAppRole.student.name);
+          await prefs.setInt('saved_backend_user_id', 1);
+        } catch (_) {}
+        widget.onRoleChanged(UserAppRole.student);
+        widget.onRegisteredOrDemoSuccess();
       }
     } catch (e) {
       if (mounted) {
@@ -570,49 +625,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: AppTypography.bodySmall,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: AppSpacing.md),
-
-                // Nút chọn vai trò nhanh để demo
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.primary),
-                  ),
-                  child: InkWell(
-                    onTap: () async {
-                      final selected = await RoleSelectionBottomSheet.show(
-                        context,
-                        currentRole: _selectedRole,
-                      );
-                      if (selected != null) {
-                        setState(() {
-                          _selectedRole = selected;
-                          _emailPhoneController.text = selected.defaultEmail;
-                        });
-                      }
-                    },
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.person_pin_circle_outlined, size: 18, color: AppColors.primary),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Vai trò: ${_selectedRole.labelVi}',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.arrow_drop_down, color: AppColors.primary),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.lg),
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
@@ -627,106 +640,90 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Đăng nhập tài khoản', style: AppTypography.heading3),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Chọn nhanh tài khoản mẫu 4 vai trò:',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[700], fontWeight: FontWeight.w500),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ChoiceChip(
+                            label: const Text('🎓 Sinh viên', style: TextStyle(fontSize: 12)),
+                            selected: _emailPhoneController.text == 'student@fpt.edu.vn',
+                            onSelected: (_) {
+                              setState(() {
+                                _emailPhoneController.text = 'student@fpt.edu.vn';
+                                _passwordController.text = '123456';
+                              });
+                            },
+                          ),
+                          ChoiceChip(
+                            label: const Text('🍲 Chủ Quán', style: TextStyle(fontSize: 12)),
+                            selected: _emailPhoneController.text == 'coba.owner@fpt.edu.vn',
+                            onSelected: (_) {
+                              setState(() {
+                                _emailPhoneController.text = 'coba.owner@fpt.edu.vn';
+                                _passwordController.text = '123456';
+                              });
+                            },
+                          ),
+                          ChoiceChip(
+                            label: const Text('🛵 Shipper', style: TextStyle(fontSize: 12)),
+                            selected: _emailPhoneController.text == 'shipper.hung@fpt.edu.vn',
+                            onSelected: (_) {
+                              setState(() {
+                                _emailPhoneController.text = 'shipper.hung@fpt.edu.vn';
+                                _passwordController.text = '123456';
+                              });
+                            },
+                          ),
+                          ChoiceChip(
+                            label: const Text('🏢 Admin BQL', style: TextStyle(fontSize: 12)),
+                            selected: _emailPhoneController.text == 'admin.ktx@fpt.edu.vn',
+                            onSelected: (_) {
+                              setState(() {
+                                _emailPhoneController.text = 'admin.ktx@fpt.edu.vn';
+                                _passwordController.text = '123456';
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
                       TextField(
                         controller: _emailPhoneController,
                         decoration: const InputDecoration(
                           labelText: 'Email hoặc Số điện thoại',
+                          hintText: 'Nhập email hoặc SĐT của bạn',
                           prefixIcon: Icon(Icons.person_outline, size: 20),
                           border: OutlineInputBorder(),
                           isDense: true,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 12),
                       TextField(
                         controller: _passwordController,
                         obscureText: true,
                         decoration: const InputDecoration(
                           labelText: 'Mật khẩu',
+                          hintText: 'Nhập mật khẩu',
                           prefixIcon: Icon(Icons.lock_outline, size: 20),
                           border: OutlineInputBorder(),
                           isDense: true,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       KtxButton(
                         label: 'Đăng nhập ngay',
                         icon: Icons.login_rounded,
+                        isLoading: _isLoading,
                         onPressed: _handleDirectLogin,
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text('HOẶC VÀO NHANH 1-CHẠM THEO VAI TRÒ',
-                    style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildRoleCard(
-                        title: 'Sinh viên',
-                        account: 'student@fpt.edu.vn',
-                        icon: Icons.school_rounded,
-                        color: AppColors.primary,
-                        onTap: () => _quickLogin(
-                          UserAppRole.student,
-                          'student@fpt.edu.vn',
-                          'Ngô Trường Đạt (Sinh viên)',
-                          '0981234567',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildRoleCard(
-                        title: 'Chủ quán',
-                        account: 'coba.owner@fpt.edu.vn',
-                        icon: Icons.restaurant_rounded,
-                        color: Colors.deepOrange,
-                        onTap: () => _quickLogin(
-                          UserAppRole.storeOwner,
-                          'coba.owner@fpt.edu.vn',
-                          'Cô Ba (Chủ Quán Cơm Tấm)',
-                          '0908888999',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildRoleCard(
-                        title: 'Shipper KTX',
-                        account: 'shipper.hung@fpt.edu.vn',
-                        icon: Icons.two_wheeler_rounded,
-                        color: Colors.teal,
-                        onTap: () => _quickLogin(
-                          UserAppRole.shipper,
-                          'shipper.hung@fpt.edu.vn',
-                          'Nguyễn Hùng (Shipper Đội Gom)',
-                          '0918765432',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildRoleCard(
-                        title: 'Quản trị (Admin)',
-                        account: 'admin.ktx@fpt.edu.vn',
-                        icon: Icons.admin_panel_settings_rounded,
-                        color: Colors.indigo,
-                        onTap: () => _quickLogin(
-                          UserAppRole.admin,
-                          'admin.ktx@fpt.edu.vn',
-                          'Ban Quản Lý KTX ĐHQG (Admin)',
-                          '0999000111',
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
                 const SizedBox(height: AppSpacing.md),
                 KtxButton(
@@ -778,69 +775,21 @@ class _LoginScreenState extends State<LoginScreen> {
 );
   }
 
-  Widget _buildRoleCard({
-    required String title,
-    required String account,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.4)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 18, color: color),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              account,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 10),
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'MK: 123456 • Chạm để vào',
-              style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 }
 
 /// Khung điều hướng chính 4 Tab (S1 Trang chủ, S12 Thông báo, S10 Đơn hàng, S13 Hồ sơ)
 class MainShellScreen extends StatefulWidget {
   final User? firebaseUser;
   final UserAppRole currentRole;
-  final VoidCallback onSwitchRole;
+  final VoidCallback? onSwitchRole;
   final VoidCallback onSignOut;
 
   const MainShellScreen({
     super.key,
     required this.firebaseUser,
     required this.currentRole,
-    required this.onSwitchRole,
+    this.onSwitchRole,
     required this.onSignOut,
   });
 
@@ -959,10 +908,15 @@ class _MainShellScreenState extends State<MainShellScreen> {
     setState(() => _selectedIndex = 4);
   }
 
+  void _openCart() {
+    setState(() => _selectedIndex = 2);
+  }
+
   void _openCheckout() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => GroupCartCheckoutScreen(
+          onBackToMenu: () => Navigator.of(context).maybePop(),
           onOrderCompleted: (OrderDetailModel order) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
@@ -1000,7 +954,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
       // Tab 0: Khám phá (Trang chủ gom đơn KTX - Node 462:1932)
       HomeScreen(
         onOpenNotifications: _openNotifications,
-        onOpenCheckout: _openCheckout,
+        onOpenCheckout: _openCart,
         onOpenDispute: _openDispute,
         onOpenProfile: _openProfile,
         onSwitchRole: widget.onSwitchRole,
@@ -1020,17 +974,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
           ratingAvg: 4.8,
           ratingCount: 128,
         ),
-        onOpenCheckout: _openCheckout,
+        onOpenCheckout: _openCart,
       ),
-      // Tab 2: Thanh toán (Thanh toán & Đơn gom chuẩn Figma)
-      GroupCartCheckoutScreen(
-        onOrderCompleted: (OrderDetailModel order) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => LiveOrderTrackingScreen(initialOrder: order),
-            ),
-          );
-        },
+      // Tab 2: Giỏ hàng (Màn hình Giỏ Hàng xem & chọn món, topping trước khi sang Thanh toán)
+      CartScreen(
+        onProceedToCheckout: _openCheckout,
+        onExploreMenu: () => setState(() => _selectedIndex = 1),
       ),
       // Tab 3: Lịch sử (Lịch sử đơn hàng - Node 438:3541)
       const OrderHistoryScreen(),
@@ -1056,12 +1005,13 @@ class _MainShellScreenState extends State<MainShellScreen> {
               itemCount: cartVm.totalItemCount,
               totalAmount: cartVm.subtotalAmount,
               pickupLocation: 'Đơn gom Cổng KTX Khu B',
-              onCheckoutTap: _openCheckout,
+              onCheckoutTap: _openCart,
             ),
-          // Footer Navigation chuẩn 5 tab (Tab 2: Thông báo)
+          // Footer Navigation chuẩn 5 tab (Tab 2: Giỏ hàng)
           KtxBottomNavBar(
             currentIndex: _selectedIndex,
             notificationBadgeCount: unreadNotis,
+            cartBadgeCount: cartVm.totalItemCount,
             onTap: (index) => setState(() => _selectedIndex = index),
           ),
         ],

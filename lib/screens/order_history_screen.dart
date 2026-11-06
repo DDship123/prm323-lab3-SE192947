@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/order_model.dart';
 import '../viewmodels/order_tracking_vm.dart';
+import '../widgets/screen_state.dart';
 import 'live_order_tracking_screen.dart';
 import 'pickup_qr_code_screen.dart';
 import 'notification_board_screen.dart';
@@ -229,7 +230,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _viewMode == 0
+      bottomNavigationBar: _shouldShowBottomQr()
           ? Container(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
               color: Colors.white,
@@ -255,12 +256,29 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               ),
             )
           : null,
-      body: switch (_viewMode) {
-        1 => _buildEmptyState(),
-        2 => _buildOfflineErrorState(),
-        _ => _buildActiveHistoryList(),
-      },
+      body: _buildBodyContent(),
     );
+  }
+
+  bool _shouldShowBottomQr() {
+    if (_viewMode == 1 || _viewMode == 2) return false;
+    final state = context.watch<OrderTrackingViewModel>().historyState;
+    return state is StateSuccess;
+  }
+
+  Widget _buildBodyContent() {
+    if (_viewMode == 1) return _buildEmptyState();
+    if (_viewMode == 2) return _buildOfflineErrorState();
+
+    final state = context.watch<OrderTrackingViewModel>().historyState;
+    return switch (state) {
+      StateInitial() || StateLoading() => const Center(
+          child: CircularProgressIndicator(color: Color(0xFFFF521B)),
+        ),
+      StateError() => _buildOfflineErrorState(),
+      StateEmpty() => _buildEmptyState(),
+      StateSuccess() => _buildActiveHistoryList(),
+    };
   }
 
   // ==================== CHẾ ĐỘ 1: CÓ ĐƠN HÀNG ĐANG GIAO & GẦN ĐÂY (FIGMA MỚI) ====================
@@ -1136,7 +1154,10 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () => setState(() => _viewMode = 0),
+            onPressed: () {
+              setState(() => _viewMode = 0);
+              context.read<OrderTrackingViewModel>().loadOrderHistory();
+            },
             icon: const Icon(Icons.refresh_rounded, size: 18),
             label: const Text('Thử lại kết nối', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           ),
@@ -1154,48 +1175,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             onPressed: _showOfflineGuidanceDialog,
             icon: const Icon(Icons.assignment_outlined, size: 18),
             label: const Text('Xem cách nhận hàng offline', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildBottomNavItem(Icons.explore_outlined, 'Khám phá', false),
-          _buildBottomNavItem(Icons.restaurant_outlined, 'Đặt món', false),
-          _buildBottomNavItem(Icons.receipt_long_rounded, 'Thanh toán', false),
-          _buildBottomNavItem(Icons.access_time_filled_rounded, 'Lịch sử', true),
-          _buildBottomNavItem(Icons.person_outline_rounded, 'Tài khoản', false),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem(IconData icon, String label, bool isActive) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: isActive ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-            color: isActive ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
           ),
         ),
       ],

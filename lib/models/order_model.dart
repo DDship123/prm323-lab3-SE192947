@@ -69,6 +69,7 @@ class CartItemModel {
   final double basePrice;
   int quantity;
   final List<SelectedItemOption> selectedOptions;
+  bool isSelected;
 
   CartItemModel({
     required this.menuItemId,
@@ -77,6 +78,7 @@ class CartItemModel {
     required this.basePrice,
     this.quantity = 1,
     this.selectedOptions = const [],
+    this.isSelected = true,
   });
 
   double get extraPriceTotal =>

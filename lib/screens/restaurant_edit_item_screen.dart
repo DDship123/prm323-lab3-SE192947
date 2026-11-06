@@ -36,17 +36,111 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
   late bool _isAvailable;
   String _selectedCategory = 'COM';
   bool _isSaving = false;
-
-  // Quản lý ảnh món ăn (Tải từ máy lên hoặc chụp trực tiếp)
-  Uint8List? _pickedImageBytes;
-  String? _pickedImageName;
   bool _isUploadingImage = false;
   double _uploadProgress = 0.0;
+  Uint8List? _pickedImageBytes;
+  String? _pickedImageName;
+  bool _showManualUrlInput = false;
   final ImagePicker _picker = ImagePicker();
 
   final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
   bool get isCreateMode => widget.item == null;
+
+  final List<Map<String, dynamic>> _toppings = [];
+
+  void _removeTopping(int index) {
+    final removedName = _toppings[index]['name'];
+    setState(() {
+      _toppings.removeAt(index);
+    });
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Đã xóa topping "$removedName"'),
+        duration: const Duration(seconds: 1),
+        backgroundColor: AppColors.error,
+      ),
+    );
+  }
+
+  void _toggleTopping(int index) {
+    setState(() {
+      final current = _toppings[index]['available'] as bool;
+      _toppings[index]['available'] = !current;
+    });
+    final item = _toppings[index];
+    final isAvail = item['available'] as bool;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${item['name']}: ${isAvail ? "Đã BẬT (Còn Topping)" : "Đã TẮT (Hết Topping)"}'),
+        duration: const Duration(seconds: 1),
+        backgroundColor: isAvail ? AppColors.success : AppColors.textSecondary,
+      ),
+    );
+  }
+
+  void _showAddToppingDialog() {
+    final nameCtrl = TextEditingController();
+    final priceCtrl = TextEditingController(text: '5000');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Thêm Topping Mới', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Tên Topping',
+                hintText: 'VD: Phô mai kéo sợi, Chả lụa...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: priceCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Giá Topping (VNĐ)',
+                hintText: 'VD: 5000',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () {
+              final name = nameCtrl.text.trim();
+              final price = double.tryParse(priceCtrl.text.trim()) ?? 5000.0;
+              if (name.isNotEmpty) {
+                setState(() {
+                  _toppings.add({'name': name, 'price': price, 'available': true});
+                });
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Đã thêm topping "$name" (+${currencyFormatter.format(price)})'),
+                    backgroundColor: AppColors.success,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+            child: const Text('Thêm', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -55,10 +149,23 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
     _priceController = TextEditingController(text: widget.item != null ? widget.item!.basePrice.toStringAsFixed(0) : '35000');
     _descController = TextEditingController(text: widget.item?.description ?? '');
     _imageUrlController = TextEditingController(
-      text: widget.item?.imageUrl ?? 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c',
+      text: widget.item?.imageUrl ?? '',
     );
     _isAvailable = widget.item?.isAvailable ?? true;
     _selectedCategory = widget.item?.category ?? 'COM';
+
+    // Nạp danh sách topping nếu là chế độ chỉnh sửa món có sẵn
+    if (widget.item != null && widget.item!.customizationOptions.isNotEmpty) {
+      for (final grp in widget.item!.customizationOptions) {
+        for (final opt in grp.options) {
+          _toppings.add({
+            'name': opt.name,
+            'price': opt.extraPrice,
+            'available': true,
+          });
+        }
+      }
+    }
     CommissionPolicyService().loadCommissionRate().then((_) {
       if (mounted) setState(() {});
     });
@@ -93,9 +200,22 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
       final name = _nameController.text.trim();
       final price = double.tryParse(_priceController.text.trim()) ?? 35000.0;
       final desc = _descController.text.trim();
-      final img = _imageUrlController.text.trim().isNotEmpty
-          ? _imageUrlController.text.trim()
-          : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+      final img = _imageUrlController.text.trim();
+
+      final customOptions = _toppings.isNotEmpty
+          ? [
+              CustomizationGroupModel(
+                group: 'Topping KTX',
+                required: false,
+                options: _toppings
+                    .map((t) => CustomizationOptionModel(
+                          name: t['name'] as String,
+                          extraPrice: (t['price'] as num).toDouble(),
+                        ))
+                    .toList(),
+              ),
+            ]
+          : <CustomizationGroupModel>[];
 
       final service = StoreService();
       if (isCreateMode) {
@@ -106,6 +226,7 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
           category: _selectedCategory,
           description: desc,
           imageUrl: img,
+          customizationOptions: customOptions,
         );
       } else {
         await service.updateMenuItem(
@@ -116,6 +237,7 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
           description: desc,
           imageUrl: img,
           isAvailable: _isAvailable,
+          customizationOptions: customOptions,
         );
       }
 
@@ -513,17 +635,44 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Tùy chọn Topping KTX', style: AppTypography.heading2),
-                      const Chip(
-                        label: Text('Mặc định', style: TextStyle(fontSize: 11)),
-                        backgroundColor: AppColors.surfaceVariant,
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        icon: const Icon(Icons.add_circle_outline, size: 16, color: AppColors.primary),
+                        label: const Text(
+                          'Thêm Topping',
+                          style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: _showAddToppingDialog,
                       ),
                     ],
                   ),
                   const Divider(),
-                  _buildToppingTile('Trứng ốp la lòng đào', 6000, true),
-                  _buildToppingTile('Chả trứng hấp thịt', 8000, true),
-                  _buildToppingTile('Thêm tóp mỡ giòn', 3000, true),
-                  _buildToppingTile('Canh chua thịt bằm', 5000, true),
+                  if (_toppings.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.lunch_dining_outlined, size: 36, color: Colors.grey.shade400),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Món ăn chưa có Topping nào',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Bấm "+ Thêm Topping" ở trên để bổ sung món ăn kèm cho sinh viên.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    for (int i = 0; i < _toppings.length; i++) _buildToppingTile(i),
                 ],
               ),
             ),
@@ -553,28 +702,62 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
     );
   }
 
-  Widget _buildToppingTile(String name, double price, bool available) {
+  Widget _buildToppingTile(int index) {
+    final item = _toppings[index];
+    final bool available = item['available'] as bool;
+    final double price = (item['price'] as num).toDouble();
+    final String name = item['name'] as String;
+
     return Material(
       color: Colors.transparent,
       child: ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(name, style: AppTypography.bodyMedium),
-      subtitle: Text(
-        '+${currencyFormatter.format(price)}',
-        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-      ),
-      trailing: Chip(
-        label: Text(
-          available ? 'Còn Topping' : 'Hết Topping',
-          style: const TextStyle(
-            color: AppColors.success,
-            fontSize: 12,
+        contentPadding: EdgeInsets.zero,
+        title: Text(
+          name,
+          style: AppTypography.bodyMedium.copyWith(
+            decoration: available ? TextDecoration.none : TextDecoration.lineThrough,
+            color: available ? AppColors.textPrimary : AppColors.textSecondary,
+          ),
+        ),
+        subtitle: Text(
+          '+${currencyFormatter.format(price)}',
+          style: TextStyle(
+            color: available ? AppColors.primary : AppColors.textSecondary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppColors.successLight,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InkWell(
+              onTap: () => _toggleTopping(index),
+              borderRadius: BorderRadius.circular(16),
+              child: Chip(
+                avatar: Icon(
+                  available ? Icons.check_circle : Icons.cancel_outlined,
+                  size: 15,
+                  color: available ? AppColors.success : AppColors.textSecondary,
+                ),
+                label: Text(
+                  available ? 'Còn Topping' : 'Hết Topping',
+                  style: TextStyle(
+                    color: available ? AppColors.success : AppColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                backgroundColor: available ? AppColors.successLight : AppColors.surfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.error),
+              tooltip: 'Xóa topping này',
+              onPressed: () => _removeTopping(index),
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -695,28 +878,40 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
                   ),
                 ],
               ),
-              if (hasImage)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.successLight,
-                    borderRadius: AppRadius.roundedSm,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle_rounded, size: 12, color: AppColors.success),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Đã có ảnh',
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.success,
-                          fontWeight: FontWeight.bold,
-                        ),
+              Row(
+                children: [
+                  if (hasImage)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.successLight,
+                        borderRadius: AppRadius.roundedSm,
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.check_circle_rounded, size: 12, color: AppColors.success),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Đã có ảnh',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  InkWell(
+                    onTap: () => setState(() => _showManualUrlInput = !_showManualUrlInput),
+                    child: Text(
+                      _showManualUrlInput ? 'Ẩn URL' : '🔗 Link URL',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFFFF521B), fontWeight: FontWeight.w600),
+                    ),
                   ),
-                ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -883,6 +1078,22 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
               onPressed: _showPresetPhotosDialog,
             ),
           ),
+
+          // Ô nhập link URL thủ công nếu cần
+          if (_showManualUrlInput) ...[
+            const SizedBox(height: 10),
+            TextFormField(
+              controller: _imageUrlController,
+              decoration: const InputDecoration(
+                labelText: 'Đường dẫn ảnh trực tiếp (URL)',
+                hintText: 'https://...',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.link_rounded),
+                isDense: true,
+              ),
+              onChanged: (_) => setState(() => _pickedImageBytes = null),
+            ),
+          ],
         ],
       ),
     );

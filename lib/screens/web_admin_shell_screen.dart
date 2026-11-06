@@ -32,7 +32,15 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentTabIndex = 0;
   bool _isSidebarCollapsed = false;
-  AdminDashboardStatsModel _stats = AdminDashboardStatsModel.mockData();
+  AdminDashboardStatsModel _stats = const AdminDashboardStatsModel(
+    totalRevenue: 0,
+    totalOrders: 0,
+    activeOrders: 0,
+    pendingDisputes: 0,
+    totalUsers: 0,
+    disputeResolutionRate: 0,
+    recentActivities: [],
+  );
 
   @override
   void initState() {

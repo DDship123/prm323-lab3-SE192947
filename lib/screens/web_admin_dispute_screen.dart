@@ -66,13 +66,13 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
       final list = await widget.disputeService.fetchDisputes();
       if (mounted) {
         setState(() {
-          _disputes = list.isNotEmpty ? list : _mockDisputes();
+          _disputes = list;
           if (_selectedDispute == null && _disputes.isNotEmpty) {
             _selectedDispute = _disputes.first;
           } else if (_selectedDispute != null) {
             _selectedDispute = _disputes.firstWhere(
               (d) => d.id == _selectedDispute!.id,
-              orElse: () => _disputes.first,
+              orElse: () => _disputes.isNotEmpty ? _disputes.first : _selectedDispute!,
             );
           }
         });
@@ -80,10 +80,7 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _disputes = _mockDisputes();
-          if (_selectedDispute == null && _disputes.isNotEmpty) {
-            _selectedDispute = _disputes.first;
-          }
+          _disputes = [];
         });
       }
     } finally {

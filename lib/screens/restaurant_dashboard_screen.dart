@@ -46,6 +46,30 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
     });
   }
 
+  void _confirmSignOut(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản Chủ quán không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Ở lại'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () {
+              Navigator.pop(ctx);
+              widget.onSignOut?.call();
+            },
+            child: const Text('Đăng xuất', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<OwnerViewModel>();
@@ -105,9 +129,13 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Text(
-                              'Đang mở Bếp ca trưa 11:30 • KTX Khu B',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                            const Expanded(
+                              child: Text(
+                                'Đang mở Bếp ca trưa 11:30 • KTX Khu B',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -119,24 +147,50 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
                     icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B), size: 22),
                     onPressed: () => vm.fetchKitchenOrders(ownerId: widget.ownerId),
                   ),
-                  if (widget.onSwitchRole != null)
-                    InkWell(
-                      onTap: widget.onSwitchRole,
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFFF521B), width: 1.5),
+                  PopupMenuButton<String>(
+                    tooltip: 'Tài khoản & Đăng xuất',
+                    onSelected: (val) {
+                      if (val == 'logout') {
+                        _confirmSignOut(context);
+                      }
+                    },
+                    itemBuilder: (ctx) => [
+                      const PopupMenuItem(
+                        enabled: false,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Cô Ba (Chủ Quán)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                            Text('coba.owner@fpt.edu.vn', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          ],
                         ),
-                        child: const CircleAvatar(
-                          radius: 16,
-                          backgroundImage: NetworkImage(
-                            'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120',
-                          ),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'logout',
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
+                            SizedBox(width: 8),
+                            Text('Đăng xuất', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFFF521B), width: 1.5),
+                      ),
+                      child: const CircleAvatar(
+                        radius: 16,
+                        backgroundImage: NetworkImage(
+                          'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120',
                         ),
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
@@ -211,18 +265,25 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.access_time_rounded, size: 18, color: Color(0xFFFF521B)),
-                  SizedBox(width: 6),
-                  Text(
-                    'Ca gom trưa (11:30 - 12:00)',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
-                  ),
-                ],
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.access_time_rounded, size: 18, color: Color(0xFFFF521B)),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Ca gom trưa (11:30 - 12:00)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFECFDF5),
                   borderRadius: BorderRadius.circular(20),
@@ -450,29 +511,34 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isPending
-                      ? const Color(0xFFFFFBEB)
-                      : (isPreparing ? const Color(0xFFEFF6FF) : const Color(0xFFECFDF5)),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
+              const SizedBox(width: 8),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
                     color: isPending
-                        ? const Color(0xFFFDE68A)
-                        : (isPreparing ? const Color(0xFFBFDBFE) : const Color(0xFFA7F3D0)),
+                        ? const Color(0xFFFFFBEB)
+                        : (isPreparing ? const Color(0xFFEFF6FF) : const Color(0xFFECFDF5)),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isPending
+                          ? const Color(0xFFFDE68A)
+                          : (isPreparing ? const Color(0xFFBFDBFE) : const Color(0xFFA7F3D0)),
+                    ),
                   ),
-                ),
-                child: Text(
-                  isPending
-                      ? 'Chờ Bếp nhận đơn'
-                      : (isPreparing ? 'Bếp đang nấu' : (isReady ? 'Sẵn sàng giao Shipper' : order.status)),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: isPending
-                        ? const Color(0xFFB45309)
-                        : (isPreparing ? const Color(0xFF1D4ED8) : const Color(0xFF047857)),
+                  child: Text(
+                    isPending
+                        ? 'Chờ Bếp nhận đơn'
+                        : (isPreparing ? 'Bếp đang nấu' : (isReady ? 'Sẵn sàng giao' : order.status)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: isPending
+                          ? const Color(0xFFB45309)
+                          : (isPreparing ? const Color(0xFF1D4ED8) : const Color(0xFF047857)),
+                    ),
                   ),
                 ),
               ),
