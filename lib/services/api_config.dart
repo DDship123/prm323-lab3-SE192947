@@ -4,7 +4,7 @@ class ApiConfig {
 
   static const String _envBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://solution-slope-creating-phillips.trycloudflare.com/api/v1',
+    defaultValue: 'https://dennis-walter-institution-appropriate.trycloudflare.com/api/v1',
   );
 
   static String _dynamicBaseUrl = _envBaseUrl;

@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 enum ServerEnvironmentPreset {
   emulator('Máy ảo Android (10.0.2.2:8088)', 'http://10.0.2.2:8088/api/v1'),
   localhost('USB Cáp / Localhost (127.0.0.1:8088)', 'http://127.0.0.1:8088/api/v1'),
-  vpsServer('Cloudflare Tunnel (HTTPS Live)', 'https://solution-slope-creating-phillips.trycloudflare.com/api/v1'),
+  vpsServer('Cloudflare Tunnel (Aiven MySQL Live)', 'https://dennis-walter-institution-appropriate.trycloudflare.com/api/v1'),
   custom('Tùy chỉnh IP / Cloudflare Tunnel', '');
 
   final String label;
