@@ -53,45 +53,101 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
     final state = vm.state;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: KtxAppBar(
-        title: 'Bảng giao nhận tại Cổng KTX',
-        actions: [
-          IconButton(
-            tooltip: 'Quét QR giao hàng nhanh',
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            onPressed: () => _openQuickScanDialog(context, vm),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(66),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
           ),
-          IconButton(
-            tooltip: 'Ví Thu nhập & Đối soát',
-            icon: const Icon(Icons.account_balance_wallet_rounded),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ShipperWalletScreen(shipperId: widget.shipperId),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: 'Làm mới',
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => vm.fetchBatch(shipperId: widget.shipperId),
-          ),
-          if (widget.onSwitchRole != null)
-            IconButton(
-              tooltip: 'Đổi vai trò',
-              icon: const Icon(Icons.swap_horiz_rounded),
-              onPressed: widget.onSwitchRole,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.local_shipping_rounded, color: Color(0xFFFF521B), size: 22),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Đội Xe Gom KTX Food',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'Trực Bàn số 2 • Cổng KTX Khu B (Ca Trưa)',
+                              style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Quét QR giao nhanh',
+                    icon: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFFFF521B), size: 22),
+                    onPressed: () => _openQuickScanDialog(context, vm),
+                  ),
+                  IconButton(
+                    tooltip: 'Làm mới',
+                    icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B), size: 22),
+                    onPressed: () => vm.fetchBatch(shipperId: widget.shipperId),
+                  ),
+                  if (widget.onSwitchRole != null)
+                    InkWell(
+                      onTap: widget.onSwitchRole,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFFF521B), width: 1.5),
+                        ),
+                        child: const CircleAvatar(
+                          radius: 16,
+                          backgroundImage: NetworkImage(
+                            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120',
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          if (widget.onSignOut != null)
-            IconButton(
-              tooltip: 'Đăng xuất',
-              icon: const Icon(Icons.logout),
-              onPressed: widget.onSignOut,
-            ),
-        ],
+          ),
+        ),
       ),
       body: switch (state) {
         StateInitial() || StateLoading() => const KtxLoadingState(message: 'Đang tải lộ trình gom hàng KTX...'),
@@ -105,12 +161,21 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
             onRetry: () => vm.fetchBatch(shipperId: widget.shipperId),
           ),
         StateSuccess(data: final batch) => ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.all(16),
             children: [
               _buildBatchSummaryCard(batch),
-              const SizedBox(height: AppSpacing.md),
-              Text('Danh sách đơn gom cần giao:', style: AppTypography.heading3),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: 16),
+              const Row(
+                children: [
+                  Icon(Icons.inventory_2_outlined, size: 18, color: Color(0xFFFF521B)),
+                  SizedBox(width: 6),
+                  Text(
+                    'Danh sách đơn gom cần phát tại bàn:',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
               ...batch.orders.map((o) => _buildShipperOrderCard(o, vm)),
             ],
           ),
@@ -120,11 +185,18 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
 
   Widget _buildBatchSummaryCard(ShipperBatchModel batch) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primaryLight.withOpacity(0.4),
-        borderRadius: AppRadius.roundedMd,
-        border: Border.all(color: AppColors.primary),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.03),
+            offset: Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,24 +204,71 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Chuyến gom: Ca Trưa 11:30', style: AppTypography.heading3),
-              Text('${batch.totalOrders} đơn', style: AppTypography.heading3.copyWith(color: AppColors.primaryDark)),
+              const Row(
+                children: [
+                  Icon(Icons.access_time_rounded, size: 18, color: Color(0xFFFF521B)),
+                  SizedBox(width: 6),
+                  Text(
+                    'Chuyến gom Ca Trưa 11:30',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                ),
+                child: Text(
+                  '${batch.totalOrders} đơn gom',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF64748B)),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  'Điểm tập kết: Bàn số 2 • Cổng KTX Khu B',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 6),
-          Text('Điểm tập kết: ${batch.campusZone}', style: AppTypography.bodySmall),
-          const SizedBox(height: 4),
-          Text('Thù lao ước tính: ${currencyFormatter.format(batch.totalDeliveryEarnings)}',
-              style: AppTypography.bodyMedium.copyWith(color: AppColors.primaryDark, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              const Icon(Icons.payments_outlined, size: 16, color: Color(0xFF10B981)),
+              const SizedBox(width: 4),
+              Text(
+                'Thù lao ước tính: ',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+              ),
+              Text(
+                currencyFormatter.format(batch.totalDeliveryEarnings),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFFF521B)),
+              ),
+              const Text(
+                ' (15k ship / đơn)',
+                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                ActionChip(
-                  avatar: const Icon(Icons.route, size: 16, color: AppColors.primary),
-                  label: const Text('Lộ trình gom hàng', style: TextStyle(fontSize: 12)),
-                  onPressed: () {
+                _buildShipperActionChip(
+                  icon: Icons.alt_route_rounded,
+                  label: 'Lộ trình gom hàng',
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const ShipperRouteScreen()),
@@ -157,10 +276,23 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                   },
                 ),
                 const SizedBox(width: 8),
-                ActionChip(
-                  avatar: const Icon(Icons.calendar_today, size: 16, color: AppColors.primary),
-                  label: const Text('Đăng ký ca', style: TextStyle(fontSize: 12)),
-                  onPressed: () {
+                _buildShipperActionChip(
+                  icon: Icons.account_balance_wallet_rounded,
+                  label: 'Ví thu nhập & COD',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ShipperWalletScreen(shipperId: widget.shipperId),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                _buildShipperActionChip(
+                  icon: Icons.calendar_today_rounded,
+                  label: 'Đăng ký ca mới',
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -170,10 +302,10 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                   },
                 ),
                 const SizedBox(width: 8),
-                ActionChip(
-                  avatar: const Icon(Icons.assessment, size: 16, color: AppColors.primary),
-                  label: const Text('Tổng kết ca', style: TextStyle(fontSize: 12)),
-                  onPressed: () {
+                _buildShipperActionChip(
+                  icon: Icons.assessment_rounded,
+                  label: 'Tổng kết ca',
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -190,139 +322,245 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
     );
   }
 
-  Widget _buildShipperOrderCard(ShipperBatchItemModel order, ShipperViewModel vm) {
-    final isDelivering = order.status == 'DELIVERING';
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppRadius.roundedMd,
-        side: const BorderSide(color: AppColors.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildShipperActionChip({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Đơn #${order.orderCode}', style: AppTypography.heading3),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isDelivering ? AppColors.primaryLight : AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    order.status,
-                    style: TextStyle(
-                      color: isDelivering ? AppColors.primaryDark : AppColors.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text('Quán: ${order.storeName} (${order.storeAddress})', style: AppTypography.bodySmall),
-            Text('Người nhận: ${order.customerName} - ${order.customerPhone}', style: AppTypography.bodySmall),
-            Text('PIN đối soát: ${order.pickupPin ?? "4567"}', style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold)),
-            const Divider(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(currencyFormatter.format(order.finalAmount),
-                    style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
-                if (!isDelivering)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ShipperPickupDetailScreen(
-                                order: order,
-                                onPickupConfirmed: () {
-                                  vm.confirmPickup(
-                                    orderId: order.orderId,
-                                    shipperId: widget.shipperId,
-                                  );
-                                },
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text('Chi tiết quán', style: TextStyle(fontSize: 12)),
-                      ),
-                      const SizedBox(width: 8),
-                      KtxButton(
-                        label: 'Lấy hàng',
-                        icon: Icons.check_circle_outline,
-                        onPressed: () async {
-                          await vm.confirmPickup(
-                            orderId: order.orderId,
-                            shipperId: widget.shipperId,
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Đã nhận đơn tại quán! Bắt đầu giao KTX.')),
-                          );
-                        },
-                      ),
-                    ],
-                  )
-                else
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.error,
-                          side: const BorderSide(color: AppColors.error),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        ),
-                        icon: const Icon(Icons.report_problem_outlined, size: 14),
-                        label: const Text('Bom hàng', style: TextStyle(fontSize: 11)),
-                        onPressed: () => _showReportFailureDialog(context, order, vm),
-                      ),
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        ),
-                        icon: const Icon(Icons.undo_rounded, size: 14),
-                        label: const Text('Hủy nhận', style: TextStyle(fontSize: 11)),
-                        onPressed: () => _showCancelPickupDialog(context, order, vm),
-                      ),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                        icon: const Icon(Icons.qr_code_scanner, size: 14, color: Colors.white),
-                        label: const Text('Trao hàng', style: TextStyle(color: Colors.white, fontSize: 11)),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ShipperHandoverConfirmScreen(
-                                order: order,
-                                shipperId: widget.shipperId,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-              ],
+            Icon(icon, size: 14, color: const Color(0xFFFF521B)),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildShipperOrderCard(ShipperBatchItemModel order, ShipperViewModel vm) {
+    final isDelivering = order.status == 'DELIVERING';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.03),
+            offset: Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFFEDD5)),
+                ),
+                child: Text(
+                  '#${order.orderCode}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Color(0xFFFF521B),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isDelivering ? const Color(0xFFEFF6FF) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isDelivering ? const Color(0xFFBFDBFE) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: Text(
+                  isDelivering ? 'Đang giao tới sảnh' : order.status,
+                  style: TextStyle(
+                    color: isDelivering ? const Color(0xFF1D4ED8) : const Color(0xFF475569),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.person_outline_rounded, size: 16, color: Color(0xFF64748B)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${order.customerName} • ${order.customerPhone}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFBEB),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: Text(
+                  'PIN: ${order.pickupPin ?? "4829"}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFFB45309)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.storefront_outlined, size: 16, color: Color(0xFF64748B)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${order.storeName} (${order.storeAddress})',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Text('Tiền thu: ', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  Text(
+                    currencyFormatter.format(order.finalAmount),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFFFF521B)),
+                  ),
+                ],
+              ),
+              if (!isDelivering)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF334155),
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ShipperPickupDetailScreen(
+                              order: order,
+                              onPickupConfirmed: () {
+                                vm.confirmPickup(
+                                  orderId: order.orderId,
+                                  shipperId: widget.shipperId,
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                      child: const Text('Chi tiết quán', style: TextStyle(fontSize: 12)),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF521B),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.check_circle_outline, size: 16),
+                      label: const Text('Lấy hàng', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      onPressed: () async {
+                        await vm.confirmPickup(
+                          orderId: order.orderId,
+                          shipperId: widget.shipperId,
+                        );
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Đã nhận đơn tại quán! Bắt đầu giao KTX.')),
+                        );
+                      },
+                    ),
+                  ],
+                )
+              else
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFFEF4444),
+                        side: const BorderSide(color: Color(0xFFEF4444)),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.report_problem_outlined, size: 14),
+                      label: const Text('Sự cố', style: TextStyle(fontSize: 11)),
+                      onPressed: () => _showReportFailureDialog(context, order, vm),
+                    ),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.qr_code_scanner, size: 14, color: Colors.white),
+                      label: const Text('Trao hàng QR', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ShipperHandoverConfirmScreen(
+                              order: order,
+                              shipperId: widget.shipperId,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
