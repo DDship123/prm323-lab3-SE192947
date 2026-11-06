@@ -308,17 +308,25 @@ class _RestaurantStoreSettingsScreenState extends State<RestaurantStoreSettingsS
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Khu vực gom đơn phục vụ', style: AppTypography.heading2),
-                  CheckboxListTile(
-                    title: const Text('KTX Khu A – Cổng 1 & Cổng 2'),
-                    value: _serveZoneA,
-                    activeColor: AppColors.primary,
-                    onChanged: (val) => setState(() => _serveZoneA = val ?? true),
+                  Material(
+                    color: Colors.transparent,
+                    child: CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('KTX Khu A – Cổng 1 & Cổng 2'),
+                      value: _serveZoneA,
+                      activeColor: AppColors.primary,
+                      onChanged: (val) => setState(() => _serveZoneA = val ?? true),
+                    ),
                   ),
-                  CheckboxListTile(
-                    title: const Text('KTX Khu B – Trụ A1–A2 (Cổng B2)'),
-                    value: _serveZoneB,
-                    activeColor: AppColors.primary,
-                    onChanged: (val) => setState(() => _serveZoneB = val ?? true),
+                  Material(
+                    color: Colors.transparent,
+                    child: CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('KTX Khu B – Trụ A1–A2 (Cổng B2)'),
+                      value: _serveZoneB,
+                      activeColor: AppColors.primary,
+                      onChanged: (val) => setState(() => _serveZoneB = val ?? true),
+                    ),
                   ),
                 ],
               ),

@@ -71,6 +71,91 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
     },
   ];
 
+  final List<Map<String, dynamic>> _toppings = [
+    {'name': 'Trứng ốp la lòng đào', 'price': 6000.0, 'available': true},
+    {'name': 'Chả trứng hấp thịt', 'price': 8000.0, 'available': true},
+    {'name': 'Thêm tóp mỡ giòn', 'price': 3000.0, 'available': true},
+    {'name': 'Canh chua thịt bằm', 'price': 5000.0, 'available': true},
+  ];
+
+  void _toggleTopping(int index) {
+    setState(() {
+      final current = _toppings[index]['available'] as bool;
+      _toppings[index]['available'] = !current;
+    });
+    final item = _toppings[index];
+    final isAvail = item['available'] as bool;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${item['name']}: ${isAvail ? "Đã bật CÒN Topping" : "Đã chuyển sang HẾT Topping"}'),
+        duration: const Duration(seconds: 1),
+        backgroundColor: isAvail ? AppColors.success : AppColors.textSecondary,
+      ),
+    );
+  }
+
+  void _showAddToppingDialog() {
+    final nameCtrl = TextEditingController();
+    final priceCtrl = TextEditingController(text: '5000');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Thêm Topping Mới', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Tên Topping',
+                hintText: 'VD: Phô mai kéo sợi, Chả lụa...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: priceCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Giá Topping (VNĐ)',
+                hintText: 'VD: 5000',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () {
+              final name = nameCtrl.text.trim();
+              final price = double.tryParse(priceCtrl.text.trim()) ?? 5000.0;
+              if (name.isNotEmpty) {
+                setState(() {
+                  _toppings.add({'name': name, 'price': price, 'available': true});
+                });
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Đã thêm topping "$name" (+${currencyFormatter.format(price)})'),
+                    backgroundColor: AppColors.success,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+            child: const Text('Thêm', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _pickAndUploadImage() async {
     try {
       final picker = ImagePicker();
@@ -383,17 +468,31 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Tùy chọn Topping KTX', style: AppTypography.heading2),
-                      const Chip(
-                        label: Text('Mặc định', style: TextStyle(fontSize: 11)),
-                        backgroundColor: AppColors.surfaceVariant,
+                      Row(
+                        children: [
+                          TextButton.icon(
+                            style: TextButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                            ),
+                            icon: const Icon(Icons.add_circle_outline, size: 16, color: AppColors.primary),
+                            label: const Text(
+                              'Thêm Topping',
+                              style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: _showAddToppingDialog,
+                          ),
+                          const SizedBox(width: 4),
+                          const Chip(
+                            label: Text('Mặc định', style: TextStyle(fontSize: 11)),
+                            backgroundColor: AppColors.surfaceVariant,
+                          ),
+                        ],
                       ),
                     ],
                   ),
                   const Divider(),
-                  _buildToppingTile('Trứng ốp la lòng đào', 6000, true),
-                  _buildToppingTile('Chả trứng hấp thịt', 8000, true),
-                  _buildToppingTile('Thêm tóp mỡ giòn', 3000, true),
-                  _buildToppingTile('Canh chua thịt bằm', 5000, true),
+                  for (int i = 0; i < _toppings.length; i++) _buildToppingTile(i),
                 ],
               ),
             ),
@@ -423,28 +522,57 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
     );
   }
 
-  Widget _buildToppingTile(String name, double price, bool available) {
+  Widget _buildToppingTile(int index) {
+    final item = _toppings[index];
+    final bool available = item['available'] as bool;
+    final double price = (item['price'] as num).toDouble();
+    final String name = item['name'] as String;
+
     return Material(
       color: Colors.transparent,
       child: ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(name, style: AppTypography.bodyMedium),
-      subtitle: Text(
-        '+${currencyFormatter.format(price)}',
-        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-      ),
-      trailing: Chip(
-        label: Text(
-          available ? 'Còn Topping' : 'Hết Topping',
-          style: const TextStyle(
-            color: AppColors.success,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
+        contentPadding: EdgeInsets.zero,
+        title: Text(name, style: AppTypography.bodyMedium),
+        subtitle: Text(
+          '+${currencyFormatter.format(price)}',
+          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: AppColors.successLight,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InkWell(
+              onTap: () => _toggleTopping(index),
+              borderRadius: BorderRadius.circular(16),
+              child: Chip(
+                avatar: Icon(
+                  available ? Icons.check_circle : Icons.cancel_outlined,
+                  size: 15,
+                  color: available ? AppColors.success : AppColors.textSecondary,
+                ),
+                label: Text(
+                  available ? 'Còn Topping' : 'Hết Topping',
+                  style: TextStyle(
+                    color: available ? AppColors.success : AppColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                backgroundColor: available ? AppColors.successLight : AppColors.surfaceVariant,
+              ),
+            ),
+            if (index >= 4) ...[
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline, size: 18, color: AppColors.error),
+                tooltip: 'Xóa topping này',
+                onPressed: () {
+                  setState(() => _toppings.removeAt(index));
+                },
+              ),
+            ],
+          ],
+        ),
       ),
-    ),
     );
   }
 
