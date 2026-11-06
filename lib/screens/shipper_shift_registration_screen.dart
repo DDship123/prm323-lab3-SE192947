@@ -87,15 +87,8 @@ class _ShipperShiftRegistrationScreenState extends State<ShipperShiftRegistratio
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: KtxAppBar(
+      appBar: const KtxAppBar(
         title: 'Đăng ký Ca & Chuyến gom',
-        actions: [
-          IconButton(
-            tooltip: 'Đăng xuất tài khoản',
-            icon: const Icon(Icons.logout_rounded, color: AppColors.error),
-            onPressed: () => _confirmSignOut(context),
-          ),
-        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),

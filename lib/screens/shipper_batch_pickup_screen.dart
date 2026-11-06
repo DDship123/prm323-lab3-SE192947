@@ -193,11 +193,6 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Đăng xuất',
-                    icon: const Icon(Icons.logout_rounded, color: AppColors.error, size: 22),
-                    onPressed: () => _confirmSignOut(context),
-                  ),
                 ],
               ),
             ),
