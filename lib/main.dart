@@ -950,7 +950,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
   }
 
   void _openNotifications() {
-    setState(() => _selectedIndex = 2);
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const NotificationBoardScreen()),
+    );
   }
 
   void _openProfile() {
@@ -1020,8 +1022,16 @@ class _MainShellScreenState extends State<MainShellScreen> {
         ),
         onOpenCheckout: _openCheckout,
       ),
-      // Tab 2: Thông báo (Bảng thông báo KTX - Node 438:1710)
-      const NotificationBoardScreen(),
+      // Tab 2: Thanh toán (Thanh toán & Đơn gom chuẩn Figma)
+      GroupCartCheckoutScreen(
+        onOrderCompleted: (OrderDetailModel order) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => LiveOrderTrackingScreen(initialOrder: order),
+            ),
+          );
+        },
+      ),
       // Tab 3: Lịch sử (Lịch sử đơn hàng - Node 438:3541)
       const OrderHistoryScreen(),
       // Tab 4: Tài khoản (Hồ sơ cá nhân & Cài đặt - Node 438:3979)

@@ -4,6 +4,8 @@ import '../models/order_model.dart';
 import '../viewmodels/order_tracking_vm.dart';
 import 'live_order_tracking_screen.dart';
 import 'pickup_qr_code_screen.dart';
+import 'notification_board_screen.dart';
+import 'group_cart_checkout_screen.dart';
 
 /// Màn hình Lịch Sử Đơn Hàng chuẩn 100% Figma
 /// Hỗ trợ đầy đủ:
@@ -177,11 +179,29 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 ),
               ],
             ),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const NotificationBoardScreen()),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF1E293B)),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => GroupCartCheckoutScreen(
+                    onOrderCompleted: (order) {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) => LiveOrderTrackingScreen(initialOrder: order),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
           ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -210,35 +230,29 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         ],
       ),
       bottomNavigationBar: _viewMode == 0
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                  color: Colors.white,
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF521B),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: _openQrScreen,
-                      icon: const Icon(Icons.qr_code_2_rounded, size: 20),
-                      label: const Text(
-                        'Mã QR Nhận Hàng',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
+          ? Container(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+              color: Colors.white,
+              child: SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF521B),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
+                  onPressed: _openQrScreen,
+                  icon: const Icon(Icons.qr_code_2_rounded, size: 20),
+                  label: const Text(
+                    'Mã QR Nhận Hàng',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
                 ),
-                _buildBottomNavBar(),
-              ],
+              ),
             )
           : null,
       body: switch (_viewMode) {

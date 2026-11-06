@@ -296,53 +296,29 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Nút Đặt đơn Sticky màu cam
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-            color: Colors.white,
-            child: SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFF521B),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: cartVm.isSubmitting ? null : () => _handlePlaceOrder(cartVm),
-                icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-                label: Text(
-                  'Đặt đơn nhận tại ${_selectedLocationIndex == 0 ? "Cổng KTX Khu B" : "Cổng KTX"} (${_formatCurrency(totalPayment)})',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        color: Colors.white,
+        child: SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF521B),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-          ),
-          // 5-Tab bar mô phỏng chuẩn Figma
-          Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildBottomNavItem(Icons.explore_outlined, 'Khám phá', false),
-                _buildBottomNavItem(Icons.restaurant_outlined, 'Đặt món', false),
-                _buildBottomNavItem(Icons.receipt_long_rounded, 'Thanh toán', true),
-                _buildBottomNavItem(Icons.history_rounded, 'Lịch sử', false),
-                _buildBottomNavItem(Icons.person_outline_rounded, 'Tài khoản', false),
-              ],
+            onPressed: cartVm.isSubmitting ? null : () => _handlePlaceOrder(cartVm),
+            icon: const Icon(Icons.shopping_bag_outlined, size: 20),
+            label: Text(
+              'Đặt đơn nhận tại ${_selectedLocationIndex == 0 ? "Cổng KTX Khu B" : "Cổng KTX"} (${_formatCurrency(totalPayment)})',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
-        ],
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
