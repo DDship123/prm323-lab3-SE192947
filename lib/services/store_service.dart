@@ -202,29 +202,42 @@ class StoreService {
   List<StoreModel> _fallbackStores() => const [
         StoreModel(
           id: 1,
-          name: 'Cơm Tấm Sườn Bì KTX B2',
+          name: 'Cơm Tấm Sườn Bì Khu B - Cổng 3',
           description: 'Cơm tấm sườn nướng mật ong, giao gom đơn tận trụ KTX Khu B',
-          address: 'Cổng B2 KTX ĐHQG TP.HCM',
+          address: 'Cổng 3 KTX (150m)',
           campusZone: 'KTX_KHU_B',
           phoneNumber: '0901234567',
           avatarUrl:
-              'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600',
+              'https://images.unsplash.com/photo-1544025162-d76694265947?w=600',
           isActive: true,
-          ratingAvg: 4.8,
-          ratingCount: 128,
+          ratingAvg: 4.9,
+          ratingCount: 350,
         ),
         StoreModel(
           id: 2,
-          name: 'Bún Bò Huế O Xuân - Khu A',
-          description: 'Bún bò giò heo đậm vị Huế, miễn ship đơn gom ca trưa Khu A',
-          address: 'Đối diện Sảnh Tòa A3 KTX Khu A',
-          campusZone: 'KTX_KHU_A',
+          name: 'Bún Đậu Mắm Tôm Cô Bông KTX',
+          description: 'Bún đậu mắm tôm thập cẩm giòn rụm, giao tới các cổng KTX',
+          address: 'Giao tới: Cổng KTX A & B',
+          campusZone: 'KTX_KHU_B',
           phoneNumber: '0909888777',
           avatarUrl:
               'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600',
           isActive: true,
+          ratingAvg: 4.8,
+          ratingCount: 210,
+        ),
+        StoreModel(
+          id: 3,
+          name: 'Trà Sữa Đậm Vị KTX Khu B',
+          description: 'Trà sữa đậm vị lá trà Bảo Lộc, trân châu hoàng kim',
+          address: 'Sảnh Tòa BA1 KTX Khu B',
+          campusZone: 'KTX_KHU_B',
+          phoneNumber: '0903111222',
+          avatarUrl:
+              'https://images.unsplash.com/photo-1556881286-fc6915169721?w=600',
+          isActive: true,
           ratingAvg: 4.7,
-          ratingCount: 86,
+          ratingCount: 480,
         ),
       ];
 
