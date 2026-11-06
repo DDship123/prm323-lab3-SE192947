@@ -2,7 +2,12 @@
 class ApiConfig {
   ApiConfig._();
 
-  static String _dynamicBaseUrl = 'https://solution-slope-creating-phillips.trycloudflare.com/api/v1';
+  static const String _envBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://solution-slope-creating-phillips.trycloudflare.com/api/v1',
+  );
+
+  static String _dynamicBaseUrl = _envBaseUrl;
 
   /// Địa chỉ Base URL kết nối Backend
   static String get baseUrl => _dynamicBaseUrl;
