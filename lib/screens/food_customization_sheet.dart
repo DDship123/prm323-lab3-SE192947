@@ -52,103 +52,11 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
   final TextEditingController _noteCtrl = TextEditingController();
 
   List<CustomizationGroupModel> get _effectiveGroups {
-    if (widget.menuItem.customizationOptions.length >= 3) {
+    // Ưu tiên hàng đầu: Lấy đúng customizationOptions thực tế của món ăn từ Backend
+    if (widget.menuItem.customizationOptions.isNotEmpty) {
       return widget.menuItem.customizationOptions;
     }
-    return const [
-      CustomizationGroupModel(
-        group: 'Chọn Kích cỡ / Phần Ăn',
-        required: true,
-        options: [
-          CustomizationOptionModel(
-            name: 'Phần Tiêu chuẩn (Vừa ăn, chuẩn no cho sinh viên)',
-            extraPrice: 0,
-          ),
-          CustomizationOptionModel(
-            name: 'Phần No nê Sinh viên (Thêm 1 bát cơm xới đầy)',
-            extraPrice: 5000,
-          ),
-          CustomizationOptionModel(
-            name: 'Phần Thượng hạng (Thêm 1 sườn que + 1 miếng chả)',
-            extraPrice: 15000,
-          ),
-        ],
-      ),
-      CustomizationGroupModel(
-        group: 'Khẩu vị & Mỡ hành',
-        required: true,
-        options: [
-          CustomizationOptionModel(
-            name: 'Mỡ hành tóp mỡ truyền thống (Khuyên dùng)',
-            extraPrice: 0,
-          ),
-          CustomizationOptionModel(
-            name: 'Nhiều mỡ hành, tóp mỡ giòn rụm',
-            extraPrice: 0,
-          ),
-          CustomizationOptionModel(
-            name: 'Ít mỡ hành, không lấy tóp mỡ',
-            extraPrice: 0,
-          ),
-          CustomizationOptionModel(
-            name: 'Không lấy mỡ hành (Ăn thanh đạm)',
-            extraPrice: 0,
-          ),
-        ],
-      ),
-      CustomizationGroupModel(
-        group: 'Topping thêm hấp dẫn',
-        required: false,
-        options: [
-          CustomizationOptionModel(
-            name: 'Trứng ốp la lòng đào sốt nước tương',
-            extraPrice: 6000,
-          ),
-          CustomizationOptionModel(
-            name: 'Chả trứng hấp nấm mèo (1 miếng)',
-            extraPrice: 5000,
-          ),
-          CustomizationOptionModel(
-            name: 'Sườn que ướp mật ong (1 miếng to)',
-            extraPrice: 15000,
-          ),
-          CustomizationOptionModel(
-            name: 'Bì heo trộn thính thơm giòn',
-            extraPrice: 7000,
-          ),
-          CustomizationOptionModel(
-            name: 'Canh rong biển thịt bằm nóng hổi',
-            extraPrice: 5000,
-          ),
-          CustomizationOptionModel(
-            name: 'Canh chua cá lóc đồng',
-            extraPrice: 12000,
-          ),
-        ],
-      ),
-      CustomizationGroupModel(
-        group: 'Độ cay & Nước mắm',
-        required: true,
-        options: [
-          CustomizationOptionModel(
-            name: 'Nước mắm kẹo chua ngọt cay vừa (Chuẩn vị)',
-            extraPrice: 0,
-          ),
-          CustomizationOptionModel(
-            name: 'Nước mắm cay nhiều (Thêm ớt băm tươi)',
-            extraPrice: 0,
-          ),
-          CustomizationOptionModel(
-            name: 'Nước mắm không cay (Không ớt)',
-            extraPrice: 0,
-          ),
-          CustomizationOptionModel(
-            name: 'Nước mắm để riêng trong bịch',
-            extraPrice: 0,
-          ),
-        ],
-      ),
-    ];
+    return const [];
   }
 
   @override
@@ -160,12 +68,6 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
         _requiredChoices[group.group] = group.options.first;
       } else {
         _optionalChoices[group.group] = {};
-        for (final opt in group.options) {
-          if (opt.name.contains('Trứng ốp la') ||
-              opt.name.contains('Canh rong biển')) {
-            _optionalChoices[group.group]!.add(opt);
-          }
-        }
       }
     }
   }
@@ -595,8 +497,9 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.menuItem.description ??
-                        'Phần cơm tấm sườn que nướng than hoa mật ong thơm lừng, bì riềng trộn thính vàng óng, chả trứng hấp béo bùi, kèm mỡ hành tóp mỡ giòn và đồ chua nhà làm tươi ngon.',
+                    (widget.menuItem.description != null && widget.menuItem.description!.isNotEmpty)
+                        ? widget.menuItem.description!
+                        : 'Món ăn thơm ngon, nóng hổi chế biến phục vụ sinh viên KTX.',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF64748B),
