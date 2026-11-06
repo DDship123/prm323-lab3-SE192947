@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
 enum ServerEnvironmentPreset {
-  emulator('Máy ảo Android (10.0.2.2:8080)', 'http://10.0.2.2:8080/api/v1'),
-  localhost('USB Cáp / Localhost (127.0.0.1:8080)', 'http://127.0.0.1:8080/api/v1'),
-  vpsServer('Máy chủ VPS TP.HCM (Public IP)', 'http://103.179.189.120:8080/api/v1'),
+  emulator('Máy ảo Android (10.0.2.2:8088)', 'http://10.0.2.2:8088/api/v1'),
+  localhost('USB Cáp / Localhost (127.0.0.1:8088)', 'http://127.0.0.1:8088/api/v1'),
+  vpsServer('Máy chủ VPS Host (192.168.1.112:8088)', 'http://192.168.1.112:8088/api/v1'),
   custom('Tùy chỉnh IP / Cloudflare Tunnel', '');
 
   final String label;
