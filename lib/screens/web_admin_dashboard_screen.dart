@@ -427,13 +427,18 @@ class WebAdminDashboardScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: AppTypography.caption.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textSecondary,
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTypography.caption.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textSecondary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -451,11 +456,15 @@ class WebAdminDashboardScreen extends StatelessWidget {
               fontSize: 22,
               color: AppColors.textPrimary,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
             style: AppTypography.caption.copyWith(fontSize: 11),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: AppSpacing.sm),
           Container(
@@ -490,7 +499,14 @@ class WebAdminDashboardScreen extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(shiftName, style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold)),
+            Expanded(
+              child: Text(
+                shiftName,
+                style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
             Text(status, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
           ],
         ),
