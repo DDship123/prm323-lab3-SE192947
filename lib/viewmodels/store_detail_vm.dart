@@ -70,6 +70,11 @@ class StoreDetailViewModel extends ChangeNotifier {
     final current = _menuState;
     if (current is! StateSuccess<List<MenuItemModel>>) return const [];
     if (_selectedCategory == 'ALL') return current.data;
+    if (_selectedCategory == 'BEST_SELLER') {
+      return current.data
+          .where((item) => item.promoBadge != null || item.id == 1)
+          .toList();
+    }
     return current.data
         .where((item) => item.category == _selectedCategory)
         .toList();

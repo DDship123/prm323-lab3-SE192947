@@ -281,8 +281,8 @@ class StoreService {
       MenuItemModel(
         id: 1,
         storeId: 1,
-        name: 'Cơm Sườn Nướng Mật Ong Chả Trứng',
-        description: 'Sườn cốt lết ướp mật ong nướng than, kèm chả hấp và canh rong biển',
+        name: 'Cơm Sườn Bì Chả Đặc Biệt',
+        description: 'Sườn nướng than hoa, bì giòn thính thơm, chả trứng hấp béo ngậy',
         imageUrl:
             'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
         basePrice: 35000,
@@ -290,11 +290,11 @@ class StoreService {
         isAvailable: true,
         customizationOptions: [
           CustomizationGroupModel(
-            group: 'Kích cỡ',
+            group: 'Kích cỡ phần ăn',
             required: true,
             options: [
-              CustomizationOptionModel(name: 'Cơm vừa', extraPrice: 0),
-              CustomizationOptionModel(name: 'Cơm nhiều (+Cơm)', extraPrice: 5000),
+              CustomizationOptionModel(name: 'Phần tiêu chuẩn', extraPrice: 0),
+              CustomizationOptionModel(name: 'Thêm cơm (+5.000đ)', extraPrice: 5000),
             ],
           ),
           CustomizationGroupModel(
@@ -302,8 +302,8 @@ class StoreService {
             required: false,
             options: [
               CustomizationOptionModel(name: 'Trứng ốp la lòng đào', extraPrice: 6000),
-              CustomizationOptionModel(name: 'Bì thính', extraPrice: 7000),
-              CustomizationOptionModel(name: 'Lạp xưởng tươi', extraPrice: 10000),
+              CustomizationOptionModel(name: 'Thêm miếng sườn nướng', extraPrice: 15000),
+              CustomizationOptionModel(name: 'Bì thính thêm', extraPrice: 7000),
             ],
           ),
         ],
@@ -311,23 +311,50 @@ class StoreService {
       MenuItemModel(
         id: 2,
         storeId: 1,
-        name: 'Trà Tắc Xí Muội Khổng Lồ (700ml)',
-        description: 'Trà tắc tươi mát lạnh giải nhiệt ca trưa KTX',
+        name: 'Cơm Sườn Nướng Muối Ớt',
+        description: 'Sườn cốt lết ướp muối ớt cay nhẹ, nướng xém cạnh đậm đà',
         imageUrl:
-            'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600',
-        basePrice: 15000,
-        category: 'NUOC',
+            'https://images.unsplash.com/photo-1555126634-323283e090fa?w=600',
+        basePrice: 32000,
+        category: 'COM',
         isAvailable: true,
-        customizationOptions: [
-          CustomizationGroupModel(
-            group: 'Mức đá',
-            required: true,
-            options: [
-              CustomizationOptionModel(name: 'Đá bình thường', extraPrice: 0),
-              CustomizationOptionModel(name: 'Ít đá', extraPrice: 0),
-            ],
-          ),
-        ],
+        customizationOptions: [],
+      ),
+      MenuItemModel(
+        id: 3,
+        storeId: 1,
+        name: 'Cơm Đùi Gà Nướng Teriyaki',
+        description: 'Đùi gà góc tư sốt Teriyaki Nhật Bản thơm lừng, da giòn rụm',
+        imageUrl:
+            'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=600',
+        basePrice: 38000,
+        category: 'COM',
+        isAvailable: true,
+        customizationOptions: [],
+      ),
+      MenuItemModel(
+        id: 4,
+        storeId: 1,
+        name: 'Canh Rong Biển Thịt Bằm',
+        description: 'Canh rong biển nấu thịt nạc bằm thanh mát, bổ dưỡng',
+        imageUrl:
+            'https://images.unsplash.com/photo-1547592180-85f173990554?w=600',
+        basePrice: 8000,
+        category: 'TOPPING',
+        isAvailable: true,
+        customizationOptions: [],
+      ),
+      MenuItemModel(
+        id: 5,
+        storeId: 1,
+        name: 'Trà Đào Cam Sả Tươi 500ml',
+        description: 'Trà đào sả tươi thanh mát kèm miếng đào giòn ngọt',
+        imageUrl:
+            'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600',
+        basePrice: 15000,
+        category: 'TOPPING',
+        isAvailable: true,
+        customizationOptions: [],
       ),
     ];
   }
