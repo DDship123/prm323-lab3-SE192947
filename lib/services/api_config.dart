@@ -2,7 +2,7 @@
 class ApiConfig {
   ApiConfig._();
 
-  static String _dynamicBaseUrl = 'http://192.168.1.112:8088/api/v1';
+  static String _dynamicBaseUrl = 'https://solution-slope-creating-phillips.trycloudflare.com/api/v1';
 
   /// Địa chỉ Base URL kết nối Backend
   static String get baseUrl => _dynamicBaseUrl;
