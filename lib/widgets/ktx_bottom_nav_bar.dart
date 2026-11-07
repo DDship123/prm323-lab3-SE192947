@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
@@ -35,7 +36,9 @@ class KtxBottomNavBar extends StatelessWidget {
     int badgeCount = 0,
   }) {
     final isSelected = currentIndex == index;
-    final color = isSelected ? AppColors.primary : AppColors.chevron; // #ff5722 vs #9ca3af
+    final color = isSelected
+        ? AppColors.primary
+        : AppColors.chevron; // #ff5722 vs #9ca3af
 
     Widget iconWidget = Icon(
       isSelected ? activeIcon : icon,
@@ -52,27 +55,37 @@ class KtxBottomNavBar extends StatelessWidget {
     }
 
     return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => onTap(index),
-          child: SizedBox(
-            height: 56,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                iconWidget,
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: AppTypography.chipLabel.copyWith(
-                    color: color,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+      child: Semantics(
+        identifier: 'nav_tab_$index',
+        button: true,
+        selected: isSelected,
+        label: badgeCount > 0 ? 'Tab $label, $badgeCount mục' : 'Tab $label',
+        excludeSemantics: true,
+        onTap: () => onTap(index),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => onTap(index),
+            child: SizedBox(
+              height: 56,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  iconWidget,
+                  const SizedBox(height: 2),
+                  Text(
+                    label,
+                    style: AppTypography.chipLabel.copyWith(
+                      color: color,
+                      fontWeight: isSelected
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -86,9 +99,7 @@ class KtxBottomNavBar extends StatelessWidget {
       height: 56.0,
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        border: Border(
-          top: BorderSide(color: AppColors.border, width: 1.0),
-        ),
+        border: Border(top: BorderSide(color: AppColors.border, width: 1.0)),
         boxShadow: [
           BoxShadow(
             color: Color.fromRGBO(0, 0, 0, 0.04),

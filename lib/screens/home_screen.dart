@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../firebase/analytics_service.dart';
 import '../firebase/remote_config_service.dart';
 import '../models/store_model.dart';
@@ -44,8 +45,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const _zones = [
     {'code': 'ALL', 'label': 'Tất cả', 'icon': '🔥', 'dotColor': null},
-    {'code': 'KTX_KHU_B', 'label': 'KTX Khu B', 'icon': '•', 'dotColor': 0xFF10B981},
-    {'code': 'KTX_KHU_A', 'label': 'KTX Khu A', 'icon': '•', 'dotColor': 0xFFF59E0B},
+    {
+      'code': 'KTX_KHU_B',
+      'label': 'KTX Khu B',
+      'icon': '•',
+      'dotColor': 0xFF10B981,
+    },
+    {
+      'code': 'KTX_KHU_A',
+      'label': 'KTX Khu A',
+      'icon': '•',
+      'dotColor': 0xFFF59E0B,
+    },
     {'code': 'LANG_DH', 'label': 'Làng ĐH', 'icon': '🎓', 'dotColor': null},
   ];
 
@@ -116,7 +127,8 @@ class _HomeScreenState extends State<HomeScreen> {
     String greetingName = 'Linh';
     try {
       final authVm = Provider.of<AuthViewModel>(context, listen: false);
-      if (authVm.currentUser != null && authVm.currentUser!.displayName.isNotEmpty) {
+      if (authVm.currentUser != null &&
+          authVm.currentUser!.displayName.isNotEmpty) {
         greetingName = authVm.currentUser!.displayName.split(' ').last;
       }
     } catch (_) {}
@@ -243,13 +255,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: selected ? const Color(0xFFFF521B) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: selected ? const Color(0xFFFF521B) : const Color(0xFFE2E8F0),
+                  color: selected
+                      ? const Color(0xFFFF521B)
+                      : const Color(0xFFE2E8F0),
                   width: 1,
                 ),
                 boxShadow: selected
                     ? [
                         BoxShadow(
-                          color: const Color(0xFFFF521B).withValues(alpha: 0.25),
+                          color: const Color(0xFFFF521B)
+                              .withValues(alpha: 0.25),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -496,10 +511,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 2),
             const Text(
               'Sinh viên KTX đặt nhiều nhất tuần này',
-              style: TextStyle(
-                color: Color(0xFF64748B),
-                fontSize: 11,
-              ),
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
             ),
           ],
         ),
@@ -546,46 +558,51 @@ class _HomeScreenState extends State<HomeScreen> {
               color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: TextField(
-              controller: _searchCtrl,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (term) {
-                homeVm.searchStores(term);
-                context.read<AnalyticsService>().logSearch(
-                      searchTerm: term.isEmpty ? 'ALL' : term,
-                      campusZone: homeVm.selectedCampusZone,
-                      resultCount: 3,
-                    );
-              },
-              decoration: InputDecoration(
-                hintText: 'Tìm món ngon, cơm, bún, trà sữa...',
-                hintStyle: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 14,
-                ),
-                prefixIcon: const Icon(
-                  Icons.search_rounded,
-                  color: Color(0xFF94A3B8),
-                ),
-                suffixIcon: IconButton(
-                  icon: const Icon(
-                    Icons.mic_none_rounded,
+            child: Semantics(
+              identifier: 'input_home_search',
+              child: TextField(
+                controller: _searchCtrl,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (term) {
+                  homeVm.searchStores(term);
+                  context.read<AnalyticsService>().logSearch(
+                    searchTerm: term.isEmpty ? 'ALL' : term,
+                    campusZone: homeVm.selectedCampusZone,
+                    resultCount: 3,
+                  );
+                },
+                decoration: InputDecoration(
+                  hintText: 'Tìm món ngon, cơm, bún, trà sữa...',
+                  hintStyle: const TextStyle(
+                    color: Color(0xFF94A3B8),
+                    fontSize: 14,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
                     color: Color(0xFF94A3B8),
                   ),
-                  tooltip: 'Tìm kiếm bằng giọng nói',
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Tìm kiếm giọng nói đang được kết nối.'),
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
-                  },
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
+                  suffixIcon: IconButton(
+                    icon: const Icon(
+                      Icons.mic_none_rounded,
+                      color: Color(0xFF94A3B8),
+                    ),
+                    tooltip: 'Tìm kiếm bằng giọng nói',
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Tìm kiếm giọng nói đang được kết nối.',
+                          ),
+                          duration: Duration(seconds: 1),
+                        ),
+                      );
+                    },
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ),
@@ -598,10 +615,7 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             color: const Color(0xFFFFF4EC),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: const Color(0xFFFFD8BF),
-              width: 1,
-            ),
+            border: Border.all(color: const Color(0xFFFFD8BF), width: 1),
           ),
           child: IconButton(
             icon: const Icon(
@@ -614,10 +628,10 @@ class _HomeScreenState extends State<HomeScreen> {
               final term = _searchCtrl.text;
               homeVm.searchStores(term);
               context.read<AnalyticsService>().logSearch(
-                    searchTerm: term.isEmpty ? 'ALL' : term,
-                    campusZone: homeVm.selectedCampusZone,
-                    resultCount: 3,
-                  );
+                searchTerm: term.isEmpty ? 'ALL' : term,
+                campusZone: homeVm.selectedCampusZone,
+                resultCount: 3,
+              );
             },
           ),
         ),
@@ -649,11 +663,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Header: Ca gom + Badge đang mở
           Row(
             children: [
-              const Icon(
-                Icons.schedule_rounded,
-                color: Colors.white,
-                size: 18,
-              ),
+              const Icon(Icons.schedule_rounded, color: Colors.white, size: 18),
               const SizedBox(width: 8),
               const Text(
                 'Ca Trưa (11:30 - 12:00)',
@@ -665,7 +675,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.22),
                   borderRadius: BorderRadius.circular(20),
@@ -774,7 +787,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFB300),
                         borderRadius: BorderRadius.circular(6),
@@ -904,23 +920,21 @@ class _HomeScreenState extends State<HomeScreen> {
     return switch (state) {
       StateInitial() || StateLoading() => const KtxLoadingState(itemCount: 3),
       StateError(:final errorMessage) => KtxErrorState(
-          message: errorMessage,
-          onRetry: homeVm.loadHomeData,
-        ),
+        message: errorMessage,
+        onRetry: homeVm.loadHomeData,
+      ),
       StateEmpty(:final message) => KtxEmptyState(
-          title: 'Không tìm thấy quán ăn',
-          message: message,
-          actionLabel: 'Xem tất cả quán',
-          onAction: () {
-            _searchCtrl.clear();
-            homeVm.searchStores('');
-          },
-        ),
+        title: 'Không tìm thấy quán ăn',
+        message: message,
+        actionLabel: 'Xem tất cả quán',
+        onAction: () {
+          _searchCtrl.clear();
+          homeVm.searchStores('');
+        },
+      ),
       StateSuccess(:final data) => Column(
-          children: data
-              .map((store) => _buildStoreCard(store, context))
-              .toList(),
-        ),
+        children: data.map((store) => _buildStoreCard(store, context)).toList(),
+      ),
     };
   }
 
@@ -951,13 +965,14 @@ class _HomeScreenState extends State<HomeScreen> {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                   child: SizedBox(
                     height: 145,
                     width: double.infinity,
-                    child: store.avatarUrl != null &&
-                            store.avatarUrl!.isNotEmpty
+                    child:
+                        store.avatarUrl != null && store.avatarUrl!.isNotEmpty
                         ? Image.network(
                             store.avatarUrl!,
                             fit: BoxFit.cover,
@@ -980,11 +995,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       final bgColor = isGreen
                           ? const Color(0xFF059669)
                           : (isPink
-                              ? const Color(0xFFE11D48)
-                              : const Color(0xFFFF521B));
+                                ? const Color(0xFFE11D48)
+                                : const Color(0xFFFF521B));
                       return Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: bgColor,
                           borderRadius: BorderRadius.circular(6),
@@ -1009,7 +1026,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     right: 8,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.65),
                         borderRadius: BorderRadius.circular(6),
@@ -1078,8 +1097,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Đánh giá sao + Số review + Khoảng cách/Thời gian
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded,
-                          color: Color(0xFFF59E0B), size: 16),
+                      const Icon(
+                        Icons.star_rounded,
+                        color: Color(0xFFF59E0B),
+                        size: 16,
+                      ),
                       const SizedBox(width: 3),
                       Text(
                         '${store.ratingAvg}',
@@ -1089,17 +1111,27 @@ class _HomeScreenState extends State<HomeScreen> {
                           color: Color(0xFF1E293B),
                         ),
                       ),
-                      const Text(' • ',
-                          style: TextStyle(
-                              color: Color(0xFF94A3B8), fontSize: 12)),
+                      const Text(
+                        ' • ',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12,
+                        ),
+                      ),
                       Text(
                         '${store.ratingCount}+ đánh giá',
                         style: const TextStyle(
-                            fontSize: 12, color: Color(0xFF64748B)),
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
-                      const Text(' • ',
-                          style: TextStyle(
-                              color: Color(0xFF94A3B8), fontSize: 12)),
+                      const Text(
+                        ' • ',
+                        style: TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 12,
+                        ),
+                      ),
                       Expanded(
                         child: Text(
                           store.distanceOrTime,
@@ -1147,7 +1179,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 7),
+                            horizontal: 14,
+                            vertical: 7,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFFF4EC),
                             borderRadius: BorderRadius.circular(12),
@@ -1188,10 +1222,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openStoreDetail(StoreModel store) {
     context.read<AnalyticsService>().logViewStoreDetail(
-          storeId: store.id,
-          storeCategory: store.campusZoneLabel,
-          ratingAvg: store.ratingAvg,
-        );
+      storeId: store.id,
+      storeCategory: store.campusZoneLabel,
+      ratingAvg: store.ratingAvg,
+    );
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => StoreDetailScreen(

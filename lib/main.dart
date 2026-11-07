@@ -9,7 +9,9 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase/analytics_service.dart';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'firebase/fcm_service.dart';
 import 'firebase/remote_config_service.dart';
 import 'firebase/cloud_storage_service.dart';
@@ -186,19 +188,16 @@ class AppBootstrap extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider<OwnerViewModel>(
-          create: (ctx) => OwnerViewModel(
-            apiService: ctx.read<OwnerApiService>(),
-          ),
+          create: (ctx) =>
+              OwnerViewModel(apiService: ctx.read<OwnerApiService>()),
         ),
         ChangeNotifierProvider<ShipperViewModel>(
-          create: (ctx) => ShipperViewModel(
-            apiService: ctx.read<ShipperApiService>(),
-          ),
+          create: (ctx) =>
+              ShipperViewModel(apiService: ctx.read<ShipperApiService>()),
         ),
         ChangeNotifierProvider<AdminViewModel>(
-          create: (ctx) => AdminViewModel(
-            apiService: ctx.read<AdminApiService>(),
-          ),
+          create: (ctx) =>
+              AdminViewModel(apiService: ctx.read<AdminApiService>()),
         ),
       ],
       child: const MyApp(),
@@ -287,9 +286,7 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     if (_isLoadingSession) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return StreamBuilder<User?>(
@@ -302,23 +299,16 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         final firebaseUser = snapshot.data;
-        if (_manualDemoSignedIn || (firebaseUser != null && _activeRole == UserAppRole.student)) {
+        if (_manualDemoSignedIn ||
+            (firebaseUser != null && _activeRole == UserAppRole.student)) {
           // Điều hướng màn hình giao diện theo đúng vai trò đang chọn (4 Roles)
           switch (_activeRole) {
             case UserAppRole.storeOwner:
-              return RestaurantShellScreen(
-                ownerId: '2',
-                onSignOut: _signOut,
-              );
+              return RestaurantShellScreen(ownerId: '2', onSignOut: _signOut);
             case UserAppRole.shipper:
-              return ShipperShellScreen(
-                shipperId: '3',
-                onSignOut: _signOut,
-              );
+              return ShipperShellScreen(shipperId: '3', onSignOut: _signOut);
             case UserAppRole.admin:
-              return WebAdminShellScreen(
-                onSignOut: _signOut,
-              );
+              return WebAdminShellScreen(onSignOut: _signOut);
             case UserAppRole.student:
               return MainShellScreen(
                 firebaseUser: firebaseUser,
@@ -335,7 +325,10 @@ class _AuthGateState extends State<AuthGate> {
             try {
               final prefs = await SharedPreferences.getInstance();
               await prefs.setBool('is_logged_in', true);
-              await prefs.setString('saved_user_role', UserAppRole.student.name);
+              await prefs.setString(
+                'saved_user_role',
+                UserAppRole.student.name,
+              );
               await prefs.setInt('saved_backend_user_id', 1);
             } catch (_) {}
             setState(() => _manualDemoSignedIn = true);
@@ -447,11 +440,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         await context.read<AuthViewModel>().syncFirebaseUser(
-              uid: user.firebaseUid,
-              email: user.email,
-              displayName: user.displayName,
-              photoUrl: user.avatarUrl,
-            );
+          uid: user.firebaseUid,
+          email: user.email,
+          displayName: user.displayName,
+          photoUrl: user.avatarUrl,
+        );
         try {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('is_logged_in', true);
@@ -552,12 +545,43 @@ class _LoginScreenState extends State<LoginScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Đã cập nhật máy chủ Backend: ${newConfig.baseUrl}'),
+              content: Text(
+                'Đã cập nhật máy chủ Backend: ${newConfig.baseUrl}',
+              ),
               backgroundColor: AppColors.success,
             ),
           );
         }
       },
+    );
+  }
+
+  Widget _buildDemoAccountChip(
+    String roleKey,
+    String label,
+    String semanticLabel,
+    String email,
+  ) {
+    final isSelected = _emailPhoneController.text == email;
+    void fillDemoAccount() {
+      setState(() {
+        _emailPhoneController.text = email;
+        _passwordController.text = '123456';
+      });
+    }
+
+    return Semantics(
+      identifier: 'chip_role_$roleKey',
+      label: semanticLabel,
+      selected: isSelected,
+      button: true,
+      excludeSemantics: true,
+      onTap: fillDemoAccount,
+      child: ChoiceChip(
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+        selected: isSelected,
+        onSelected: (_) => fillDemoAccount(),
+      ),
     );
   }
 
@@ -582,7 +606,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.08),
                         blurRadius: 4,
-                      )
+                      ),
                     ],
                   ),
                   child: const Icon(
@@ -600,182 +624,194 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight.withValues(alpha: 0.45),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.fastfood_rounded,
-                    size: 48,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'KTX Food Ordering',
-                  style: AppTypography.heading1,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Đặt món & Gom đơn theo Ca KTX Khu A / Khu B\n(PRM393 - Lab 3)',
-                  style: AppTypography.bodySmall,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Đăng nhập tài khoản', style: AppTypography.heading3),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Chọn nhanh tài khoản mẫu 4 vai trò:',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700], fontWeight: FontWeight.w500),
+                    Container(
+                      width: 88,
+                      height: 88,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight.withValues(alpha: 0.45),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          ChoiceChip(
-                            label: const Text('🎓 Sinh viên', style: TextStyle(fontSize: 12)),
-                            selected: _emailPhoneController.text == 'student@fpt.edu.vn',
-                            onSelected: (_) {
-                              setState(() {
-                                _emailPhoneController.text = 'student@fpt.edu.vn';
-                                _passwordController.text = '123456';
-                              });
-                            },
-                          ),
-                          ChoiceChip(
-                            label: const Text('🍲 Chủ Quán', style: TextStyle(fontSize: 12)),
-                            selected: _emailPhoneController.text == 'coba.owner@fpt.edu.vn',
-                            onSelected: (_) {
-                              setState(() {
-                                _emailPhoneController.text = 'coba.owner@fpt.edu.vn';
-                                _passwordController.text = '123456';
-                              });
-                            },
-                          ),
-                          ChoiceChip(
-                            label: const Text('🛵 Shipper', style: TextStyle(fontSize: 12)),
-                            selected: _emailPhoneController.text == 'shipper.hung@fpt.edu.vn',
-                            onSelected: (_) {
-                              setState(() {
-                                _emailPhoneController.text = 'shipper.hung@fpt.edu.vn';
-                                _passwordController.text = '123456';
-                              });
-                            },
-                          ),
-                          ChoiceChip(
-                            label: const Text('🏢 Admin BQL', style: TextStyle(fontSize: 12)),
-                            selected: _emailPhoneController.text == 'admin.ktx@fpt.edu.vn',
-                            onSelected: (_) {
-                              setState(() {
-                                _emailPhoneController.text = 'admin.ktx@fpt.edu.vn';
-                                _passwordController.text = '123456';
-                              });
-                            },
+                      child: const Icon(
+                        Icons.fastfood_rounded,
+                        size: 48,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'KTX Food Ordering',
+                      style: AppTypography.heading1,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Đặt món & Gom đơn theo Ca KTX Khu A / Khu B\n(PRM393 - Lab 3)',
+                      style: AppTypography.bodySmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.border),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0A000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
-                      TextField(
-                        controller: _emailPhoneController,
-                        decoration: const InputDecoration(
-                          labelText: 'Email hoặc Số điện thoại',
-                          hintText: 'Nhập email hoặc SĐT của bạn',
-                          prefixIcon: Icon(Icons.person_outline, size: 20),
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Mật khẩu',
-                          hintText: 'Nhập mật khẩu',
-                          prefixIcon: Icon(Icons.lock_outline, size: 20),
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      KtxButton(
-                        label: 'Đăng nhập ngay',
-                        icon: Icons.login_rounded,
-                        isLoading: _isLoading,
-                        onPressed: _handleDirectLogin,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                KtxButton(
-                  label: 'Đăng nhập bằng Google (S0)',
-                  icon: Icons.login_rounded,
-                  variant: KtxButtonVariant.outline,
-                  isLoading: _isLoading,
-                  onPressed: _signInWithGoogle,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => StudentRegisterScreen(
-                              onRegisterCompleted: widget.onRegisteredOrDemoSuccess,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Đăng nhập tài khoản',
+                            style: AppTypography.heading3,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Chọn nhanh tài khoản mẫu 4 vai trò:',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        );
-                      },
-                      child: const Text('Đăng ký tài khoản mới', style: TextStyle(fontSize: 12)),
-                    ),
-                    const Text('•', style: TextStyle(color: Colors.grey)),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const ForgotPasswordScreen(),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _buildDemoAccountChip(
+                                'student',
+                                '🎓 Sinh viên',
+                                'Tài khoản mẫu Sinh viên',
+                                'student@fpt.edu.vn',
+                              ),
+                              _buildDemoAccountChip(
+                                'owner',
+                                '🍲 Chủ Quán',
+                                'Tài khoản mẫu Chủ Quán',
+                                'coba.owner@fpt.edu.vn',
+                              ),
+                              _buildDemoAccountChip(
+                                'shipper',
+                                '🛵 Shipper',
+                                'Tài khoản mẫu Shipper',
+                                'shipper.hung@fpt.edu.vn',
+                              ),
+                              _buildDemoAccountChip(
+                                'admin',
+                                '🏢 Admin BQL',
+                                'Tài khoản mẫu Admin BQL',
+                                'admin.ktx@fpt.edu.vn',
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                      child: Text(
-                        'Quên mật khẩu?',
-                        style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                          const SizedBox(height: 14),
+                          Semantics(
+                            identifier: 'input_login_email',
+                            child: TextField(
+                              controller: _emailPhoneController,
+                              decoration: const InputDecoration(
+                                labelText: 'Email hoặc Số điện thoại',
+                                hintText: 'Nhập email hoặc SĐT của bạn',
+                                prefixIcon: Icon(
+                                  Icons.person_outline,
+                                  size: 20,
+                                ),
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Semantics(
+                            identifier: 'input_login_password',
+                            child: TextField(
+                              controller: _passwordController,
+                              obscureText: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Mật khẩu',
+                                hintText: 'Nhập mật khẩu',
+                                prefixIcon: Icon(Icons.lock_outline, size: 20),
+                                border: OutlineInputBorder(),
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          KtxButton(
+                            label: 'Đăng nhập ngay',
+                            icon: Icons.login_rounded,
+                            isLoading: _isLoading,
+                            onPressed: _handleDirectLogin,
+                            semanticsId: 'btn_login_submit',
+                          ),
+                        ],
                       ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    KtxButton(
+                      label: 'Đăng nhập bằng Google (S0)',
+                      icon: Icons.login_rounded,
+                      variant: KtxButtonVariant.outline,
+                      isLoading: _isLoading,
+                      onPressed: _signInWithGoogle,
+                      semanticsId: 'btn_login_google',
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => StudentRegisterScreen(
+                                  onRegisterCompleted:
+                                      widget.onRegisteredOrDemoSuccess,
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            'Đăng ký tài khoản mới',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                        const Text('•', style: TextStyle(color: Colors.grey)),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ForgotPasswordScreen(),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Quên mật khẩu?',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
-      ],
-    ),
-  ),
-);
+      ),
+    );
   }
-
-
 }
 
 /// Khung điều hướng chính 4 Tab (S1 Trang chủ, S12 Thông báo, S10 Đơn hàng, S13 Hồ sơ)
@@ -829,9 +865,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
     final token = await fcmService.initialize(
       onMessageReceived: (RemoteMessage message, String appState) {
         if (!mounted) return;
-        final title =
-            message.notification?.title ?? 'Thông báo đơn hàng KTX';
-        final body = message.notification?.body ??
+        final title = message.notification?.title ?? 'Thông báo đơn hàng KTX';
+        final body =
+            message.notification?.body ??
             'Bạn có cập nhật mới về đơn hàng gom đơn KTX.';
         final type = (message.data['type'] as String?) ?? 'ORDER_STATUS';
         final orderId = message.data['order_id']?.toString() ?? '101';
@@ -866,9 +902,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
       },
       onNotificationTapped: (RemoteMessage message, String appState) {
         if (!mounted) return;
-        final title =
-            message.notification?.title ?? 'Thông báo đơn hàng KTX';
-        final body = message.notification?.body ??
+        final title = message.notification?.title ?? 'Thông báo đơn hàng KTX';
+        final body =
+            message.notification?.body ??
             'Đã mở ứng dụng từ thông báo đẩy FCM.';
         final type = (message.data['type'] as String?) ?? 'ORDER_STATUS';
         final orderId = message.data['order_id']?.toString() ?? '101';
@@ -899,9 +935,9 @@ class _MainShellScreenState extends State<MainShellScreen> {
   }
 
   void _openNotifications() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const NotificationBoardScreen()),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const NotificationBoardScreen()));
   }
 
   void _openProfile() {
@@ -964,12 +1000,12 @@ class _MainShellScreenState extends State<MainShellScreen> {
         store: const StoreModel(
           id: 1,
           name: 'Cơm Tấm Sườn Bì KTX B2',
-          description: 'Cơm tấm sườn nướng mật ong, giao gom đơn tận trụ KTX Khu B',
+          description:
+              'Cơm tấm sườn nướng mật ong, giao gom đơn tận trụ KTX Khu B',
           address: 'Cổng B2 KTX ĐHQG TP.HCM',
           campusZone: 'KTX_KHU_B',
           phoneNumber: '0901234567',
-          avatarUrl:
-              'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600',
+          avatarUrl: 'https://images.unsplash.com/photo-1512058564366-18510be2db19?w=600',
           isActive: true,
           ratingAvg: 4.8,
           ratingCount: 128,
@@ -1000,7 +1036,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // Thanh giỏ hàng nổi bám đáy: CHỈ HIỆN Ở TRANG CHỦ (tab 0) VÀ TRANG CHỌN MÓN (tab 1)
-          if (cartVm.totalItemCount > 0 && (_selectedIndex == 0 || _selectedIndex == 1))
+          if (cartVm.totalItemCount > 0 &&
+              (_selectedIndex == 0 || _selectedIndex == 1))
             KtxStickyCartBar(
               itemCount: cartVm.totalItemCount,
               totalAmount: cartVm.subtotalAmount,

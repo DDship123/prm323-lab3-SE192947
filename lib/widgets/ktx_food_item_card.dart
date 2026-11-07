@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -45,8 +46,10 @@ class KtxFoodItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'card_food_item',
+      identifier: 'card_food_item',
+      label: isAvailable ? 'Món $title' : 'Món $title (hết món)',
       button: true,
+      enabled: isAvailable,
       child: Opacity(
         opacity: isAvailable ? 1.0 : 0.65,
         child: Card(
@@ -179,8 +182,11 @@ class KtxFoodItemCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded,
-                          size: 16, color: Colors.amber),
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 16,
+                        color: Colors.amber,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         rating!.toStringAsFixed(1),
@@ -191,10 +197,7 @@ class KtxFoodItemCard extends StatelessWidget {
                       ),
                       if (ratingCount != null) ...[
                         const SizedBox(width: 4),
-                        Text(
-                          '($ratingCount)',
-                          style: AppTypography.bodySmall,
-                        ),
+                        Text('($ratingCount)', style: AppTypography.bodySmall),
                       ],
                     ],
                   ),
@@ -231,7 +234,7 @@ class KtxFoodItemCard extends StatelessWidget {
                               size: 20,
                             ),
                           ),
-                          tooltip: 'Thêm món',
+                          tooltip: 'Thêm $title vào giỏ',
                         ),
                       ),
                   ],
@@ -286,22 +289,26 @@ class KtxFoodItemCard extends StatelessWidget {
                     ),
                   ),
                   if (onAddTap != null)
-                    InkWell(
-                      onTap: isAvailable ? onAddTap : null,
-                      borderRadius: AppRadius.roundedSm,
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: isAvailable
-                              ? AppColors.primary
-                              : AppColors.border,
-                          borderRadius: AppRadius.roundedSm,
-                        ),
-                        child: const Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 18,
+                    Semantics(
+                      button: true,
+                      label: 'Thêm $title vào giỏ',
+                      child: InkWell(
+                        onTap: isAvailable ? onAddTap : null,
+                        borderRadius: AppRadius.roundedSm,
+                        child: Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: isAvailable
+                                ? AppColors.primary
+                                : AppColors.border,
+                            borderRadius: AppRadius.roundedSm,
+                          ),
+                          child: const Icon(
+                            Icons.add,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ),

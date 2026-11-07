@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../theme/app_colors.dart';
 import '../viewmodels/cart_checkout_vm.dart';
 
@@ -29,10 +30,15 @@ class CartScreen extends StatelessWidget {
           children: [
             Icon(Icons.delete_sweep_rounded, color: AppColors.error, size: 24),
             SizedBox(width: 8),
-            Text('Xóa toàn bộ giỏ hàng?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              'Xóa toàn bộ giỏ hàng?',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ],
         ),
-        content: const Text('Bạn có chắc chắn muốn xóa tất cả món ăn trong giỏ hàng không?'),
+        content: const Text(
+          'Bạn có chắc chắn muốn xóa tất cả món ăn trong giỏ hàng không?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -59,7 +65,12 @@ class CartScreen extends StatelessWidget {
     final selectedSubtotal = cartVm.selectedSubtotalAmount;
     const double shipFee = 5000.0;
     const double voucherDiscount = 10000.0;
-    final double estimatedFinal = selectedCount > 0 ? (selectedSubtotal + shipFee - voucherDiscount).clamp(0, double.infinity) : 0;
+    final double estimatedFinal = selectedCount > 0
+        ? (selectedSubtotal + shipFee - voucherDiscount).clamp(
+            0,
+            double.infinity,
+          )
+        : 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -76,7 +87,11 @@ class CartScreen extends StatelessWidget {
                 color: const Color(0xFFFF521B),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 16),
+              child: const Icon(
+                Icons.shopping_bag_outlined,
+                color: Colors.white,
+                size: 16,
+              ),
             ),
             const SizedBox(width: 8),
             const Text(
@@ -93,7 +108,10 @@ class CartScreen extends StatelessWidget {
           if (items.isNotEmpty)
             IconButton(
               tooltip: 'Xóa toàn bộ giỏ hàng',
-              icon: const Icon(Icons.delete_sweep_outlined, color: Color(0xFF64748B)),
+              icon: const Icon(
+                Icons.delete_sweep_outlined,
+                color: Color(0xFF64748B),
+              ),
               onPressed: () => _confirmClearCart(context, cartVm),
             ),
         ],
@@ -122,7 +140,11 @@ class CartScreen extends StatelessWidget {
                                 color: const Color(0xFFFFF7ED),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Icon(Icons.storefront_rounded, color: Color(0xFFFF521B), size: 22),
+                              child: const Icon(
+                                Icons.storefront_rounded,
+                                color: Color(0xFFFF521B),
+                                size: 22,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -130,7 +152,9 @@ class CartScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    cartVm.storeName.isNotEmpty ? cartVm.storeName : 'Quán Ăn KTX Khu B',
+                                    cartVm.storeName.isNotEmpty
+                                        ? cartVm.storeName
+                                        : 'Quán Ăn KTX Khu B',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 15,
@@ -142,7 +166,11 @@ class CartScreen extends StatelessWidget {
                                   const SizedBox(height: 3),
                                   const Row(
                                     children: [
-                                      Icon(Icons.flash_on_rounded, size: 13, color: Color(0xFFFF521B)),
+                                      Icon(
+                                        Icons.flash_on_rounded,
+                                        size: 13,
+                                        color: Color(0xFFFF521B),
+                                      ),
                                       SizedBox(width: 3),
                                       Text(
                                         'Đơn gom ca KTX • Tiết kiệm 65% ship',
@@ -172,7 +200,10 @@ class CartScreen extends StatelessWidget {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: item.isSelected ? const Color(0xFFFF521B).withValues(alpha: 0.35) : const Color(0xFFE2E8F0),
+                              color: item.isSelected
+                                  ? const Color(0xFFFF521B)
+                                        .withValues(alpha: 0.35)
+                                  : const Color(0xFFE2E8F0),
                               width: item.isSelected ? 1.5 : 1,
                             ),
                             boxShadow: [
@@ -190,11 +221,18 @@ class CartScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // Checkbox chọn món
-                                  Checkbox(
-                                    value: item.isSelected,
-                                    activeColor: const Color(0xFFFF521B),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                    onChanged: (_) => cartVm.toggleItemSelection(index),
+                                  Semantics(
+                                    identifier: 'checkbox_cart_item_$index',
+                                    label: 'Chọn thanh toán ${item.itemName}',
+                                    child: Checkbox(
+                                      value: item.isSelected,
+                                      activeColor: const Color(0xFFFF521B),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      onChanged: (_) =>
+                                          cartVm.toggleItemSelection(index),
+                                    ),
                                   ),
                                   // Ảnh món
                                   ClipRRect(
@@ -204,19 +242,25 @@ class CartScreen extends StatelessWidget {
                                       width: 68,
                                       height: 68,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (context, error, stackTrace) => Container(
-                                        width: 68,
-                                        height: 68,
-                                        color: Colors.grey.shade100,
-                                        child: const Icon(Icons.fastfood_rounded, color: Colors.grey),
-                                      ),
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Container(
+                                                width: 68,
+                                                height: 68,
+                                                color: Colors.grey.shade100,
+                                                child: const Icon(
+                                                  Icons.fastfood_rounded,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
                                     ),
                                   ),
                                   const SizedBox(width: 10),
                                   // Tên món và giá đơn vị
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           item.itemName,
@@ -230,7 +274,9 @@ class CartScreen extends StatelessWidget {
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
-                                          _formatCurrency(item.unitPriceWithOptions),
+                                          _formatCurrency(
+                                            item.unitPriceWithOptions,
+                                          ),
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w700,
                                             fontSize: 13,
@@ -242,8 +288,12 @@ class CartScreen extends StatelessWidget {
                                   ),
                                   // Nút xóa món
                                   IconButton(
-                                    icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF94A3B8)),
-                                    tooltip: 'Bỏ món',
+                                    icon: const Icon(
+                                      Icons.close_rounded,
+                                      size: 18,
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                    tooltip: 'Bỏ món ${item.itemName}',
                                     onPressed: () => cartVm.removeItem(index),
                                   ),
                                 ],
@@ -258,12 +308,19 @@ class CartScreen extends StatelessWidget {
                                     spacing: 6,
                                     runSpacing: 4,
                                     children: item.selectedOptions.map((opt) {
-                                      final priceTag = opt.extraPrice > 0 ? ' (+${_formatCurrency(opt.extraPrice)})' : '';
+                                      final priceTag = opt.extraPrice > 0
+                                          ? ' (+${_formatCurrency(opt.extraPrice)})'
+                                          : '';
                                       return Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF1F5F9),
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                         ),
                                         child: Text(
                                           '${opt.choice}$priceTag',
@@ -280,14 +337,18 @@ class CartScreen extends StatelessWidget {
                               ],
 
                               const SizedBox(height: 10),
-                              const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                              const Divider(
+                                height: 1,
+                                color: Color(0xFFF1F5F9),
+                              ),
                               const SizedBox(height: 8),
 
                               // Thành tiền & Bộ điều khiển số lượng
                               Padding(
                                 padding: const EdgeInsets.only(left: 48),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'Thành tiền: ${_formatCurrency(item.totalPrice)}',
@@ -302,32 +363,79 @@ class CartScreen extends StatelessWidget {
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFF8FAFC),
                                         borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                                        border: Border.all(
+                                          color: const Color(0xFFE2E8F0),
+                                        ),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          InkWell(
-                                            onTap: () => cartVm.updateQuantity(index, -1),
-                                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(6),
-                                              child: const Icon(Icons.remove_rounded, size: 16, color: Color(0xFF475569)),
+                                          Semantics(
+                                            identifier:
+                                                'btn_cart_decrease_$index',
+                                            button: true,
+                                            label:
+                                                'Giảm số lượng ${item.itemName}',
+                                            child: InkWell(
+                                              onTap: () => cartVm
+                                                  .updateQuantity(index, -1),
+                                              borderRadius:
+                                                  const BorderRadius.horizontal(
+                                                    left: Radius.circular(8),
+                                                  ),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(
+                                                  6,
+                                                ),
+                                                child: const Icon(
+                                                  Icons.remove_rounded,
+                                                  size: 16,
+                                                  color: Color(0xFF475569),
+                                                ),
+                                              ),
                                             ),
                                           ),
                                           Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                                            child: Text(
-                                              '${item.quantity}',
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                            ),
+                                            child: Semantics(
+                                              identifier:
+                                                  'text_cart_qty_$index',
+                                              label:
+                                                  'Số lượng ${item.itemName}',
+                                              child: Text(
+                                                '${item.quantity}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
                                             ),
                                           ),
-                                          InkWell(
-                                            onTap: () => cartVm.updateQuantity(index, 1),
-                                            borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(6),
-                                              child: const Icon(Icons.add_rounded, size: 16, color: Color(0xFFFF521B)),
+                                          Semantics(
+                                            identifier:
+                                                'btn_cart_increase_$index',
+                                            button: true,
+                                            label:
+                                                'Tăng số lượng ${item.itemName}',
+                                            child: InkWell(
+                                              onTap: () => cartVm
+                                                  .updateQuantity(index, 1),
+                                              borderRadius:
+                                                  const BorderRadius.horizontal(
+                                                    right: Radius.circular(8),
+                                                  ),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(
+                                                  6,
+                                                ),
+                                                child: const Icon(
+                                                  Icons.add_rounded,
+                                                  size: 16,
+                                                  color: Color(0xFFFF521B),
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -346,12 +454,20 @@ class CartScreen extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: const Color(0xFFFF521B),
                           side: const BorderSide(color: Color(0xFFFF521B)),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         onPressed: onExploreMenu,
-                        icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-                        label: const Text('+ Thêm món khác từ thực đơn', style: TextStyle(fontWeight: FontWeight.bold)),
+                        icon: const Icon(
+                          Icons.add_circle_outline_rounded,
+                          size: 18,
+                        ),
+                        label: const Text(
+                          '+ Thêm món khác từ thực đơn',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                       const SizedBox(height: 16),
 
@@ -368,19 +484,40 @@ class CartScreen extends StatelessWidget {
                           children: [
                             const Text(
                               'Chi tiết thanh toán',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1E293B)),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Color(0xFF1E293B),
+                              ),
                             ),
                             const SizedBox(height: 10),
-                            _buildPriceRow('Tiền món ($selectedCount món đã chọn)', _formatCurrency(selectedSubtotal)),
+                            _buildPriceRow(
+                              'Tiền món ($selectedCount món đã chọn)',
+                              _formatCurrency(selectedSubtotal),
+                            ),
                             const SizedBox(height: 6),
-                            _buildPriceRow('Phí ship gom đơn KTX', _formatCurrency(shipFee), subtitle: '(Tiết kiệm 10k so với ship riêng)'),
+                            _buildPriceRow(
+                              'Phí ship gom đơn KTX',
+                              _formatCurrency(shipFee),
+                              subtitle: '(Tiết kiệm 10k so với ship riêng)',
+                            ),
                             const SizedBox(height: 6),
-                            _buildPriceRow('Voucher giảm giá KTX', '-${_formatCurrency(voucherDiscount)}', highlightColor: const Color(0xFF059669)),
+                            _buildPriceRow(
+                              'Voucher giảm giá KTX',
+                              '-${_formatCurrency(voucherDiscount)}',
+                              highlightColor: const Color(0xFF059669),
+                            ),
                             const Divider(height: 18, color: Color(0xFFF1F5F9)),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Tạm tính:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                const Text(
+                                  'Tạm tính:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
                                 Text(
                                   _formatCurrency(estimatedFinal),
                                   style: const TextStyle(
@@ -418,17 +555,27 @@ class CartScreen extends StatelessWidget {
                       children: [
                         // Chọn tất cả
                         InkWell(
-                          onTap: () => cartVm.toggleSelectAll(!cartVm.isAllSelected),
+                          onTap: () =>
+                              cartVm.toggleSelectAll(!cartVm.isAllSelected),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Checkbox(
                                 value: cartVm.isAllSelected,
                                 activeColor: const Color(0xFFFF521B),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                onChanged: (val) => cartVm.toggleSelectAll(val ?? false),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                onChanged: (val) =>
+                                    cartVm.toggleSelectAll(val ?? false),
                               ),
-                              const Text('Tất cả', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              const Text(
+                                'Tất cả',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -438,7 +585,13 @@ class CartScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text('Tổng thanh toán', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                            const Text(
+                              'Tổng thanh toán',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
                             Text(
                               _formatCurrency(estimatedFinal),
                               style: const TextStyle(
@@ -451,27 +604,47 @@ class CartScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 14),
                         // Nút Thanh Toán
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: selectedCount > 0 ? const Color(0xFFFF521B) : Colors.grey.shade400,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            elevation: 0,
-                          ),
-                          onPressed: selectedCount > 0 ? onProceedToCheckout : () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Vui lòng tích chọn ít nhất 1 món ăn để thanh toán'),
-                                backgroundColor: AppColors.error,
-                                duration: Duration(seconds: 2),
+                        Semantics(
+                          identifier: 'btn_cart_checkout',
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: selectedCount > 0
+                                  ? const Color(0xFFFF521B)
+                                  : Colors.grey.shade400,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 12,
                               ),
-                            );
-                          },
-                          icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                          label: Text(
-                            'Thanh toán ($selectedCount)',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            onPressed: selectedCount > 0
+                                ? onProceedToCheckout
+                                : () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Vui lòng tích chọn ít nhất 1 món ăn để thanh toán',
+                                        ),
+                                        backgroundColor: AppColors.error,
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                            icon: const Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 18,
+                            ),
+                            label: Text(
+                              'Thanh toán ($selectedCount)',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -483,16 +656,27 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPriceRow(String label, String value, {String? subtitle, Color? highlightColor}) {
+  Widget _buildPriceRow(
+    String label,
+    String value, {
+    String? subtitle,
+    Color? highlightColor,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-            Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
             if (subtitle != null) ...[
               const SizedBox(width: 4),
-              Text(subtitle, style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+              Text(
+                subtitle,
+                style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+              ),
             ],
           ],
         ),
@@ -554,8 +738,13 @@ class CartScreen extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFF521B),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               onPressed: onExploreMenu,

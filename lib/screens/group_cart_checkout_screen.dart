@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../firebase/analytics_service.dart';
 import '../firebase/remote_config_service.dart';
 import '../models/order_model.dart';
@@ -40,8 +41,7 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
     {
       'title': 'Cổng KTX Khu B (Trụ A1–A2)',
       'badge': 'Khu B',
-      'desc':
-          'Shipper đậu ô tô tải ngay cổng chính KTX Khu B, sinh viên kiểm tra tên tại bàn trực',
+      'desc': 'Shipper đậu ô tô tải ngay cổng chính KTX Khu B, sinh viên kiểm tra tên tại bàn trực',
       'highlight': '✓ Đã có 28 bạn cùng tòa đặt đợt này',
     },
     {
@@ -62,8 +62,10 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final remoteFee =
-          context.read<RemoteConfigService>().groupShipFee.toDouble();
+      final remoteFee = context
+          .read<RemoteConfigService>()
+          .groupShipFee
+          .toDouble();
       context.read<CartCheckoutViewModel>().updateDeliveryFee(remoteFee);
     });
   }
@@ -81,15 +83,19 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
 
   Future<void> _handlePlaceOrder(CartCheckoutViewModel cartVm) async {
     context.read<AnalyticsService>().logBeginCheckout(
-          itemCount: cartVm.totalItemCount > 0 ? cartVm.totalItemCount : 2,
-          subtotalAmount: cartVm.totalItemCount > 0 ? cartVm.subtotalAmount : 50000,
-          shippingFee: cartVm.deliveryFee,
-        );
+      itemCount: cartVm.totalItemCount > 0 ? cartVm.totalItemCount : 2,
+      subtotalAmount: cartVm.totalItemCount > 0 ? cartVm.subtotalAmount : 50000,
+      shippingFee: cartVm.deliveryFee,
+    );
 
     cartVm.setNote(_noteCtrl.text);
     cartVm.setPaymentMethod(_paymentMethod);
-    cartVm.setPickupLocation(_pickupPoints[_selectedLocationIndex]['title'] as String);
-    cartVm.setSlotTime(_selectedShiftIndex == 0 ? 'CA_TRUA_11H30' : 'CA_CHIEU_18H00');
+    cartVm.setPickupLocation(
+      _pickupPoints[_selectedLocationIndex]['title'] as String,
+    );
+    cartVm.setSlotTime(
+      _selectedShiftIndex == 0 ? 'CA_TRUA_11H30' : 'CA_CHIEU_18H00',
+    );
 
     OrderDetailModel? created;
     if (cartVm.items.isNotEmpty && cartVm.storeId != null) {
@@ -106,7 +112,8 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
         paymentStatus: 'UNPAID',
         paymentMethod: _paymentMethod,
         slotTime: _selectedShiftIndex == 0 ? '11:30 - 12:00' : '18:00 - 18:30',
-        pickupLocation: _pickupPoints[_selectedLocationIndex]['title'] as String,
+        pickupLocation:
+            _pickupPoints[_selectedLocationIndex]['title'] as String,
         note: _noteCtrl.text,
         subtotalAmount: 50000,
         deliveryFee: 5000,
@@ -124,7 +131,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
             quantity: 1,
             itemTotalAmount: 35000,
             selectedOptions: [
-              SelectedItemOption(group: 'Ghi chú', choice: 'Ít mỡ hành, không ớt', extraPrice: 0),
+              SelectedItemOption(
+                group: 'Ghi chú',
+                choice: 'Ít mỡ hành, không ớt',
+                extraPrice: 0,
+              ),
             ],
           ),
           OrderItemModel(
@@ -135,7 +146,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
             quantity: 1,
             itemTotalAmount: 15000,
             selectedOptions: [
-              SelectedItemOption(group: 'Đường đá', choice: '50% đường, ít đá', extraPrice: 0),
+              SelectedItemOption(
+                group: 'Đường đá',
+                choice: '50% đường, ít đá',
+                extraPrice: 0,
+              ),
             ],
           ),
         ],
@@ -175,7 +190,9 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
           final delivering = created!.copyWith(status: 'DELIVERING');
           if (mounted) {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => PickupQrCodeScreen(order: delivering)),
+              MaterialPageRoute(
+                builder: (_) => PickupQrCodeScreen(order: delivering),
+              ),
             );
           }
         },
@@ -187,7 +204,10 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Lời nhắn cho Quán ăn', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          'Lời nhắn cho Quán ăn',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         content: TextField(
           controller: _noteCtrl,
           maxLines: 3,
@@ -202,12 +222,17 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
             child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF521B)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF521B),
+            ),
             onPressed: () {
               setState(() {});
               Navigator.pop(ctx);
             },
-            child: const Text('Lưu ghi chú', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Lưu ghi chú',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -218,11 +243,14 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
   Widget build(BuildContext context) {
     final cartVm = context.watch<CartCheckoutViewModel>();
 
-    final double itemsSubtotal = cartVm.totalItemCount > 0 ? cartVm.subtotalAmount : 50000;
+    final double itemsSubtotal = cartVm.totalItemCount > 0
+        ? cartVm.subtotalAmount
+        : 50000;
     const double originalShipFee = 15000;
     final double shipFee = cartVm.deliveryFee > 0 ? cartVm.deliveryFee : 5000;
     final double voucherDiscount = _voucherApplied ? 10000 : 0;
-    final double totalPayment = (itemsSubtotal + shipFee - voucherDiscount).clamp(0, double.infinity);
+    final double totalPayment = (itemsSubtotal + shipFee - voucherDiscount)
+        .clamp(0, double.infinity);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -230,6 +258,7 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
+          tooltip: 'Quay lại giỏ hàng',
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1E293B)),
           onPressed: () {
             if (widget.onBackToMenu != null) {
@@ -248,7 +277,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                 color: const Color(0xFFFF521B),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.restaurant_menu_rounded, color: Colors.white, size: 16),
+              child: const Icon(
+                Icons.restaurant_menu_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
             ),
             const SizedBox(width: 8),
             const Text(
@@ -264,10 +297,14 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            tooltip: 'Thông báo',
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(Icons.notifications_none_rounded, color: Color(0xFF1E293B)),
+                const Icon(
+                  Icons.notifications_none_rounded,
+                  color: Color(0xFF1E293B),
+                ),
                 Positioned(
                   top: 2,
                   right: 2,
@@ -302,20 +339,28 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
         child: SizedBox(
           width: double.infinity,
           height: 48,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF521B),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          child: Semantics(
+            identifier: 'btn_place_order',
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF521B),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-            ),
-            onPressed: cartVm.isSubmitting ? null : () => _handlePlaceOrder(cartVm),
-            icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-            label: Text(
-              'Đặt đơn nhận tại ${_selectedLocationIndex == 0 ? "Cổng KTX Khu B" : "Cổng KTX"} (${_formatCurrency(totalPayment)})',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              onPressed: cartVm.isSubmitting
+                  ? null
+                  : () => _handlePlaceOrder(cartVm),
+              icon: const Icon(Icons.shopping_bag_outlined, size: 20),
+              label: Text(
+                'Đặt đơn nhận tại ${_selectedLocationIndex == 0 ? "Cổng KTX Khu B" : "Cổng KTX"} (${_formatCurrency(totalPayment)})',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
             ),
           ),
         ),
@@ -365,7 +410,10 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
@@ -373,7 +421,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                   ),
                   child: const Row(
                     children: [
-                      Icon(Icons.access_time_rounded, size: 14, color: Color(0xFFFF521B)),
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 14,
+                        color: Color(0xFFFF521B),
+                      ),
                       SizedBox(width: 4),
                       Text(
                         '10:45',
@@ -417,7 +469,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                           child: const Center(
                             child: Text(
                               '1',
-                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -433,7 +489,10 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFECFDF5),
                         borderRadius: BorderRadius.circular(6),
@@ -467,10 +526,14 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFFFFFBF9) : Colors.white,
+                        color: isSelected
+                            ? const Color(0xFFFFFBF9)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected ? const Color(0xFFFF521B) : const Color(0xFFE2E8F0),
+                          color: isSelected
+                              ? const Color(0xFFFF521B)
+                              : const Color(0xFFE2E8F0),
                           width: isSelected ? 1.5 : 1,
                         ),
                       ),
@@ -480,8 +543,12 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                           Row(
                             children: [
                               Icon(
-                                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                                color: isSelected ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
+                                isSelected
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off,
+                                color: isSelected
+                                    ? const Color(0xFFFF521B)
+                                    : const Color(0xFF94A3B8),
                                 size: 18,
                               ),
                               const SizedBox(width: 8),
@@ -490,15 +557,22 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                                   pt['title'] as String,
                                   style: TextStyle(
                                     fontSize: 13,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                    fontWeight: isSelected
+                                        ? FontWeight.bold
+                                        : FontWeight.w600,
                                     color: const Color(0xFF1E293B),
                                   ),
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFFECFDF5) : const Color(0xFFF1F5F9),
+                                  color: isSelected
+                                      ? const Color(0xFFECFDF5)
+                                      : const Color(0xFFF1F5F9),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
@@ -506,7 +580,9 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: isSelected ? const Color(0xFF059669) : const Color(0xFF64748B),
+                                    color: isSelected
+                                        ? const Color(0xFF059669)
+                                        : const Color(0xFF64748B),
                                   ),
                                 ),
                               ),
@@ -516,14 +592,21 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                             padding: const EdgeInsets.only(left: 26, top: 4),
                             child: Text(
                               pt['desc'] as String,
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), height: 1.3),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                                height: 1.3,
+                              ),
                             ),
                           ),
                           if (pt['highlight'] != null)
                             Padding(
                               padding: const EdgeInsets.only(left: 26, top: 6),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFECFDF5),
                                   borderRadius: BorderRadius.circular(6),
@@ -569,13 +652,24 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: const Center(
-                        child: Text('2', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          '2',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     const Text(
                       'Chọn Khung giờ nhận hàng theo Ca',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                   ],
                 ),
@@ -590,10 +684,14 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: _selectedShiftIndex == 0 ? const Color(0xFFFFFBF9) : Colors.white,
+                            color: _selectedShiftIndex == 0
+                                ? const Color(0xFFFFFBF9)
+                                : Colors.white,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: _selectedShiftIndex == 0 ? const Color(0xFFFF521B) : const Color(0xFFE2E8F0),
+                              color: _selectedShiftIndex == 0
+                                  ? const Color(0xFFFF521B)
+                                  : const Color(0xFFE2E8F0),
                               width: _selectedShiftIndex == 0 ? 1.5 : 1,
                             ),
                           ),
@@ -601,22 +699,34 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
                                     '☀️ Ca Trưa',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFFFF521B)),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                      color: Color(0xFFFF521B),
+                                    ),
                                   ),
                                   if (_selectedShiftIndex == 0)
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 5,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFFF521B),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: const Text(
                                         'ĐANG CHỌN',
-                                        style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 8,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                 ],
@@ -624,12 +734,19 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                               const SizedBox(height: 6),
                               const Text(
                                 '11:30 – 12:00',
-                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF1E293B)),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                  color: Color(0xFF1E293B),
+                                ),
                               ),
                               const SizedBox(height: 2),
                               const Text(
                                 'Chốt gom lúc 10:45',
-                                style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF64748B),
+                                ),
                               ),
                             ],
                           ),
@@ -645,10 +762,14 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: _selectedShiftIndex == 1 ? const Color(0xFFFFFBF9) : const Color(0xFFF8FAFC),
+                            color: _selectedShiftIndex == 1
+                                ? const Color(0xFFFFFBF9)
+                                : const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: _selectedShiftIndex == 1 ? const Color(0xFFFF521B) : const Color(0xFFE2E8F0),
+                              color: _selectedShiftIndex == 1
+                                  ? const Color(0xFFFF521B)
+                                  : const Color(0xFFE2E8F0),
                               width: _selectedShiftIndex == 1 ? 1.5 : 1,
                             ),
                           ),
@@ -657,17 +778,28 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                             children: [
                               const Text(
                                 '🌙 Ca Tối',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF64748B)),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: Color(0xFF64748B),
+                                ),
                               ),
                               const SizedBox(height: 6),
                               const Text(
                                 '18:00 – 18:30',
-                                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF1E293B)),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                  color: Color(0xFF1E293B),
+                                ),
                               ),
                               const SizedBox(height: 2),
                               const Text(
                                 'Mở nhận đến 17:15',
-                                style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF94A3B8),
+                                ),
                               ),
                             ],
                           ),
@@ -705,13 +837,24 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                             shape: BoxShape.circle,
                           ),
                           child: const Center(
-                            child: Text('3', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                            child: Text(
+                              '3',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'Tóm tắt món đã chọn (${cartVm.totalItemCount > 0 ? cartVm.totalItemCount : 2})',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Color(0xFF1E293B),
+                          ),
                         ),
                       ],
                     ),
@@ -737,11 +880,21 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    const Icon(Icons.storefront_rounded, size: 16, color: Color(0xFFFF521B)),
+                    const Icon(
+                      Icons.storefront_rounded,
+                      size: 16,
+                      color: Color(0xFFFF521B),
+                    ),
                     const SizedBox(width: 6),
                     Text(
-                      cartVm.storeName.isNotEmpty ? cartVm.storeName : 'Cơm Tấm Cô Ba Sinh Viên – Chợ Đêm',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF1E293B)),
+                      cartVm.storeName.isNotEmpty
+                          ? cartVm.storeName
+                          : 'Cơm Tấm Cô Ba Sinh Viên – Chợ Đêm',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                   ],
                 ),
@@ -750,7 +903,9 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                 // Danh sách món ăn
                 if (cartVm.items.isNotEmpty)
                   ...cartVm.items.map((it) {
-                    final noteText = it.selectedOptions.map((e) => e.choice).join(', ');
+                    final noteText = it.selectedOptions
+                        .map((e) => e.choice)
+                        .join(', ');
                     return _buildDishItem(
                       name: '${it.quantity}x ${it.itemName}',
                       price: _formatCurrency(it.totalPrice),
@@ -763,7 +918,9 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                     name: '1x Cơm Tấm Sườn Bì Chả',
                     price: '35.000đ',
                     imageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200',
-                    note: _noteCtrl.text.isNotEmpty ? 'Ghi chú: ${_noteCtrl.text}' : 'Ghi chú: Ít mỡ hành, không ớt, thêm nước mắm ngọt',
+                    note: _noteCtrl.text.isNotEmpty
+                        ? 'Ghi chú: ${_noteCtrl.text}'
+                        : 'Ghi chú: Ít mỡ hành, không ớt, thêm nước mắm ngọt',
                   ),
                   _buildDishItem(
                     name: '1x Trà Đào Cam Sả',
@@ -778,7 +935,10 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                   onTap: _showEditNoteDialog,
                   borderRadius: BorderRadius.circular(10),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(10),
@@ -787,7 +947,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.edit_outlined, size: 14, color: Color(0xFFFF521B)),
+                        Icon(
+                          Icons.edit_outlined,
+                          size: 14,
+                          color: Color(0xFFFF521B),
+                        ),
                         SizedBox(width: 6),
                         Text(
                           '+ Thêm lời nhắn cho Quán ăn',
@@ -827,13 +991,24 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: const Center(
-                        child: Text('4', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          '4',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     const Text(
                       'Mã giảm giá / Ưu đãi KTX',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                   ],
                 ),
@@ -853,7 +1028,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                           color: const Color(0xFF059669),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.confirmation_num_rounded, color: Colors.white, size: 18),
+                        child: const Icon(
+                          Icons.confirmation_num_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -864,18 +1043,29 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                               children: [
                                 const Text(
                                   'SINHVIENKTX',
-                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF065F46)),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                    color: Color(0xFF065F46),
+                                  ),
                                 ),
                                 const SizedBox(width: 6),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 5,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF059669),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: const Text(
                                     'Đã áp dụng',
-                                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -883,7 +1073,10 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                             const SizedBox(height: 2),
                             const Text(
                               'Giảm 10.000đ phí giao gom chung',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF047857)),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF047857),
+                              ),
                             ),
                           ],
                         ),
@@ -893,7 +1086,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                           setState(() => _voucherApplied = !_voucherApplied);
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(_voucherApplied ? 'Đã áp dụng mã SINHVIENKTX' : 'Đã gỡ mã ưu đãi'),
+                              content: Text(
+                                _voucherApplied
+                                    ? 'Đã áp dụng mã SINHVIENKTX'
+                                    : 'Đã gỡ mã ưu đãi',
+                              ),
                               duration: const Duration(seconds: 1),
                             ),
                           );
@@ -936,135 +1133,206 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: const Center(
-                        child: Text('5', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          '5',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     const Text(
                       'Phương thức thanh toán',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
 
                 // Option 1: VietQR
-                InkWell(
-                  onTap: () => setState(() => _paymentMethod = 'VIETQR'),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: _paymentMethod == 'VIETQR' ? const Color(0xFFFFFBF9) : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _paymentMethod == 'VIETQR' ? const Color(0xFFFF521B) : const Color(0xFFE2E8F0),
-                        width: _paymentMethod == 'VIETQR' ? 1.5 : 1,
+                Semantics(
+                  identifier: 'radio_payment_vietqr',
+                  inMutuallyExclusiveGroup: true,
+                  checked: _paymentMethod == 'VIETQR',
+                  child: InkWell(
+                    onTap: () => setState(() => _paymentMethod = 'VIETQR'),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _paymentMethod == 'VIETQR'
+                            ? const Color(0xFFFFFBF9)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _paymentMethod == 'VIETQR'
+                              ? const Color(0xFFFF521B)
+                              : const Color(0xFFE2E8F0),
+                          width: _paymentMethod == 'VIETQR' ? 1.5 : 1,
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              _paymentMethod == 'VIETQR' ? Icons.radio_button_checked : Icons.radio_button_off,
-                              color: _paymentMethod == 'VIETQR' ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            const Expanded(
-                              child: Text(
-                                'Chuyển khoản VietQR trước cho Quán',
-                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFF521B),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'KHUYÊN DÙNG',
-                                style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.only(left: 26, top: 4),
-                          child: Text(
-                            'Quét mã QR qua app ngân hàng, không lo thiếu tiền lẻ khi lấy đồ trường KTX',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          margin: const EdgeInsets.only(left: 26),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF7ED),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFFFEDD5)),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Icon(Icons.bolt_rounded, size: 14, color: Color(0xFFFF521B)),
-                              SizedBox(width: 4),
-                              Text(
-                                'Tạo mã QR tự động sau khi bấm đặt',
-                                style: TextStyle(color: Color(0xFFFF521B), fontSize: 11, fontWeight: FontWeight.bold),
+                              Icon(
+                                _paymentMethod == 'VIETQR'
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off,
+                                color: _paymentMethod == 'VIETQR'
+                                    ? const Color(0xFFFF521B)
+                                    : const Color(0xFF94A3B8),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  'Chuyển khoản VietQR trước cho Quán',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 5,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFF521B),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'KHUYÊN DÙNG',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          const Padding(
+                            padding: EdgeInsets.only(left: 26, top: 4),
+                            child: Text(
+                              'Quét mã QR qua app ngân hàng, không lo thiếu tiền lẻ khi lấy đồ trường KTX',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            margin: const EdgeInsets.only(left: 26),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF7ED),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: const Color(0xFFFFEDD5),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.bolt_rounded,
+                                  size: 14,
+                                  color: Color(0xFFFF521B),
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Tạo mã QR tự động sau khi bấm đặt',
+                                  style: TextStyle(
+                                    color: Color(0xFFFF521B),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
 
                 // Option 2: COD
-                InkWell(
-                  onTap: () => setState(() => _paymentMethod = 'COD'),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: _paymentMethod == 'COD' ? const Color(0xFFFFFBF9) : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _paymentMethod == 'COD' ? const Color(0xFFFF521B) : const Color(0xFFE2E8F0),
-                        width: _paymentMethod == 'COD' ? 1.5 : 1,
+                Semantics(
+                  identifier: 'radio_payment_cod',
+                  inMutuallyExclusiveGroup: true,
+                  checked: _paymentMethod == 'COD',
+                  child: InkWell(
+                    onTap: () => setState(() => _paymentMethod = 'COD'),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: _paymentMethod == 'COD'
+                            ? const Color(0xFFFFFBF9)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _paymentMethod == 'COD'
+                              ? const Color(0xFFFF521B)
+                              : const Color(0xFFE2E8F0),
+                          width: _paymentMethod == 'COD' ? 1.5 : 1,
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              _paymentMethod == 'COD' ? Icons.radio_button_checked : Icons.radio_button_off,
-                              color: _paymentMethod == 'COD' ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'Tiền mặt khi nhận tại cổng (COD)',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
-                            ),
-                          ],
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 26, top: 4),
-                          child: Text(
-                            'Chuẩn bị sẵn ${_formatCurrency(totalPayment)} tiền mặt để không làm nghẽn luồng điểm nhận hàng',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                _paymentMethod == 'COD'
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off,
+                                color: _paymentMethod == 'COD'
+                                    ? const Color(0xFFFF521B)
+                                    : const Color(0xFF94A3B8),
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Tiền mặt khi nhận tại cổng (COD)',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                          Padding(
+                            padding: const EdgeInsets.only(left: 26, top: 4),
+                            child: Text(
+                              'Chuẩn bị sẵn ${_formatCurrency(totalPayment)} tiền mặt để không làm nghẽn luồng điểm nhận hàng',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -1094,13 +1362,24 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: const Center(
-                        child: Text('6', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          '6',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     const Text(
                       'Chi tiết thanh toán',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                   ],
                 ),
@@ -1115,9 +1394,19 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                   children: [
                     const Row(
                       children: [
-                        Text('Phí gom đơn KTX', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        Text(
+                          'Phí gom đơn KTX',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
                         SizedBox(width: 4),
-                        Icon(Icons.info_outline, size: 13, color: Color(0xFF94A3B8)),
+                        Icon(
+                          Icons.info_outline,
+                          size: 13,
+                          color: Color(0xFF94A3B8),
+                        ),
                       ],
                     ),
                     Row(
@@ -1150,7 +1439,10 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                     children: [
                       const Text(
                         'Giảm giá voucher [SINHVIENKTX]',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF059669)),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF059669),
+                        ),
                       ),
                       Text(
                         '-${_formatCurrency(voucherDiscount)}',
@@ -1172,7 +1464,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                   children: [
                     const Text(
                       'Tổng thanh toán',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: Color(0xFF1E293B),
+                      ),
                     ),
                     Text(
                       _formatCurrency(totalPayment),
@@ -1187,7 +1483,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                 const SizedBox(height: 4),
                 const Row(
                   children: [
-                    Icon(Icons.local_fire_department_rounded, size: 14, color: Color(0xFFFF521B)),
+                    Icon(
+                      Icons.local_fire_department_rounded,
+                      size: 14,
+                      color: Color(0xFFFF521B),
+                    ),
                     SizedBox(width: 4),
                     Text(
                       'Tiết kiệm 20.000đ nhờ gom đơn',
@@ -1212,12 +1512,20 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                   child: const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.verified_user_outlined, color: Color(0xFF059669), size: 16),
+                      Icon(
+                        Icons.verified_user_outlined,
+                        color: Color(0xFF059669),
+                        size: 16,
+                      ),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Đơn gom được giao đồng loạt đến cổng KTX vào khung giờ đã chọn. Shipper sẽ gửi mã PIN qua App để bạn đối soát nhận món, tránh thất lạc đồ ăn giờ cao điểm.',
-                          style: TextStyle(fontSize: 11, color: Color(0xFF065F46), height: 1.35),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF065F46),
+                            height: 1.35,
+                          ),
                         ),
                       ),
                     ],
@@ -1255,7 +1563,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                 width: 50,
                 height: 50,
                 color: const Color(0xFFF1F5F9),
-                child: const Icon(Icons.fastfood_rounded, color: Color(0xFFFF521B), size: 24),
+                child: const Icon(
+                  Icons.fastfood_rounded,
+                  color: Color(0xFFFF521B),
+                  size: 24,
+                ),
               ),
             ),
           ),
@@ -1288,7 +1600,10 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                 if (note != null && note.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(6),
@@ -1296,7 +1611,10 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                     ),
                     child: Text(
                       note,
-                      style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF64748B),
+                      ),
                     ),
                   ),
                 ],
@@ -1312,7 +1630,10 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+        ),
         Text(
           value,
           style: const TextStyle(
@@ -1324,5 +1645,4 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
       ],
     );
   }
-
 }
