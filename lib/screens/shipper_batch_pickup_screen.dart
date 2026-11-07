@@ -23,12 +23,14 @@ import 'shipper_wallet_screen.dart';
 
 class ShipperBatchPickupScreen extends StatefulWidget {
   final String shipperId;
+  final int initialTabIndex;
   final VoidCallback? onSwitchRole;
   final VoidCallback? onSignOut;
 
   const ShipperBatchPickupScreen({
     super.key,
     this.shipperId = '3',
+    this.initialTabIndex = 0,
     this.onSwitchRole,
     this.onSignOut,
   });
@@ -39,11 +41,13 @@ class ShipperBatchPickupScreen extends StatefulWidget {
 
 class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
   final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
-  int _selectedTabIndex = 0; // 0: Cần phát, 1: Đã hoàn tất
+  late int _selectedTabIndex; // 0: Cần phát, 1: Đã hoàn tất
+  String? _lastCompletedOrderCode;
 
   @override
   void initState() {
     super.initState();
+    _selectedTabIndex = widget.initialTabIndex;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ShipperViewModel>().fetchBatch(shipperId: widget.shipperId);
     });
@@ -257,7 +261,51 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
           totalCount: allOrders.length,
           accumulatedEarnings: liveEarnings,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+
+        if (_lastCompletedOrderCode != null) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFECFDF5),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFF6EE7B7)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Đã giao thành công đơn #$_lastCompletedOrderCode! (+15.000đ vào ví)',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF065F46),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _selectedTabIndex = 1;
+                    });
+                  },
+                  child: const Text(
+                    'Xem đơn đã giao →',
+                    style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: Color(0xFF047857)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
 
         // 3. Tab chuyển đổi rõ ràng giữa: Đơn cần phát vs Đơn đã hoàn tất
         Container(
@@ -720,6 +768,22 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
               ),
             ],
           ),
+          if (order.itemSummaries.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.shopping_bag_outlined, size: 15, color: Color(0xFFFF521B)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Món: ${order.itemSummaries.join(', ')}',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
             child: Divider(height: 1, color: Color(0xFFF1F5F9)),
@@ -824,8 +888,8 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                       ),
                       icon: const Icon(Icons.qr_code_scanner, size: 14, color: Colors.white),
                       label: const Text('Trao hàng QR', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                      onPressed: () {
-                        Navigator.push(
+                      onPressed: () async {
+                        final res = await Navigator.push<bool>(
                           context,
                           MaterialPageRoute(
                             builder: (_) => ShipperHandoverConfirmScreen(
@@ -833,9 +897,13 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                               shipperId: widget.shipperId,
                             ),
                           ),
-                        ).then((_) {
-                          vm.fetchBatch(shipperId: widget.shipperId);
-                        });
+                        );
+                        if (res == true && mounted) {
+                          setState(() {
+                            _lastCompletedOrderCode = order.orderCode;
+                          });
+                        }
+                        vm.fetchBatch(shipperId: widget.shipperId);
                       },
                     ),
                   ],
@@ -949,6 +1017,22 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
               ),
             ],
           ),
+          if (order.itemSummaries.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.shopping_bag_outlined, size: 15, color: Color(0xFF059669)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Đã giao: ${order.itemSummaries.join(', ')}',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 10),
             child: Divider(height: 1, color: Color(0xFFF1F5F9)),
