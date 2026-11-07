@@ -1,248 +1,253 @@
-﻿# Káº¿ Hoáº¡ch & Nháº­t KÃ½ Kiá»ƒm Thá»­ ToÃ n Diá»‡n (Comprehensive Test Plan & ARTEMIS E2E Log)
+# Kế Hoạch & Nhật Ký Kiểm Thử Toàn Diện (Comprehensive Test Plan & ARTEMIS E2E Log)
 
-- **Dá»± Ã¡n:** KTX Food Ordering App â€“ á»¨ng dá»¥ng Äáº·t mÃ³n & Gom Ä‘Æ¡n KTX
-- **MÃ´n há»c:** PRM393 / PRM323 â€“ Lab 3: Flutter & Firebase Integration
-- **NhÃ³m thá»±c hiá»‡n:** NgÃ´ HoÃ ng TrÆ°á»ng Äáº¡t (SE192964 - Frontend Mobile Lead) & Tráº§n Sanh Äiá»n (Backend Lead)
-- **Ná»n táº£ng kiá»ƒm thá»­:** Android 14 Emulator (Pixel 7 Pro) & Chrome Web Dev Server (Port 3000)
-- **Thá»i gian thá»±c hiá»‡n:** 06/11/2026
+- **Dự án:** KTX Food Ordering App – Ứng dụng Đặt món & Gom đơn KTX
+- **Môn học:** PRM393 / PRM323 – Lab 3: Flutter & Firebase Integration
+- **Nhóm thực hiện:** Ngô Hoàng Trường Đạt (SE192964 - Frontend Mobile Lead) & Trần Sanh Điền (Backend Lead)
+- **Nền tảng kiểm thử:** Android 14 Emulator (Pixel 7 Pro) & Chrome Web Dev Server (Port 3000)
+- **Thời gian thực hiện:** 06/11/2026
 
 ---
 
-## 1. Káº¿t Quáº£ Kiá»ƒm Thá»­ Tá»± Äá»™ng ÄÆ¡n Vá»‹ & TÃ­ch Há»£p (Automated Unit & Widget Tests)
+## 1. Kết Quả Kiểm Thử Tự Động Đơn Vị & Tích Hợp (Automated Unit & Widget Tests)
 
-Táº¥t cáº£ cÃ¡c bÃ i kiá»ƒm thá»­ tá»± Ä‘á»™ng Ä‘Æ°á»£c thá»±c thi báº±ng lá»‡nh `flutter test`. Káº¿t quáº£ Ä‘áº¡t **31/31 bÃ i test PASSED (100%)**:
+Tất cả các bài kiểm thử tự động được thực thi bằng lệnh `flutter test`. Kết quả đạt **31/31 bài test PASSED (100%)**:
 
-| STT | Táº­p tin Kiá»ƒm thá»­ | Sá»‘ TC | Káº¿t quáº£ | MÃ´ táº£ & Nghiá»‡p vá»¥ kiá»ƒm chá»©ng |
+| STT | Tập tin Kiểm thử | Số TC | Kết quả | Mô tả & Nghiệp vụ kiểm chứng |
 | :-: | :--- | :---: | :---: | :--- |
-| **1** | `test/auth_role_flow_test.dart` | 2 | **PASSED** | Kiá»ƒm tra enum 4 vai trÃ² (`UserAppRole`) vÃ  xÃ¡c thá»±c header `currentBackendUserId`. |
-| **2** | `test/admin_web_test.dart` | 3 | **PASSED** | Serialize / Deserialize `AdminDashboardStatsModel` vÃ  phÃ¢n loáº¡i Activity log. |
-| **3** | `test/cart_and_review_vm_test.dart` | 4 | **PASSED** | Kiá»ƒm thá»­ quy táº¯c nghiá»‡p vá»¥: BR-ORD-01 (cháº·n Ä‘áº·t giá» rá»—ng), BR-ORD-02 & 03 (tÃ­nh tá»•ng tiá»n kÃ¨m phÃ­ gom Ä‘Æ¡n), BR-REV-02 (Ä‘Ã¡nh giÃ¡ 1-5 sao) vÃ  S0_OTP (xÃ¡c thá»±c OTP 6 sá»‘). |
-| **4** | `test/commission_policy_service_test.dart` | 6 | **PASSED** | Kiá»ƒm thá»­ chÃ­nh sÃ¡ch chiáº¿t kháº¥u sÃ n Ä‘á»™ng (máº·c Ä‘á»‹nh 10%, Ä‘iá»u chá»‰nh 8%, 0% vÃ  cháº·n tá»· lá»‡ Ã¢m hoáº·c >50%). |
-| **5** | `test/crashlytics_service_test.dart` | 2 | **PASSED** | Khá»Ÿi táº¡o Crashlytics an toÃ n, ghi váº¿t user context vÃ  nÃ©m exception kiá»ƒm thá»­ trÃªn mÃ´i trÆ°á»ng non-native. |
-| **6** | `test/dispute_model_test.dart` | 3 | **PASSED** | Parse `DisputeModel`, mapping enum tráº¡ng thÃ¡i vÃ  chuáº©n hÃ³a DTO gá»­i Backend. |
-| **7** | `test/dispute_vm_validation_test.dart` | 4 | **PASSED** | Cháº·n gá»­i khiáº¿u náº¡i thiáº¿u Ä‘Æ¡n hÃ ng, cháº·n gá»­i khiáº¿u náº¡i thiáº¿u áº£nh báº±ng chá»©ng, cáº­p nháº­t lÃ½ do khiáº¿u náº¡i. |
-| **8** | `test/server_config_test.dart` | 3 | **PASSED** | Cáº¥u hÃ¬nh Ä‘á»™ng Ä‘a server (Localhost, FPT LAN, Aiven Cloud) vÃ  chuáº©n hÃ³a URL. |
-| **9** | `test/widget_test.dart` | 4 | **PASSED** | VÃ¹ng cháº¡m KtxButton (>=48dp touch target), KtxLoadingState, KtxEmptyState, KtxErrorState (nÃºt Thá»­ láº¡i). |
-| **Tá»”NG** | **9 tá»‡p kiá»ƒm thá»­** | **31 TC** | **31/31 PASSED (100%)** | Thá»i gian thá»±c thi: **~2.8s** |
+| **1** | `test/auth_role_flow_test.dart` | 2 | **PASSED** | Kiểm tra enum 4 vai trò (`UserAppRole`) và xác thực header `currentBackendUserId`. |
+| **2** | `test/admin_web_test.dart` | 3 | **PASSED** | Serialize / Deserialize `AdminDashboardStatsModel` và phân loại Activity log. |
+| **3** | `test/cart_and_review_vm_test.dart` | 4 | **PASSED** | Kiểm thử quy tắc nghiệp vụ: BR-ORD-01 (chặn đặt giỏ rỗng), BR-ORD-02 & 03 (tính tổng tiền kèm phí gom đơn), BR-REV-02 (đánh giá 1-5 sao) và S0_OTP (xác thực OTP 6 số). |
+| **4** | `test/commission_policy_service_test.dart` | 6 | **PASSED** | Kiểm thử chính sách chiết khấu sàn động (mặc định 10%, điều chỉnh 8%, 0% và chặn tỷ lệ âm hoặc >50%). |
+| **5** | `test/crashlytics_service_test.dart` | 2 | **PASSED** | Khởi tạo Crashlytics an toàn, ghi vết user context và ném exception kiểm thử trên môi trường non-native. |
+| **6** | `test/dispute_model_test.dart` | 3 | **PASSED** | Parse `DisputeModel`, mapping enum trạng thái và chuẩn hóa DTO gửi Backend. |
+| **7** | `test/dispute_vm_validation_test.dart` | 4 | **PASSED** | Chặn gửi khiếu nại thiếu đơn hàng, chặn gửi khiếu nại thiếu ảnh bằng chứng, cập nhật lý do khiếu nại. |
+| **8** | `test/server_config_test.dart` | 3 | **PASSED** | Cấu hình động đa server (Localhost, FPT LAN, Aiven Cloud) và chuẩn hóa URL. |
+| **9** | `test/widget_test.dart` | 4 | **PASSED** | Vùng chạm KtxButton (>=48dp touch target), KtxLoadingState, KtxEmptyState, KtxErrorState (nút Thử lại). |
+| **TỔNG** | **9 tệp kiểm thử** | **31 TC** | **31/31 PASSED (100%)** | Thời gian thực thi: **~2.8s** |
 
 ---
 
-## 2. Ká»‹ch Báº£n Kiá»ƒm Thá»­ Äáº§u Cuá»‘i ARTEMIS (10 E2E Test Cases)
+## 2. Kịch Bản Kiểm Thử Đầu Cuối ARTEMIS (10 E2E Test Cases)
 
-TuÃ¢n thá»§ nghiÃªm ngáº·t yÃªu cáº§u chuáº©n bá»‹ Lab 3 (Slide 23): Má»—i ca kiá»ƒm thá»­ Ä‘Æ°á»£c thá»±c thi **láº·p láº¡i tá»‘i thiá»ƒu 3 láº§n** trÃªn thiáº¿t bá»‹ tháº­t / mÃ¡y áº£o Android Ä‘á»ƒ xÃ¡c minh tÃ­nh á»•n Ä‘á»‹nh vÃ  Ä‘o lÆ°á»ng tá»· lá»‡ Ä‘áº¡t:
+Tuân thủ nghiêm ngặt yêu cầu chuẩn bị Lab 3 (Slide 23): Mỗi ca kiểm thử được thực thi **lặp lại tối thiểu 3 lần** trên thiết bị thật / máy ảo Android để xác minh tính ổn định và đo lường tỷ lệ đạt:
 
-### Báº£ng Tá»•ng Há»£p 10 Ca Kiá»ƒm Thá»­ ARTEMIS E2E
+### Bảng Tổng Hợp 10 Ca Kiểm Thử ARTEMIS E2E
 
-| MÃ£ TC | TÃªn Ca Kiá»ƒm Thá»­ | Luá»“ng nghiá»‡p vá»¥ Lab 2 / Firebase | NhÃ¡nh kiá»ƒm thá»­ | Tá»· lá»‡ Äáº¡t (3 láº§n cháº¡y) | Tráº¡ng thÃ¡i |
+| Mã TC | Tên Ca Kiểm Thử | Luồng nghiệp vụ Lab 2 / Firebase | Nhánh kiểm thử | Tỷ lệ Đạt (3 lần chạy) | Trạng thái |
 | :---: | :--- | :--- | :--- | :---: | :---: |
-| **TC-01** | ÄÄƒng nháº­p Google & LÆ°u PhiÃªn lÃ m viá»‡c | Luá»“ng 1 - XÃ¡c thá»±c (Firebase Auth) | Luá»“ng chÃ­nh (Happy Path) | 3/3 (100%) | **PASSED** |
-| **TC-02** | Há»§y ÄÄƒng nháº­p Google & ThÃ´ng bÃ¡o thÃ¢n thiá»‡n | Luá»“ng 1 - XÃ¡c thá»±c (Firebase Auth) | **NhÃ¡nh lá»—i (Error Flow)** | 3/3 (100%) | **PASSED** |
-| **TC-03** | Duyá»‡t QuÃ¡n Äƒn & Lá»c theo PhÃ¢n khu KTX | Luá»“ng 1 - Äáº·t mÃ³n (Home S1) | Luá»“ng chÃ­nh | 3/3 (100%) | **PASSED** |
-| **TC-04** | TÃ¹y chá»n MÃ³n Äƒn & ThÃªm vÃ o Giá» gom Ä‘Æ¡n | Luá»“ng 1 - Giá» hÃ ng (S3, S4) | Luá»“ng chÃ­nh | 3/3 (100%) | **PASSED** |
-| **TC-05** | Thanh toÃ¡n VietQR & Äiá»u phá»‘i Ca gom KTX | Luá»“ng 1 - Thanh toÃ¡n (S5) | Luá»“ng chÃ­nh | 3/3 (100%) | **PASSED** |
-| **TC-06** | Táº¡o Khiáº¿u náº¡i & Táº£i áº¢nh lÃªn Cloud Storage | Luá»“ng 2 - Khiáº¿u náº¡i (Cloud Storage) | Luá»“ng chÃ­nh | 3/3 (100%) | **PASSED** |
-| **TC-07** | Cháº·n Gá»­i Khiáº¿u náº¡i khi Thiáº¿u áº¢nh Báº±ng Chá»©ng | Luá»“ng 2 - Khiáº¿u náº¡i (Validation) | **NhÃ¡nh lá»—i (Error Flow)** | 3/3 (100%) | **PASSED** |
-| **TC-08** | Nháº­n & Äiá»u HÆ°á»›ng ThÃ´ng BÃ¡o Äáº©y FCM | Dá»‹ch vá»¥ FCM (Foreground/Background) | **TÆ°Æ¡ng tÃ¡c Android gá»‘c** | 3/3 (100%) | **PASSED** |
-| **TC-09** | Thay Äá»•i Banner PhÃ­ Ship qua Remote Config | Dá»‹ch vá»¥ Firebase Remote Config | Runtime dynamic config | 3/3 (100%) | **PASSED** |
-| **TC-10** | KÃ­ch Hoáº¡t Crash Thá»­ Nghiá»‡m trong CÃ i Äáº·t | Dá»‹ch vá»¥ Firebase Crashlytics | **TÆ°Æ¡ng tÃ¡c Android gá»‘c / Crash** | 3/3 (100%) | **PASSED** |
+| **TC-01** | Đăng nhập Google & Lưu Phiên làm việc | Luồng 1 - Xác thực (Firebase Auth) | Luồng chính (Happy Path) | 3/3 (100%) | **PASSED** |
+| **TC-02** | Hủy Đăng nhập Google & Thông báo thân thiện | Luồng 1 - Xác thực (Firebase Auth) | **Nhánh lỗi (Error Flow)** | 3/3 (100%) | **PASSED** |
+| **TC-03** | Duyệt Quán ăn & Lọc theo Phân khu KTX | Luồng 1 - Đặt món (Home S1) | Luồng chính | 3/3 (100%) | **PASSED** |
+| **TC-04** | Tùy chọn Món ăn & Thêm vào Giỏ gom đơn | Luồng 1 - Giỏ hàng (S3, S4) | Luồng chính | 3/3 (100%) | **PASSED** |
+| **TC-05** | Thanh toán VietQR & Điều phối Ca gom KTX | Luồng 1 - Thanh toán (S5) | Luồng chính | 3/3 (100%) | **PASSED** |
+| **TC-06** | Tạo Khiếu nại & Tải Ảnh lên Cloud Storage | Luồng 2 - Khiếu nại (Cloud Storage) | Luồng chính | 3/3 (100%) | **PASSED** |
+| **TC-07** | Chặn Gửi Khiếu nại khi Thiếu Ảnh Bằng Chứng | Luồng 2 - Khiếu nại (Validation) | **Nhánh lỗi (Error Flow)** | 3/3 (100%) | **PASSED** |
+| **TC-08** | Nhận & Điều Hướng Thông Báo Đẩy FCM | Dịch vụ FCM (Foreground/Background) | **Tương tác Android gốc** | 3/3 (100%) | **PASSED** |
+| **TC-09** | Thay Đổi Banner Phí Ship qua Remote Config | Dịch vụ Firebase Remote Config | Runtime dynamic config | 3/3 (100%) | **PASSED** |
+| **TC-10** | Kích Hoạt Crash Thử Nghiệm trong Cài Đặt | Dịch vụ Firebase Crashlytics | **Tương tác Android gốc / Crash** | 3/3 (100%) | **PASSED** |
 
 ---
 
-### Chi Tiáº¿t Tá»«ng Ká»‹ch Báº£n Kiá»ƒm Thá»­
+### Chi Tiết Từng Kịch Bản Kiểm Thử
 
-#### TC-01: ÄÄƒng nháº­p Google & Duy trÃ¬ tráº¡ng thÃ¡i phiÃªn
-* **Äiá»u kiá»‡n Ä‘áº§u:** á»¨ng dá»¥ng á»Ÿ mÃ n hÃ¬nh Ä‘Äƒng nháº­p S0, thiáº¿t bá»‹ káº¿t ná»‘i máº¡ng Internet.
-* **CÃ¡c bÆ°á»›c thá»±c hiá»‡n:**
-  1. Nháº¥n nÃºt "ÄÄƒng nháº­p báº±ng Google".
-  2. Chá»n tÃ i khoáº£n Google sinh viÃªn trÃªn giao diá»‡n popup OAuth.
-* **Káº¿t quáº£ mong Ä‘á»£i:** Firebase Auth xÃ¡c thá»±c thÃ nh cÃ´ng, mÃ n hÃ¬nh tá»± Ä‘á»™ng chuyá»ƒn sang Trang chá»§ S1, thÃ´ng tin user Ä‘Æ°á»£c hiá»ƒn thá»‹ chÃ­nh xÃ¡c.
-* **Káº¿t quáº£ thá»±c táº¿:** ÄÄƒng nháº­p mÆ°á»£t mÃ , chuyá»ƒn trang trong 1.2s. Äáº¡t 3/3.
+#### TC-01: Đăng nhập Google & Duy trì trạng thái phiên
+* **Điều kiện đầu:** Ứng dụng ở màn hình đăng nhập S0, thiết bị kết nối mạng Internet.
+* **Các bước thực hiện:**
+  1. Nhấn nút "Đăng nhập bằng Google".
+  2. Chọn tài khoản Google sinh viên trên giao diện popup OAuth.
+* **Kết quả mong đợi:** Firebase Auth xác thực thành công, màn hình tự động chuyển sang Trang chủ S1, thông tin user được hiển thị chính xác.
+* **Kết quả thực tế:** Đăng nhập mượt mà, chuyển trang trong 1.2s. Đạt 3/3.
 
-#### TC-02: Xá»­ lÃ½ Há»§y ÄÄƒng nháº­p Google
-* **Äiá»u kiá»‡n Ä‘áº§u:** MÃ n hÃ¬nh Ä‘Äƒng nháº­p S0.
-* **CÃ¡c bÆ°á»›c thá»±c hiá»‡n:**
-  1. Nháº¥n nÃºt "ÄÄƒng nháº­p báº±ng Google".
-  2. Khi popup Google hiá»‡n lÃªn, nháº¥n nÃºt "Há»§y" hoáº·c vuá»‘t Back.
-* **Káº¿t quáº£ mong Ä‘á»£i:** á»¨ng dá»¥ng khÃ´ng bá»‹ treo, báº¯t ngoáº¡i lá»‡ `GoogleSignInExceptionCode.canceled`, giá»¯ nguyÃªn giao diá»‡n Ä‘Äƒng nháº­p vÃ  khÃ´ng hiá»ƒn thá»‹ SnackBar lá»—i khÃ³ chá»‹u.
-* **Káº¿t quáº£ thá»±c táº¿:** Xá»­ lÃ½ Ãªm, ngÆ°á»i dÃ¹ng cÃ³ thá»ƒ thá»­ láº¡i ngay. Äáº¡t 3/3.
+#### TC-02: Xử lý Hủy Đăng nhập Google
+* **Điều kiện đầu:** Màn hình đăng nhập S0.
+* **Các bước thực hiện:**
+  1. Nhấn nút "Đăng nhập bằng Google".
+  2. Khi popup Google hiện lên, nhấn nút "Hủy" hoặc vuốt Back.
+* **Kết quả mong đợi:** Ứng dụng không bị treo, bắt ngoại lệ `GoogleSignInExceptionCode.canceled`, giữ nguyên giao diện đăng nhập và không hiển thị SnackBar lỗi khó chịu.
+* **Kết quả thực tế:** Xử lý êm, người dùng có thể thử lại ngay. Đạt 3/3.
 
-#### TC-03: TÃ¬m kiáº¿m mÃ³n Äƒn & Lá»c theo PhÃ¢n khu KTX
-* **Äiá»u kiá»‡n Ä‘áº§u:** Sinh viÃªn Ä‘ang á»Ÿ Trang chá»§ S1.
-* **CÃ¡c bÆ°á»›c thá»±c hiá»‡n:**
-  1. Nháº­p tá»« khÃ³a `"CÆ¡m sÆ°á»n"` vÃ o thanh tÃ¬m kiáº¿m.
-  2. Chá»n bá»™ lá»c phÃ¢n khu `"KTX Khu B"`.
-* **Káº¿t quáº£ mong Ä‘á»£i:** Danh sÃ¡ch mÃ³n Äƒn Ä‘Æ°á»£c lá»c tá»©c thÃ¬, sá»± kiá»‡n `search` Ä‘Æ°á»£c gá»­i lÃªn Firebase Analytics DebugView vá»›i tham sá»‘ `search_term: "CÆ¡m sÆ°á»n"`.
-* **Káº¿t quáº£ thá»±c táº¿:** Danh sÃ¡ch cáº­p nháº­t chÃ­nh xÃ¡c, DebugView ghi nháº­n Ä‘Ãºng sá»± kiá»‡n. Äáº¡t 3/3.
+#### TC-03: Tìm kiếm món ăn & Lọc theo Phân khu KTX
+* **Điều kiện đầu:** Sinh viên đang ở Trang chủ S1.
+* **Các bước thực hiện:**
+  1. Nhập từ khóa `"Cơm sườn"` vào thanh tìm kiếm.
+  2. Chọn bộ lọc phân khu `"KTX Khu B"`.
+* **Kết quả mong đợi:** Danh sách món ăn được lọc tức thì, sự kiện `search` được gửi lên Firebase Analytics DebugView với tham số `search_term: "Cơm sườn"`.
+* **Kết quả thực tế:** Danh sách cập nhật chính xác, DebugView ghi nhận đúng sự kiện. Đạt 3/3.
+
+#### TC-04: Thêm món kèm Topping KTX vào Giỏ hàng
+* **Điều kiện đầu:** Đang mở màn hình Chi tiết quán S2.
+* **Các bước thực hiện:**
+  1. Chọn món ăn bất kỳ.
+  2. Tích chọn Topping (Trứng ốp la, Chả trứng) và tăng số lượng lên 2.
+  3. Bấm "Thêm vào giỏ gom đơn".
+* **Kết quả mong đợi:** Badge giỏ hàng trên Header tăng lên, tổng tiền được tính chuẩn xác `(Giá gốc + Topping) * 2`.
+* **Kết quả thực tế:** Tính đúng 100%, không bị sai lệch số học. Đạt 3/3.
+
+#### TC-05: Đặt đơn & Xác nhận Thanh toán VietQR
+* **Điều kiện đầu:** Giỏ hàng có ít nhất 1 món.
+* **Các bước thực hiện:**
+  1. Vào màn hình Giỏ hàng S4, chọn điểm nhận `"Cổng KTX Khu B"`.
+  2. Chọn phương thức `"VietQR"`, bấm Đặt hàng.
+* **Kết quả mong đợi:** Mã QR thanh toán động hiển thị kèm số tiền và nội dung chuyển khoản, tạo đơn thành công và chuyển sang màn hình theo dõi đơn S6.
+* **Kết quả thực tế:** Mã VietQR sinh chuẩn NAPAS 24/7, trạng thái chuyển sang PREPARING. Đạt 3/3.
+
+#### TC-06: Tải ảnh bằng chứng khiếu nại lên Cloud Storage
+* **Điều kiện đầu:** Màn hình Khiếu nại đơn hàng S8.
+* **Các bước thực hiện:**
+  1. Chọn lý do khiếu nại `"Món ăn bị nguội / hỏng"`.
+  2. Chọn 1 ảnh từ thư viện máy.
+  3. Bấm "Gửi yêu cầu khiếu nại".
+* **Kết quả mong đợi:** Thanh Progress Bar hiển thị tiến độ 0% -> 100%, ảnh tải lên đúng đường dẫn `reports/{userId}/...`, Firebase Storage nhận file và trả về downloadURL.
+* **Kết quả thực tế:** Ảnh upload hoàn tất trong ~1.5s, Storage Console ghi nhận đúng file metadata. Đạt 3/3.
+
+#### TC-07: Chặn gửi khiếu nại khi chưa chọn ảnh bằng chứng (Error Branch)
+* **Điều kiện đầu:** Màn hình Khiếu nại S8, chưa chọn ảnh bằng chứng.
+* **Các bước thực hiện:**
+  1. Chỉ chọn lý do khiếu nại, để trống phần ảnh.
+  2. Cố tình nhấn nút "Gửi yêu cầu khiếu nại".
+* **Kết quả mong đợi:** Nút bị vô hiệu hóa hoặc SnackBar cảnh báo màu đỏ: *"Vui lòng chọn ảnh bằng chứng món ăn trước khi gửi khiếu nại!"*, không gửi request lên server.
+* **Kết quả thực tế:** Chặn thành công 100%, hiển thị thông báo lỗi rõ ràng. Đạt 3/3.
+
+#### TC-08: Nhận thông báo đẩy FCM & Điều hướng (Android Native)
+* **Điều kiện đầu:** Thiết bị Android 14 đã cấp quyền `POST_NOTIFICATIONS`.
+* **Các bước thực hiện:**
+  1. Đưa ứng dụng vào chế độ chạy nền (Background).
+  2. Gửi một Notification test từ Firebase Console kèm payload `screen: "order_tracking"`.
+  3. Nhấn vào thông báo trên thanh Notification Tray của Android.
+* **Kết quả mong đợi:** Ứng dụng tự động bật lên và điều hướng chính xác vào màn hình Theo dõi đơn hàng.
+* **Kết quả thực tế:** Điều hướng chính xác theo deep-link nội bộ. Đạt 3/3.
+
+#### TC-09: Cập nhật phí ship thời gian thực qua Remote Config
+* **Điều kiện đầu:** Ứng dụng đang mở trên thiết bị.
+* **Các bước thực hiện:**
+  1. Vào Firebase Console > Remote Config, đổi giá trị `ktx_group_ship_fee` từ `5000` thành `7000`.
+  2. Nhấn Publish Changes.
+  3. Trên ứng dụng, thực hiện kéo để làm mới (Pull-to-refresh).
+* **Kết quả mong đợi:** Phí ship trên giao diện tự động cập nhật sang 7.000đ mà không cần cài đặt lại app.
+* **Kết quả thực tế:** Giá trị hiển thị cập nhật ngay lập tức. Đạt 3/3.
+
+#### TC-10: Kích hoạt Crash thử nghiệm Crashlytics (Android Native)
+* **Điều kiện đầu:** Thiết bị Android kết nối ADB.
+* **Các bước thực hiện:**
+  1. Vào màn hình Cài đặt & Quản lý vai trò (S13 / Demo Hub).
+  2. Nhấn nút "Test Crashlytics (Crash thử nghiệm)".
+* **Kết quả mong đợi:** Ứng dụng đóng ngay lập tức (Crash có chủ đích). Mở lại ứng dụng, báo cáo crash xuất hiện trên Firebase Crashlytics Dashboard kèm User ID và custom keys (`campusZone`, `role`).
+* **Kết quả thực tế:** Dashboard Firebase Crashlytics ghi nhận sự cố sau ~2 phút. Đạt 3/3.
 
 ---
 
-## 4. BÆ°á»›c 6 â€“ Kiá»ƒm thá»­ E2E tá»± Ä‘á»™ng vá»›i Google ARTEMIS
+## 3. Nhật Ký Phiên Kiểm Thử Khám Phá (Exploratory Testing Session - 25 Phút)
 
-### 4.1. MÃ´i trÆ°á»ng
+- **Thời lượng:** 25 phút (từ 22:30 đến 22:55 ngày 06/11/2026).
+- **Mục tiêu:** Kiểm tra độ nhạy cử chỉ, xoay màn hình, gián đoạn mạng (Airplane Mode) và chuyển đổi 4 vai trò liên tục.
+- **Ghi nhận & Khắc phục:**
+  1. Phát hiện lỗi tràn pixel 38px ở thanh Bottom Bar khi giả lập iPhone 16 $\rightarrow$ Đã xử lý triệt để bằng cách bỏ cố định chiều cao và dùng `SafeArea`.
+  2. Phát hiện lỗi tràn pixel 57-75px ở tiêu đề ca gom và AppBar khi màn hình hẹp $\rightarrow$ Đã xử lý triệt để bằng `Expanded`, `maxLines: 1` và `TextOverflow.ellipsis`.
+  3. Kiểm tra tính năng ngắt mạng: Các màn hình đều hiển thị giao diện `KtxErrorState` với nút "Thử lại", không xảy ra hiện tượng màn hình trắng (White Screen of Death).
 
-| ThÃ nh pháº§n | GiÃ¡ trá»‹ |
+---
+
+## 4. Bước 6 – Kiểm thử E2E tự động với Google ARTEMIS
+
+Mục 2–3 ở trên mô tả kịch bản kiểm thử theo luồng nghiệp vụ Firebase. Mục này là **bộ test tự động** trong thư mục `e2e_test/`
+(15 test case ngôn ngữ tự nhiên chạy bằng `ArtemisClient` + pytest), viết theo giao diện sau khi app bỏ toàn bộ dữ liệu mock
+và chỉ dùng API backend thật.
+
+### 4.1. Môi trường
+
+| Thành phần | Giá trị |
 | :--- | :--- |
 | Framework | Google ARTEMIS (`artemis` 1.0, `artemis_client` 0.1.0), pytest 9.2 |
-| Python / cÃ´ng cá»¥ | Python 3.12.16, `uv`, ADB |
-| LLM | Gemini (`gemini-3.8-flash`, key Ä‘áº·t trong `e2e_test/.env` â€“ Ä‘Ã£ gitignore) |
-| Thiáº¿t bá»‹ | Emulator `sdk gphone64 x86_64`, Android 14 (API 34), 1080Ã—2400 |
-| Báº£n app | Debug APK `com.example.prm393_lab03_se192947` |
-| Profile | Test case: **Flash** (`E2E_PROFILE=flash`); phiÃªn khÃ¡m phÃ¡: **Pro** (`explorer_mode=pro`) |
+| Python / công cụ | Python 3.12.16, `uv`, ADB |
+| LLM | Gemini (`gemini-3.8-flash`, key đặt trong `e2e_test/.env` – đã gitignore) |
+| Thiết bị | Emulator `sdk gphone64 x86_64`, Android 14 (API 34), 1080×2400 |
+| Bản app | Debug APK `com.example.prm393_lab03_se192947` |
+| Profile | Test case: **Flash** (`E2E_PROFILE=flash`); phiên khám phá: **Pro** (`explorer_mode=pro`) |
 
-MÃ£ nguá»“n vÃ  cÃ¡ch cháº¡y: [`e2e_test/README.md`](../e2e_test/README.md).
+Mã nguồn và cách chạy: [`e2e_test/README.md`](../e2e_test/README.md).
 
-### 4.2. Chiáº¿n lÆ°á»£c
+### 4.2. Chiến lược
 
-- Má»—i test case lÃ  má»™t **goal ngÃ´n ngá»¯ tá»± nhiÃªn** (tiáº¿ng Viá»‡t, trÃ­ch Ä‘Ãºng nhÃ£n UI) gá»“m *CÃ¡c bÆ°á»›c* + *Káº¿t quáº£ mong Ä‘á»£i*, gá»­i qua `ArtemisClient.submit()` vá»›i `locked_app_package` Ä‘á»ƒ agent khÃ´ng rá»i khá»i app.
-- **Verdict cÃ³ cáº¥u trÃºc:** `expected_output` yÃªu cáº§u Outputter tráº£ JSON `{verdict, evidence, failed_step}`. Test PASS khi task `completed` + `verdict == PASS` + Checker (Pro) khÃ´ng cÃ³ assertion fail.
-- **Tráº¡ng thÃ¡i Ä‘áº§u xÃ¡c Ä‘á»‹nh:** trÆ°á»›c má»—i láº§n cháº¡y, fixture `pm clear` app, cáº¥p quyá»n thÃ´ng bÃ¡o, vÃ  vá»›i cÃ¡c case cáº§n Ä‘Äƒng nháº­p thÃ¬ **náº¡p sáºµn phiÃªn** (ghi `FlutterSharedPreferences.xml` qua `run-as`) thay vÃ¬ báº¯t agent Ä‘Äƒng nháº­p láº¡i â†’ giáº£m sá»‘ bÆ°á»›c vÃ  Ä‘á»™ cháº­p chá»n. TC01 váº«n kiá»ƒm thá»­ Ä‘Äƒng nháº­p qua UI.
-- **á»”n Ä‘á»‹nh thiáº¿t bá»‹:** táº¯t 3 loáº¡i animation, giá»¯ mÃ n hÃ¬nh sÃ¡ng, má»Ÿ khoÃ¡ mÃ n hÃ¬nh.
-- **Fail nhanh:** preflight gá»i Gemini má»™t láº§n trÆ°á»›c khi cháº¡y; timeout 900 s/case, quÃ¡ háº¡n thÃ¬ `stop()` task Ä‘á»ƒ khÃ´ng khoÃ¡ thiáº¿t bá»‹ cho case sau. LÃºc fail tá»± chá»¥p mÃ n hÃ¬nh vÃ o `reports/screens/`.
+- Mỗi test case là một **goal ngôn ngữ tự nhiên** (tiếng Việt, trích đúng nhãn UI) gồm *Các bước* + *Kết quả mong đợi*, gửi qua `ArtemisClient.submit()` với `locked_app_package` để agent không rời khỏi app.
+- **Verdict có cấu trúc:** `expected_output` yêu cầu Outputter trả JSON `{verdict, evidence, failed_step}`. Test PASS khi task `completed` + `verdict == PASS` + Checker (Pro) không có assertion fail.
+- **Trạng thái đầu xác định:** trước mỗi lần chạy, fixture `pm clear` app, cấp quyền thông báo, và với các case cần đăng nhập thì **nạp sẵn phiên** (ghi `FlutterSharedPreferences.xml` qua `run-as`) thay vì bắt agent đăng nhập lại → giảm số bước và độ chập chờn. TC01 vẫn kiểm thử đăng nhập qua UI.
+- **Ổn định thiết bị:** tắt 3 loại animation, giữ màn hình sáng, mở khoá màn hình.
+- **Fail nhanh:** preflight gọi Gemini một lần trước khi chạy; timeout 900 s/case, quá hạn thì `stop()` task để không khoá thiết bị cho case sau. Lúc fail tự chụp màn hình vào `reports/screens/`.
 
-### 4.3. Danh sÃ¡ch test case (15 TC)
+### 4.3. Danh sách test case (15 TC)
 
-| MÃ£ | NhÃ³m | Test case | Tiá»n Ä‘iá»u kiá»‡n | Káº¿t quáº£ mong Ä‘á»£i chÃ­nh |
+| Mã | Nhóm | Test case | Tiền điều kiện | Kết quả mong đợi chính |
 | :--- | :--- | :--- | :--- | :--- |
-| TC01 | Luá»“ng chÃ­nh | ÄÄƒng nháº­p báº±ng tÃ i khoáº£n máº«u Sinh viÃªn | ChÆ°a Ä‘Äƒng nháº­p | VÃ o mÃ n hÃ¬nh chÃ­nh, Ä‘á»§ 5 tab |
-| TC02 | Luá»“ng chÃ­nh | ThÃªm mÃ³n khÃ´ng tÃ¹y biáº¿n, thanh giá» hÃ ng ná»•i cáº­p nháº­t | ÄÃ£ Ä‘Äƒng nháº­p | Bá»™ Ä‘áº¿m "1", thanh ná»•i "1 mÃ³n" + Ä‘Ãºng giÃ¡ |
-| TC03 | Luá»“ng chÃ­nh | TÃ¹y biáº¿n mÃ³n (nÆ°á»›c máº¯m khÃ´ng cay, SL 2) rá»“i thÃªm vÃ o giá» | ÄÃ£ Ä‘Äƒng nháº­p | Giá» cÃ³ mÃ³n SL "2" + nhÃ£n tÃ¹y chá»n |
-| TC04 | Luá»“ng chÃ­nh | TÄƒng sá»‘ lÆ°á»£ng trong giá», thÃ nh tiá»n cáº­p nháº­t | ÄÃ£ Ä‘Äƒng nháº­p | SL "2", thÃ nh tiá»n = 2 Ã— Ä‘Æ¡n giÃ¡, "Thanh toÃ¡n (2)" |
-| TC05 | Luá»“ng chÃ­nh | Äáº·t Ä‘Æ¡n gom KTX báº±ng COD | ÄÃ£ Ä‘Äƒng nháº­p | Há»™p thoáº¡i "Äáº·t Ä‘Æ¡n thÃ nh cÃ´ng!" |
-| TC06 | Luá»“ng chÃ­nh | ÄÄƒng xuáº¥t | ÄÃ£ Ä‘Äƒng nháº­p | Quay vá» "ÄÄƒng nháº­p tÃ i khoáº£n" |
-| TC07 | Luá»“ng lá»—i | ÄÄƒng nháº­p bá» trá»‘ng email | ChÆ°a Ä‘Äƒng nháº­p | Snackbar "Vui lÃ²ng nháº­p Email hoáº·c Sá»‘ Ä‘iá»‡n thoáº¡i" |
-| TC08 | Luá»“ng lá»—i | ÄÄƒng nháº­p bá» trá»‘ng máº­t kháº©u | ChÆ°a Ä‘Äƒng nháº­p | Snackbar "Vui lÃ²ng nháº­p Máº­t kháº©u" |
-| TC09 | Luá»“ng lá»—i | ÄÄƒng kÃ½ sinh viÃªn thiáº¿u há» tÃªn | ChÆ°a Ä‘Äƒng nháº­p | BÃ¡o lá»—i, khÃ´ng sang mÃ n OTP |
-| TC10 | Luá»“ng lá»—i | Giá» hÃ ng trá»‘ng + nÃºt "KhÃ¡m phÃ¡ thá»±c Ä‘Æ¡n ngay" | ÄÃ£ Ä‘Äƒng nháº­p | Empty state, chuyá»ƒn sang tab "Äáº·t mÃ³n" |
-| TC11 | Luá»“ng lá»—i | Bá» chá»n táº¥t cáº£ rá»“i báº¥m Thanh toÃ¡n | ÄÃ£ Ä‘Äƒng nháº­p | Snackbar "Vui lÃ²ng tÃ­ch chá»n Ã­t nháº¥t 1 mÃ³nâ€¦" |
-| TC12 | TÆ°Æ¡ng tÃ¡c há»‡ thá»‘ng | Há»™p thoáº¡i quyá»n POST_NOTIFICATIONS (Android 13+) sau Ä‘Äƒng nháº­p | ChÆ°a Ä‘Äƒng nháº­p, quyá»n bá»‹ thu há»“i | Há»™p thoáº¡i há»‡ thá»‘ng xuáº¥t hiá»‡n, cho phÃ©p xong vÃ o app |
-| TC13 | TÆ°Æ¡ng tÃ¡c há»‡ thá»‘ng | NÃºt Back há»‡ thá»‘ng tá»« "QuÃªn máº­t kháº©u?" | ChÆ°a Ä‘Äƒng nháº­p | Vá» mÃ n Ä‘Äƒng nháº­p, khÃ´ng thoÃ¡t app |
-| TC14 | TÆ°Æ¡ng tÃ¡c há»‡ thá»‘ng | ÄÆ°a app xuá»‘ng ná»n (HOME) rá»“i má»Ÿ láº¡i | ÄÃ£ Ä‘Äƒng nháº­p | Giá»¯ phiÃªn vÃ  giá» "1 mÃ³n" |
-| TC15 | TÆ°Æ¡ng tÃ¡c há»‡ thá»‘ng | Cold start khÃ´i phá»¥c phiÃªn Ä‘Ã£ lÆ°u | PhiÃªn Ä‘Ã£ lÆ°u | VÃ o tháº³ng app, cÃ³ nÃºt "ÄÄƒng xuáº¥t tÃ i khoáº£n" |
+| TC01 | Luồng chính | Đăng nhập bằng tài khoản mẫu Sinh viên | Chưa đăng nhập | Vào màn hình chính, đủ 5 tab |
+| TC02 | Luồng chính | Thêm món không tùy biến, thanh giỏ hàng nổi cập nhật | Đã đăng nhập | Bộ đếm "1", thanh nổi "1 món" + đúng giá |
+| TC03 | Luồng chính | Tùy biến món (đổi lựa chọn thứ 2 của nhóm tùy chọn đầu tiên, SL 2) rồi thêm vào giỏ | Đã đăng nhập | Giỏ có món SL "2" + nhãn đúng lựa chọn đã chọn |
+| TC04 | Luồng chính | Tăng số lượng trong giỏ, thành tiền cập nhật | Đã đăng nhập | SL "2", thành tiền = 2 × đơn giá, "Thanh toán (2)" |
+| TC05 | Luồng chính | Đặt đơn gom KTX bằng COD | Đã đăng nhập | Hộp thoại "Đặt đơn thành công!" |
+| TC06 | Luồng chính | Đăng xuất | Đã đăng nhập | Quay về "Đăng nhập tài khoản" |
+| TC07 | Luồng lỗi | Đăng nhập bỏ trống email | Chưa đăng nhập | Snackbar "Vui lòng nhập Email hoặc Số điện thoại" |
+| TC08 | Luồng lỗi | Đăng nhập bỏ trống mật khẩu | Chưa đăng nhập | Snackbar "Vui lòng nhập Mật khẩu" |
+| TC09 | Luồng lỗi | Đăng ký sinh viên thiếu họ tên | Chưa đăng nhập | Báo lỗi, không sang màn OTP |
+| TC10 | Luồng lỗi | Giỏ hàng trống + nút "Khám phá thực đơn ngay" | Đã đăng nhập | Empty state, chuyển sang tab "Đặt món" |
+| TC11 | Luồng lỗi | Bỏ chọn tất cả rồi bấm Thanh toán | Đã đăng nhập | Snackbar "Vui lòng tích chọn ít nhất 1 món…" |
+| TC12 | Tương tác hệ thống | Hộp thoại quyền POST_NOTIFICATIONS (Android 13+) sau đăng nhập | Chưa đăng nhập, quyền bị thu hồi | Hộp thoại hệ thống xuất hiện, cho phép xong vào app |
+| TC13 | Tương tác hệ thống | Nút Back hệ thống từ "Quên mật khẩu?" | Chưa đăng nhập | Về màn đăng nhập, không thoát app |
+| TC14 | Tương tác hệ thống | Đưa app xuống nền (HOME) rồi mở lại | Đã đăng nhập | Giữ phiên và giỏ "1 món" |
+| TC15 | Tương tác hệ thống | Cold start khôi phục phiên đã lưu | Phiên đã lưu | Vào thẳng app, có nút "Đăng xuất tài khoản" |
 
-### 4.4. Gáº¯n nhÃ£n Semantics cho widget quan trá»ng
+### 4.4. Gắn nhãn Semantics cho widget quan trọng
 
-`identifier` Ä‘Æ°á»£c Flutter Ã¡nh xáº¡ thÃ nh `resource-id` trong cÃ¢y UI Android (Ä‘Ã£ xÃ¡c minh báº±ng `uiautomator dump` trÃªn emulator), `label` thÃ nh `content-desc`.
+`identifier` được Flutter ánh xạ thành `resource-id` trong cây UI Android (đã xác minh bằng `uiautomator dump` trên emulator), `label` thành `content-desc`.
 
-| Widget / mÃ n hÃ¬nh | identifier | label (content-desc) | LÃ½ do |
+| Widget / màn hình | identifier | label (content-desc) | Lý do |
 | :--- | :--- | :--- | :--- |
-| `KtxBottomNavBar` (5 tab) | `nav_tab_0` â€¦ `nav_tab_4` | "Tab KhÃ¡m phÃ¡", â€¦ + sá»‘ badge, `selected` | Agent biáº¿t tab nÃ o Ä‘ang chá»n |
-| `KtxButton` | tham sá»‘ `semanticsId` | nhÃ£n nÃºt, "(Ä‘ang xá»­ lÃ½)" khi loading, `enabled` | PhÃ¢n biá»‡t tráº¡ng thÃ¡i loading |
-| Login: Ã´ nháº­p, nÃºt | `input_login_email`, `input_login_password`, `btn_login_submit`, `btn_login_google` | â€“ | Äá»‹nh vá»‹ á»•n Ä‘á»‹nh |
-| Login: chip tÃ i khoáº£n máº«u | `chip_role_student/owner/shipper/admin` | "TÃ i khoáº£n máº«u Sinh viÃªn"â€¦ | NhÃ£n gá»‘c chá»©a emoji |
-| Thá»±c Ä‘Æ¡n: nÃºt + / TÃ¹y biáº¿n / âˆ’ | `btn_add_item_<id>`, `btn_customize_item_<id>`, `btn_increase_item_<id>`, `btn_decrease_item_<id>`, `text_qty_item_<id>` | "ThÃªm <tÃªn mÃ³n> vÃ o giá»"â€¦ | TrÆ°á»›c Ä‘Ã¢y lÃ  icon **khÃ´ng nhÃ£n** |
-| Thá»±c Ä‘Æ¡n: yÃªu thÃ­ch / chia sáº» / quay láº¡i | `btn_store_favorite` | cÃ³ `toggled` | Icon khÃ´ng nhÃ£n |
-| `KtxFoodItemCard` | `card_food_item` | "MÃ³n <tÃªn>" (+ "háº¿t mÃ³n") | NhÃ£n cÅ© `card_food_item` giá»‘ng nhau á»Ÿ má»i tháº» |
-| `KtxStickyCartBar` | `bar_sticky_cart` | "Giá» hÃ ng: N mÃ³n, tá»•ng â€¦" | Äá»c sá»‘ mÃ³n/tá»•ng tiá»n trong 1 node |
-| Giá» hÃ ng | `checkbox_cart_item_<i>`, `btn_cart_increase/decrease_<i>`, `text_cart_qty_<i>`, `btn_cart_checkout` | "TÄƒng sá»‘ lÆ°á»£ng <tÃªn mÃ³n>"â€¦ | NÃºt +/âˆ’ lÃ  icon khÃ´ng nhÃ£n |
-| TÃ¹y biáº¿n mÃ³n | `text_customize_qty`, `btn_customize_add_to_cart` + tooltip cÃ¡c icon | â€“ | |
-| Thanh toÃ¡n | `btn_place_order`, `radio_payment_vietqr`, `radio_payment_cod` (`checked`, nhÃ³m loáº¡i trá»«) | â€“ | Tráº¡ng thÃ¡i chá»n trÆ°á»›c Ä‘Ã¢y chá»‰ thá»ƒ hiá»‡n báº±ng icon |
-| Trang chá»§ / Há»“ sÆ¡ | `input_home_search`, `btn_sign_out` | â€“ | |
+| `KtxBottomNavBar` (5 tab) | `nav_tab_0` … `nav_tab_4` | "Tab Khám phá", … + số badge, `selected` | Agent biết tab nào đang chọn |
+| `KtxButton` | tham số `semanticsId` | nhãn nút, "(đang xử lý)" khi loading, `enabled` | Phân biệt trạng thái loading |
+| Login: ô nhập, nút | `input_login_email`, `input_login_password`, `btn_login_submit`, `btn_login_google` | – | Định vị ổn định |
+| Login: chip tài khoản mẫu | `chip_role_student/owner/shipper/admin` | "Tài khoản mẫu Sinh viên"… | Nhãn gốc chứa emoji |
+| Thực đơn: nút + / Tùy biến / − | `btn_add_item_<id>`, `btn_customize_item_<id>`, `btn_increase_item_<id>`, `btn_decrease_item_<id>`, `text_qty_item_<id>` | "Thêm <tên món> vào giỏ"… | Trước đây là icon **không nhãn** |
+| Thực đơn: yêu thích / chia sẻ / quay lại | `btn_store_favorite` | có `toggled` | Icon không nhãn |
+| `KtxFoodItemCard` | `card_food_item` | "Món <tên>" (+ "hết món") | Nhãn cũ `card_food_item` giống nhau ở mọi thẻ |
+| `KtxStickyCartBar` | `bar_sticky_cart` | "Giỏ hàng: N món, tổng …" | Đọc số món/tổng tiền trong 1 node |
+| Giỏ hàng | `checkbox_cart_item_<i>`, `btn_cart_increase/decrease_<i>`, `text_cart_qty_<i>`, `btn_cart_checkout` | "Tăng số lượng <tên món>"… | Nút +/− là icon không nhãn |
+| Tùy biến món | `text_customize_qty`, `btn_customize_add_to_cart` + tooltip các icon | – | |
+| Thanh toán | `btn_place_order`, `radio_payment_vietqr`, `radio_payment_cod` (`checked`, nhóm loại trừ) | – | Trạng thái chọn trước đây chỉ thể hiện bằng icon |
+| Trang chủ / Hồ sơ | `input_home_search`, `btn_sign_out` | – | |
 
-### 4.5. Báº£ng tá»· lá»‡ vÆ°á»£t qua (Pass rate)
+### 4.5. Bảng tỷ lệ vượt qua (Pass rate)
 
-> **Tráº¡ng thÃ¡i 07/11/2026: CHÆ¯A THá»°C THI ÄÆ¯á»¢C.** Láº§n cháº¡y thá»­ Ä‘áº§u tiÃªn (TC02) bá»‹ Gemini tá»« chá»‘i vá»›i
-> `402 RESOURCE_EXHAUSTED â€“ "Your prepayment credits are depleted"`; preflight xÃ¡c nháº­n lá»—i nÃ y xáº£y ra vá»›i má»i model
-> (`gemini-3.8-flash`, `gemini-2.5-flash`, `gemini-2.5-flash-lite`). Cáº§n náº¡p credit / báº­t billing cho project AI Studio
-> cá»§a key rá»“i cháº¡y `uv run pytest --repeat 3` vÃ  `uv run e2e-report --last 3` Ä‘á»ƒ Ä‘iá»n báº£ng dÆ°á»›i (file sinh tá»± Ä‘á»™ng: `e2e_test/reports/pass_rate.md`).
+> **Trạng thái 07/11/2026: CHƯA THỰC THI ĐƯỢC.** Lần chạy thử đầu tiên (TC02) bị Gemini từ chối với
+> `402 RESOURCE_EXHAUSTED – "Your prepayment credits are depleted"`; preflight xác nhận lỗi này xảy ra với mọi model
+> (`gemini-3.8-flash`, `gemini-2.5-flash`, `gemini-2.5-flash-lite`). Cần nạp credit / bật billing cho project AI Studio
+> của key rồi chạy `uv run pytest --repeat 3` và `uv run e2e-report --last 3` để điền bảng dưới (file sinh tự động: `e2e_test/reports/pass_rate.md`).
 
-| MÃ£ TC | Láº§n 1 | Láº§n 2 | Láº§n 3 | Pass rate | ÄÃ¡nh giÃ¡ |
+| Mã TC | Lần 1 | Lần 2 | Lần 3 | Pass rate | Đánh giá |
 | :--- | :---: | :---: | :---: | :---: | :--- |
-| TC01 â€“ TC15 | â€“ | â€“ | â€“ | â€“ | ChÆ°a cháº¡y |
+| TC01 – TC15 | – | – | – | – | Chưa chạy |
 
-### 4.6. Test case cháº­p chá»n (Flaky): nguyÃªn nhÃ¢n & cÃ¡ch kháº¯c phá»¥c
+### 4.6. Test case chập chờn (Flaky): nguyên nhân & cách khắc phục
 
-Pháº§n nÃ y cáº§n Ä‘Æ°á»£c cáº­p nháº­t theo káº¿t quáº£ 3 láº§n cháº¡y thá»±c táº¿. CÃ¡c nguá»“n cháº­p chá»n **Ä‘Ã£ nháº­n diá»‡n khi thiáº¿t káº¿** vÃ  biá»‡n phÃ¡p Ä‘Ã£ Ã¡p dá»¥ng sáºµn:
+Phần này cần được cập nhật theo kết quả 3 lần chạy thực tế. Các nguồn chập chờn **đã nhận diện khi thiết kế** và biện pháp đã áp dụng sẵn:
 
-| Nguy cÆ¡ | Test case bá»‹ áº£nh hÆ°á»Ÿng | NguyÃªn nhÃ¢n | Kháº¯c phá»¥c Ä‘Ã£ Ã¡p dá»¥ng |
+| Nguy cơ | Test case bị ảnh hưởng | Nguyên nhân | Khắc phục đã áp dụng |
 | :--- | :--- | :--- | :--- |
-| Snackbar biáº¿n máº¥t trÆ°á»›c khi agent chá»¥p mÃ n hÃ¬nh | TC07, TC08, TC11 (snackbar 2â€“4 s) | Agent máº¥t vÃ i giÃ¢y suy luáº­n giá»¯a thao tÃ¡c vÃ  quan sÃ¡t | Goal nháº¯c "quan sÃ¡t NGAY"; Ä‘á» xuáº¥t tÄƒng `duration` snackbar lá»—i lÃªn â‰¥ 4 s trong app |
-| Backend Cloudflare tunnel khÃ´ng pháº£n há»“i | TC01, TC05, TC12 | Gá»i API timeout 6â€“8 s rá»“i má»›i fallback dá»¯ liá»‡u máº«u | Goal cho phÃ©p chá» tá»‘i Ä‘a 20 s; app cÃ³ fallback nÃªn káº¿t quáº£ khÃ´ng Ä‘á»•i |
-| NÃºt icon khÃ´ng nhÃ£n / nhÃ£n trÃ¹ng nhau | TC02â€“TC05, TC11, TC14 | Agent pháº£i Ä‘oÃ¡n báº±ng hÃ¬nh áº£nh | Gáº¯n Semantics (má»¥c 4.4) |
-| Dá»¯ liá»‡u thá»±c Ä‘Æ¡n khÃ¡c nhau (backend vs fallback) | TC02â€“TC05 | TÃªn/giÃ¡ mÃ³n phá»¥ thuá»™c nguá»“n dá»¯ liá»‡u | Goal khÃ´ng cá»©ng tÃªn mÃ³n: "mÃ³n Ä‘áº§u tiÃªn cÃ³ nÃºt ThÃªm/TÃ¹y biáº¿n", so sÃ¡nh tÆ°Æ¡ng Ä‘á»‘i vá»›i giÃ¡ Ä‘Ã£ ghi nhá»› |
-| Tráº¡ng thÃ¡i rÃ² rá»‰ giá»¯a cÃ¡c láº§n cháº¡y | Táº¥t cáº£ | PhiÃªn/giá» hÃ ng/quyá»n tá»« láº§n trÆ°á»›c | `pm clear` + seed phiÃªn + cáº¥p/thu há»“i quyá»n má»—i láº§n cháº¡y |
-| Animation chuyá»ƒn mÃ n hÃ¬nh | Táº¥t cáº£ | Chá»¥p mÃ n hÃ¬nh giá»¯a lÃºc chuyá»ƒn cáº£nh | Táº¯t animation há»‡ thá»‘ng |
-| Há»™p thoáº¡i quyá»n hiá»‡n cháº­m/khÃ´ng hiá»‡n | TC12 | Quyá»n Ä‘Ã£ Ä‘Æ°á»£c cáº¥p tá»« láº§n trÆ°á»›c | Thu há»“i quyá»n + xoÃ¡ cá» `user-set/user-fixed` trÆ°á»›c khi cháº¡y |
-| Task treo khi LLM lá»—i (402/429) | Táº¥t cáº£ | Artemis táº¡m dá»«ng chá» "resume" vÃ´ thá»i háº¡n | Preflight Gemini + timeout + `stop()` task |
+| Snackbar biến mất trước khi agent chụp màn hình | TC07, TC08, TC11 (snackbar 2–4 s) | Agent mất vài giây suy luận giữa thao tác và quan sát | Goal nhắc "quan sát NGAY"; đề xuất tăng `duration` snackbar lỗi lên ≥ 4 s trong app |
+| Backend không phản hồi / chậm | TC01, TC02–TC05, TC11, TC12, TC14 | App đã bỏ dữ liệu mock: đăng nhập (`loginWithPassword`), thực đơn, tùy chọn món và tạo đơn đều gọi API thật; backend lỗi là case fail | Goal cho phép chờ tối đa 20 s; TC05 báo FAIL với lý do rõ ràng khi không tạo được đơn. Khi phân tích pass rate cần tách lỗi hạ tầng (backend) khỏi lỗi app |
+| Nút icon không nhãn / nhãn trùng nhau | TC02–TC05, TC11, TC14 | Agent phải đoán bằng hình ảnh | Gắn Semantics (mục 4.4) |
+| Dữ liệu thực đơn thay đổi theo backend | TC02–TC05 | Tên/giá món và nhóm tùy chọn lấy từ database | Goal không cứng tên món/tùy chọn: "món đầu tiên có nút Thêm/Tùy biến", "lựa chọn thứ 2 của nhóm đầu tiên", so sánh tương đối với giá/tên đã ghi nhớ |
+| Trạng thái rò rỉ giữa các lần chạy | Tất cả | Phiên/giỏ hàng/quyền từ lần trước | `pm clear` + seed phiên + cấp/thu hồi quyền mỗi lần chạy |
+| Animation chuyển màn hình | Tất cả | Chụp màn hình giữa lúc chuyển cảnh | Tắt animation hệ thống |
+| Hộp thoại quyền hiện chậm/không hiện | TC12 | Quyền đã được cấp từ lần trước | Thu hồi quyền + xoá cờ `user-set/user-fixed` trước khi chạy |
+| Task treo khi LLM lỗi (402/429) | Tất cả | Artemis tạm dừng chờ "resume" vô thời hạn | Preflight Gemini + timeout + `stop()` task |
 
-### 4.7. PhiÃªn khÃ¡m phÃ¡ tá»± do (Exploratory Session â€“ Pro profile)
+### 4.7. Phiên khám phá tự do (Exploratory Session – Pro profile)
 
-- **Charter:** khÃ¡m phÃ¡ luá»“ng Sinh viÃªn 25 phÃºt (tÃ¬m kiáº¿m, thá»±c Ä‘Æ¡n/tÃ¹y biáº¿n, giá» hÃ ng, thanh toÃ¡n, lá»‹ch sá»­, khiáº¿u náº¡i, nÃºt Back, ná»n/khÃ´i phá»¥c). Cháº¡y: `uv run e2e-explore --minutes 25`, káº¿t quáº£ JSON á»Ÿ `e2e_test/reports/exploratory_*.json`.
-- **Tráº¡ng thÃ¡i:** chÆ°a cháº¡y Ä‘Æ°á»£c vÃ¬ cÃ¹ng lá»—i 402 cá»§a Gemini.
+- **Charter:** khám phá luồng Sinh viên 25 phút (tìm kiếm, thực đơn/tùy biến, giỏ hàng, thanh toán, lịch sử, khiếu nại, nút Back, nền/khôi phục). Chạy: `uv run e2e-explore --minutes 25`, kết quả JSON ở `e2e_test/reports/exploratory_*.json`.
+- **Trạng thái:** chưa chạy được vì cùng lỗi 402 của Gemini.
 
-Sá»± cá»‘ ghi nháº­n thá»§ cÃ´ng trong quÃ¡ trÃ¬nh chuáº©n bá»‹ (chÆ°a pháº£i káº¿t quáº£ cá»§a phiÃªn Pro):
+Sự cố ghi nhận thủ công trong quá trình chuẩn bị (chưa phải kết quả của phiên Pro):
 
-| MÃ£ | MÃ n hÃ¬nh | Má»©c Ä‘á»™ | MÃ´ táº£ | Mong Ä‘á»£i |
+| Mã | Màn hình | Mức độ | Mô tả | Mong đợi |
 | :--- | :--- | :--- | :--- | :--- |
-| EXP-M01 | Tab "KhÃ¡m phÃ¡" | Trung bÃ¬nh | Khi backend máº¥t káº¿t ná»‘i, má»¥c "QuÃ¡n quen Ä‘Æ°á»£c yÃªu thÃ­ch" hiá»‡n lá»—i "KhÃ´ng thá»ƒ táº£i danh sÃ¡ch quÃ¡n Äƒn: Exception: Máº¥t káº¿t ná»‘i mÃ¡y chá»§â€¦" (lá»™ chuá»—i `Exception:`), trong khi tab "Äáº·t mÃ³n" váº«n dÃ¹ng dá»¯ liá»‡u dá»± phÃ²ng | ThÃ´ng bÃ¡o thÃ¢n thiá»‡n, khÃ´ng lá»™ exception; hÃ nh vi fallback nháº¥t quÃ¡n giá»¯a cÃ¡c tab |
-| EXP-M02 | Thá»±c Ä‘Æ¡n, giá» hÃ ng, thanh toÃ¡n | Trung bÃ¬nh (Accessibility) | NÃºt +/âˆ’/TÃ¹y biáº¿n, yÃªu thÃ­ch, chia sáº» vÃ  lá»±a chá»n thanh toÃ¡n khÃ´ng cÃ³ nhÃ£n trá»£ nÄƒng | ÄÃ£ kháº¯c phá»¥c báº±ng Semantics (má»¥c 4.4) |
-
-#### TC-04: ThÃªm mÃ³n kÃ¨m Topping KTX vÃ o Giá» hÃ ng
-* **Äiá»u kiá»‡n Ä‘áº§u:** Äang má»Ÿ mÃ n hÃ¬nh Chi tiáº¿t quÃ¡n S2.
-* **CÃ¡c bÆ°á»›c thá»±c hiá»‡n:**
-  1. Chá»n mÃ³n Äƒn báº¥t ká»³.
-  2. TÃ­ch chá»n Topping (Trá»©ng á»‘p la, Cháº£ trá»©ng) vÃ  tÄƒng sá»‘ lÆ°á»£ng lÃªn 2.
-  3. Báº¥m "ThÃªm vÃ o giá» gom Ä‘Æ¡n".
-* **Káº¿t quáº£ mong Ä‘á»£i:** Badge giá» hÃ ng trÃªn Header tÄƒng lÃªn, tá»•ng tiá»n Ä‘Æ°á»£c tÃ­nh chuáº©n xÃ¡c `(GiÃ¡ gá»‘c + Topping) * 2`.
-* **Káº¿t quáº£ thá»±c táº¿:** TÃ­nh Ä‘Ãºng 100%, khÃ´ng bá»‹ sai lá»‡ch sá»‘ há»c. Äáº¡t 3/3.
-
-#### TC-05: Äáº·t Ä‘Æ¡n & XÃ¡c nháº­n Thanh toÃ¡n VietQR
-* **Äiá»u kiá»‡n Ä‘áº§u:** Giá» hÃ ng cÃ³ Ã­t nháº¥t 1 mÃ³n.
-* **CÃ¡c bÆ°á»›c thá»±c hiá»‡n:**
-  1. VÃ o mÃ n hÃ¬nh Giá» hÃ ng S4, chá»n Ä‘iá»ƒm nháº­n `"Cá»•ng KTX Khu B"`.
-  2. Chá»n phÆ°Æ¡ng thá»©c `"VietQR"`, báº¥m Äáº·t hÃ ng.
-* **Káº¿t quáº£ mong Ä‘á»£i:** MÃ£ QR thanh toÃ¡n Ä‘á»™ng hiá»ƒn thá»‹ kÃ¨m sá»‘ tiá»n vÃ  ná»™i dung chuyá»ƒn khoáº£n, táº¡o Ä‘Æ¡n thÃ nh cÃ´ng vÃ  chuyá»ƒn sang mÃ n hÃ¬nh theo dÃµi Ä‘Æ¡n S6.
-* **Káº¿t quáº£ thá»±c táº¿:** MÃ£ VietQR sinh chuáº©n NAPAS 24/7, tráº¡ng thÃ¡i chuyá»ƒn sang PREPARING. Äáº¡t 3/3.
-
-#### TC-06: Táº£i áº£nh báº±ng chá»©ng khiáº¿u náº¡i lÃªn Cloud Storage
-* **Äiá»u kiá»‡n Ä‘áº§u:** MÃ n hÃ¬nh Khiáº¿u náº¡i Ä‘Æ¡n hÃ ng S8.
-* **CÃ¡c bÆ°á»›c thá»±c hiá»‡n:**
-  1. Chá»n lÃ½ do khiáº¿u náº¡i `"MÃ³n Äƒn bá»‹ nguá»™i / há»ng"`.
-  2. Chá»n 1 áº£nh tá»« thÆ° viá»‡n mÃ¡y.
-  3. Báº¥m "Gá»­i yÃªu cáº§u khiáº¿u náº¡i".
-* **Káº¿t quáº£ mong Ä‘á»£i:** Thanh Progress Bar hiá»ƒn thá»‹ tiáº¿n Ä‘á»™ 0% -> 100%, áº£nh táº£i lÃªn Ä‘Ãºng Ä‘Æ°á»ng dáº«n `reports/{userId}/...`, Firebase Storage nháº­n file vÃ  tráº£ vá» downloadURL.
-* **Káº¿t quáº£ thá»±c táº¿:** áº¢nh upload hoÃ n táº¥t trong ~1.5s, Storage Console ghi nháº­n Ä‘Ãºng file metadata. Äáº¡t 3/3.
-
-#### TC-07: Cháº·n gá»­i khiáº¿u náº¡i khi chÆ°a chá»n áº£nh báº±ng chá»©ng (Error Branch)
-* **Äiá»u kiá»‡n Ä‘áº§u:** MÃ n hÃ¬nh Khiáº¿u náº¡i S8, chÆ°a chá»n áº£nh báº±ng chá»©ng.
-* **CÃ¡c bÆ°á»›c thá»±c hiá»‡n:**
-  1. Chá»‰ chá»n lÃ½ do khiáº¿u náº¡i, Ä‘á»ƒ trá»‘ng pháº§n áº£nh.
-  2. Cá»‘ tÃ¬nh nháº¥n nÃºt "Gá»­i yÃªu cáº§u khiáº¿u náº¡i".
-* **Káº¿t quáº£ mong Ä‘á»£i:** NÃºt bá»‹ vÃ´ hiá»‡u hÃ³a hoáº·c SnackBar cáº£nh bÃ¡o mÃ u Ä‘á»: *"Vui lÃ²ng chá»n áº£nh báº±ng chá»©ng mÃ³n Äƒn trÆ°á»›c khi gá»­i khiáº¿u náº¡i!"*, khÃ´ng gá»­i request lÃªn server.
-* **Káº¿t quáº£ thá»±c táº¿:** Cháº·n thÃ nh cÃ´ng 100%, hiá»ƒn thá»‹ thÃ´ng bÃ¡o lá»—i rÃµ rÃ ng. Äáº¡t 3/3.
-
-#### TC-08: Nháº­n thÃ´ng bÃ¡o Ä‘áº©y FCM & Äiá»u hÆ°á»›ng (Android Native)
-* **Äiá»u kiá»‡n Ä‘áº§u:** Thiáº¿t bá»‹ Android 14 Ä‘Ã£ cáº¥p quyá»n `POST_NOTIFICATIONS`.
-* **CÃ¡c bÆ°á»›c thá»±c hiá»‡n:**
-  1. ÄÆ°a á»©ng dá»¥ng vÃ o cháº¿ Ä‘á»™ cháº¡y ná»n (Background).
-  2. Gá»­i má»™t Notification test tá»« Firebase Console kÃ¨m payload `screen: "order_tracking"`.
-  3. Nháº¥n vÃ o thÃ´ng bÃ¡o trÃªn thanh Notification Tray cá»§a Android.
-* **Káº¿t quáº£ mong Ä‘á»£i:** á»¨ng dá»¥ng tá»± Ä‘á»™ng báº­t lÃªn vÃ  Ä‘iá»u hÆ°á»›ng chÃ­nh xÃ¡c vÃ o mÃ n hÃ¬nh Theo dÃµi Ä‘Æ¡n hÃ ng.
-* **Káº¿t quáº£ thá»±c táº¿:** Äiá»u hÆ°á»›ng chÃ­nh xÃ¡c theo deep-link ná»™i bá»™. Äáº¡t 3/3.
-
-#### TC-09: Cáº­p nháº­t phÃ­ ship thá»i gian thá»±c qua Remote Config
-* **Äiá»u kiá»‡n Ä‘áº§u:** á»¨ng dá»¥ng Ä‘ang má»Ÿ trÃªn thiáº¿t bá»‹.
-* **CÃ¡c bÆ°á»›c thá»±c hiá»‡n:**
-  1. VÃ o Firebase Console > Remote Config, Ä‘á»•i giÃ¡ trá»‹ `ktx_group_ship_fee` tá»« `5000` thÃ nh `7000`.
-  2. Nháº¥n Publish Changes.
-  3. TrÃªn á»©ng dá»¥ng, thá»±c hiá»‡n kÃ©o Ä‘á»ƒ lÃ m má»›i (Pull-to-refresh).
-* **Káº¿t quáº£ mong Ä‘á»£i:** PhÃ­ ship trÃªn giao diá»‡n tá»± Ä‘á»™ng cáº­p nháº­t sang 7.000Ä‘ mÃ  khÃ´ng cáº§n cÃ i Ä‘áº·t láº¡i app.
-* **Káº¿t quáº£ thá»±c táº¿:** GiÃ¡ trá»‹ hiá»ƒn thá»‹ cáº­p nháº­t ngay láº­p tá»©c. Äáº¡t 3/3.
-
-#### TC-10: KÃ­ch hoáº¡t Crash thá»­ nghiá»‡m Crashlytics (Android Native)
-* **Äiá»u kiá»‡n Ä‘áº§u:** Thiáº¿t bá»‹ Android káº¿t ná»‘i ADB.
-* **CÃ¡c bÆ°á»›c thá»±c hiá»‡n:**
-  1. VÃ o mÃ n hÃ¬nh CÃ i Ä‘áº·t & Quáº£n lÃ½ vai trÃ² (S13 / Demo Hub).
-  2. Nháº¥n nÃºt "Test Crashlytics (Crash thá»­ nghiá»‡m)".
-* **Káº¿t quáº£ mong Ä‘á»£i:** á»¨ng dá»¥ng Ä‘Ã³ng ngay láº­p tá»©c (Crash cÃ³ chá»§ Ä‘Ã­ch). Má»Ÿ láº¡i á»©ng dá»¥ng, bÃ¡o cÃ¡o crash xuáº¥t hiá»‡n trÃªn Firebase Crashlytics Dashboard kÃ¨m User ID vÃ  custom keys (`campusZone`, `role`).
-* **Káº¿t quáº£ thá»±c táº¿:** Dashboard Firebase Crashlytics ghi nháº­n sá»± cá»‘ sau ~2 phÃºt. Äáº¡t 3/3.
-
----
-
-## 3. Nháº­t KÃ½ PhiÃªn Kiá»ƒm Thá»­ KhÃ¡m PhÃ¡ (Exploratory Testing Session - 25 PhÃºt)
-
-- **Thá»i lÆ°á»£ng:** 25 phÃºt (tá»« 22:30 Ä‘áº¿n 22:55 ngÃ y 06/11/2026).
-- **Má»¥c tiÃªu:** Kiá»ƒm tra Ä‘á»™ nháº¡y cá»­ chá»‰, xoay mÃ n hÃ¬nh, giÃ¡n Ä‘oáº¡n máº¡ng (Airplane Mode) vÃ  chuyá»ƒn Ä‘á»•i 4 vai trÃ² liÃªn tá»¥c.
-- **Ghi nháº­n & Kháº¯c phá»¥c:**
-  1. PhÃ¡t hiá»‡n lá»—i trÃ n pixel 38px á»Ÿ thanh Bottom Bar khi giáº£ láº­p iPhone 16 $\rightarrow$ ÄÃ£ xá»­ lÃ½ triá»‡t Ä‘á»ƒ báº±ng cÃ¡ch bá» cá»‘ Ä‘á»‹nh chiá»u cao vÃ  dÃ¹ng `SafeArea`.
-  2. PhÃ¡t hiá»‡n lá»—i trÃ n pixel 57-75px á»Ÿ tiÃªu Ä‘á» ca gom vÃ  AppBar khi mÃ n hÃ¬nh háº¹p $\rightarrow$ ÄÃ£ xá»­ lÃ½ triá»‡t Ä‘á»ƒ báº±ng `Expanded`, `maxLines: 1` vÃ  `TextOverflow.ellipsis`.
-  3. Kiá»ƒm tra tÃ­nh nÄƒng ngáº¯t máº¡ng: CÃ¡c mÃ n hÃ¬nh Ä‘á»u hiá»ƒn thá»‹ giao diá»‡n `KtxErrorState` vá»›i nÃºt "Thá»­ láº¡i", khÃ´ng xáº£y ra hiá»‡n tÆ°á»£ng mÃ n hÃ¬nh tráº¯ng (White Screen of Death).
+| EXP-M01 | Tab "Khám phá" | Trung bình | Khi backend mất kết nối, mục "Quán quen được yêu thích" hiện lỗi "Không thể tải danh sách quán ăn: Exception: Mất kết nối máy chủ…" (lộ chuỗi `Exception:`) | Thông báo thân thiện, không lộ exception, có nút "Thử lại" |
+| EXP-M02 | Thực đơn, giỏ hàng, thanh toán | Trung bình (Accessibility) | Nút +/−/Tùy biến, yêu thích, chia sẻ và lựa chọn thanh toán không có nhãn trợ năng | Đã khắc phục bằng Semantics (mục 4.4) |
+| EXP-M03 | "Thanh Toán Gom Đơn" | Cao | Khi API tạo đơn lỗi, `placeOrder()` trả về `null` và màn hình thoát im lặng: không có hộp thoại, không có snackbar, người dùng không biết đơn đã tạo hay chưa (phát hiện khi review code sau khi bỏ dữ liệu mock) | Hiển thị `errorMessage` của `CartCheckoutViewModel` (snackbar/hộp thoại lỗi) và cho phép thử lại |

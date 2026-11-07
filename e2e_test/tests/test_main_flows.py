@@ -49,19 +49,22 @@ def test_tc03_customize_item_and_add_two_portions(app, run_case):
     app.start_logged_in()
     run_case(
         case_id="TC03",
-        title="Tùy biến món (đổi nước mắm, số lượng 2) rồi thêm vào giỏ",
+        title="Tùy biến món (đổi tùy chọn, số lượng 2) rồi thêm vào giỏ",
         category=CATEGORY,
         goal="""
 Mục tiêu: tùy biến một món có tùy chọn và thêm 2 phần vào giỏ.
+Tùy chọn của món được tải từ backend nên KHÔNG cố định tên; hãy đọc trên màn hình.
 Các bước:
 1. Bấm tab "Đặt món". Tìm món đầu tiên có nút "Tùy biến" và bấm nút đó. Ghi nhớ tên món.
-2. Ở màn hình "Tùy Biến Món Ăn", cuộn xuống nhóm "Độ cay & Nước mắm" và chọn "Nước mắm không cay (Không ớt)".
+2. Ở màn hình "Tùy Biến Món Ăn", tìm nhóm tùy chọn đầu tiên. Chọn lựa chọn THỨ HAI của nhóm đó
+   (nếu nhóm chỉ có 1 lựa chọn thì chọn lựa chọn đó). Ghi nhớ chính xác tên lựa chọn vừa chọn.
 3. Bấm nút "Tăng số lượng" đúng 1 lần để số lượng chuyển từ 1 thành 2.
 4. Bấm nút "Thêm vào giỏ • ..." ở đáy màn hình.
 5. Bấm tab "Giỏ hàng".
 Kết quả mong đợi:
 - Màn hình "Giỏ Hàng Gom Đơn" có món vừa tùy biến với số lượng "2".
-- Dưới tên món có nhãn tùy chọn "Nước mắm không cay (Không ớt)".
+- Dưới tên món có nhãn tùy chọn chứa đúng tên lựa chọn đã ghi nhớ ở bước 2.
+Nếu thực đơn không có món nào có nút "Tùy biến", trả về FAIL với lý do "không có món có tùy chọn".
 """,
     )
 
@@ -102,6 +105,8 @@ Các bước:
 4. Bấm nút "Đặt đơn nhận tại ..." ở đáy màn hình và chờ tối đa 20 giây.
 Kết quả mong đợi:
 - Hộp thoại "Đặt đơn thành công!" xuất hiện, có mã đơn hàng và nút "Theo dõi đơn hàng".
+Đơn được tạo thật qua backend. Nếu sau 20 giây vẫn ở màn hình "Thanh Toán Gom Đơn" mà không có hộp thoại nào,
+trả về FAIL với lý do "backend không tạo được đơn (app không hiển thị lỗi)".
 """,
     )
 

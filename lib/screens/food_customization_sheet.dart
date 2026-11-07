@@ -1,13 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-
 import '../firebase/analytics_service.dart';
 import '../models/menu_item_model.dart';
 import '../models/order_model.dart';
 import '../viewmodels/cart_checkout_vm.dart';
 
-/// MÃ n hÃ¬nh S3 (TÃ¹y Biáº¿n MÃ³n Ä‚n): Chá»n Size báº¯t buá»™c, Topping thÃªm, Ghi chÃº chuáº©n Figma
+/// Màn hình S3 (Tùy Biến Món Ăn): Chọn Size bắt buộc, Topping thêm, Ghi chú chuẩn Figma
 class FoodCustomizationSheet extends StatefulWidget {
   final int storeId;
   final String storeName;
@@ -53,7 +52,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
   final TextEditingController _noteCtrl = TextEditingController();
 
   List<CustomizationGroupModel> get _effectiveGroups {
-    // Æ¯u tiÃªn hÃ ng Ä‘áº§u: Láº¥y Ä‘Ãºng customizationOptions thá»±c táº¿ cá»§a mÃ³n Äƒn tá»« Backend
+    // Ưu tiên hàng đầu: Lấy đúng customizationOptions thực tế của món ăn từ Backend
     if (widget.menuItem.customizationOptions.isNotEmpty) {
       return widget.menuItem.customizationOptions;
     }
@@ -105,16 +104,14 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
   }
 
   double get _totalPrice {
-    final extras = _buildSelectedOptions().fold(
-      0.0,
-      (sum, element) => sum + element.extraPrice,
-    );
+    final extras = _buildSelectedOptions()
+        .fold(0.0, (sum, element) => sum + element.extraPrice);
     return (widget.menuItem.basePrice + extras) * _quantity;
   }
 
   String _formatCurrency(double amount) {
     final formatter = NumberFormat('#,###', 'vi_VN');
-    return '${formatter.format(amount)}Ä‘';
+    return '${formatter.format(amount)}đ';
   }
 
   void _addQuickChip(String chipText) {
@@ -131,11 +128,11 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
   Widget build(BuildContext context) {
     final groups = _effectiveGroups;
     final quickChips = [
-      '+ Ãt cay',
-      '+ KhÃ´ng hÃ nh lÃ¡',
-      '+ Äá»ƒ riÃªng nÆ°á»›c máº¯m',
-      '+ Xin thÃªm Ä‘á»“ chua',
-      '+ CÆ¡m nhiá»u chÃ¡y giÃ²n',
+      '+ Ít cay',
+      '+ Không hành lá',
+      '+ Để riêng nước mắm',
+      '+ Xin thêm đồ chua',
+      '+ Cơm nhiều cháy giòn',
     ];
 
     return Scaffold(
@@ -144,12 +141,12 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          tooltip: 'Quay láº¡i thá»±c Ä‘Æ¡n',
+          tooltip: 'Quay lại thực đơn',
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1E293B)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'TÃ¹y Biáº¿n MÃ³n Ä‚n',
+          'Tùy Biến Món Ăn',
           style: TextStyle(
             color: Color(0xFF1E293B),
             fontWeight: FontWeight.w800,
@@ -159,14 +156,11 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
         centerTitle: true,
         actions: [
           IconButton(
-            tooltip: 'ThÃ´ng bÃ¡o',
+            tooltip: 'Thông báo',
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(
-                  Icons.notifications_none_rounded,
-                  color: Color(0xFF1E293B),
-                ),
+                const Icon(Icons.notifications_none_rounded, color: Color(0xFF1E293B)),
                 Positioned(
                   top: 2,
                   right: 2,
@@ -184,11 +178,8 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
             onPressed: () {},
           ),
           IconButton(
-            tooltip: 'Giá» hÃ ng',
-            icon: const Icon(
-              Icons.shopping_bag_outlined,
-              color: Color(0xFF1E293B),
-            ),
+            tooltip: 'Giỏ hàng',
+            icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF1E293B)),
             onPressed: () {},
           ),
           Padding(
@@ -230,16 +221,15 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                   child: Row(
                     children: [
                       IconButton(
-                        tooltip: 'Giáº£m sá»‘ lÆ°á»£ng',
-                        onPressed: _quantity > 1
-                            ? () => setState(() => _quantity--)
-                            : null,
+                        tooltip: 'Giảm số lượng',
+                        onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
                         icon: const Icon(Icons.remove, size: 16),
                         color: const Color(0xFF475569),
                       ),
                       Semantics(
                         identifier: 'text_customize_qty',
-                        label: 'Sá»‘ lÆ°á»£ng',
+                        label: 'Số lượng: $_quantity',
+                        excludeSemantics: true,
                         child: Text(
                           '$_quantity',
                           style: const TextStyle(
@@ -250,7 +240,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'TÄƒng sá»‘ lÆ°á»£ng',
+                        tooltip: 'Tăng số lượng',
                         onPressed: () => setState(() => _quantity++),
                         icon: const Icon(Icons.add, size: 16),
                         color: const Color(0xFFFF521B),
@@ -265,47 +255,47 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                     child: Semantics(
                       identifier: 'btn_customize_add_to_cart',
                       child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF521B),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: () {
-                          context.read<AnalyticsService>().logAddToCart(
-                            menuItemId: widget.menuItem.id,
-                            storeId: widget.storeId,
-                            quantity: _quantity,
-                            unitPrice: widget.menuItem.basePrice,
-                          );
-                          context.read<CartCheckoutViewModel>().addItemToCart(
-                            storeId: widget.storeId,
-                            storeName: widget.storeName,
-                            menuItem: widget.menuItem,
-                            quantity: _quantity,
-                            selectedOptions: _buildSelectedOptions(),
-                          );
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'ÄÃ£ thÃªm $_quantity x ${widget.menuItem.name} vÃ o giá»',
-                              ),
-                              backgroundColor: const Color(0xFFFF521B),
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'ThÃªm vÃ o giá» â€¢ ${_formatCurrency(_totalPrice)}',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF521B),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
+                      onPressed: () {
+                        context.read<AnalyticsService>().logAddToCart(
+                              menuItemId: widget.menuItem.id,
+                              storeId: widget.storeId,
+                              quantity: _quantity,
+                              unitPrice: widget.menuItem.basePrice,
+                            );
+                        context.read<CartCheckoutViewModel>().addItemToCart(
+                              storeId: widget.storeId,
+                              storeName: widget.storeName,
+                              menuItem: widget.menuItem,
+                              quantity: _quantity,
+                              selectedOptions: _buildSelectedOptions(),
+                            );
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Đã thêm $_quantity x ${widget.menuItem.name} vào giỏ',
+                            ),
+                            backgroundColor: const Color(0xFFFF521B),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        'Thêm vào giỏ • ${_formatCurrency(_totalPrice)}',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                     ),
                   ),
                 ),
@@ -321,23 +311,11 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildBottomNavItem(Icons.explore_outlined, 'KhÃ¡m phÃ¡', true),
-                _buildBottomNavItem(
-                  Icons.restaurant_outlined,
-                  'Äáº·t mÃ³n',
-                  false,
-                ),
-                _buildBottomNavItem(
-                  Icons.receipt_long_rounded,
-                  'Thanh toÃ¡n',
-                  false,
-                ),
-                _buildBottomNavItem(Icons.history_rounded, 'Lá»‹ch sá»­', false),
-                _buildBottomNavItem(
-                  Icons.person_outline_rounded,
-                  'TÃ i khoáº£n',
-                  false,
-                ),
+                _buildBottomNavItem(Icons.explore_outlined, 'Khám phá', true),
+                _buildBottomNavItem(Icons.restaurant_outlined, 'Đặt món', false),
+                _buildBottomNavItem(Icons.receipt_long_rounded, 'Thanh toán', false),
+                _buildBottomNavItem(Icons.history_rounded, 'Lịch sử', false),
+                _buildBottomNavItem(Icons.person_outline_rounded, 'Tài khoản', false),
               ],
             ),
           ),
@@ -347,27 +325,25 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. áº¢nh bÃ¬a Hero cá»§a mÃ³n Äƒn kÃ¨m nhÃ£n
+            // 1. Ảnh bìa Hero của món ăn kèm nhãn
             Stack(
               children: [
                 SizedBox(
                   height: 180,
                   width: double.infinity,
-                  child:
-                      widget.menuItem.imageUrl != null &&
+                  child: widget.menuItem.imageUrl != null &&
                           widget.menuItem.imageUrl!.isNotEmpty
                       ? Image.network(
                           widget.menuItem.imageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                color: const Color(0xFFF1F5F9),
-                                child: const Icon(
-                                  Icons.fastfood_rounded,
-                                  size: 50,
-                                  color: Color(0xFFFF521B),
-                                ),
-                              ),
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: const Color(0xFFF1F5F9),
+                            child: const Icon(
+                              Icons.fastfood_rounded,
+                              size: 50,
+                              color: Color(0xFFFF521B),
+                            ),
+                          ),
                         )
                       : Container(
                           color: const Color(0xFFF1F5F9),
@@ -384,16 +360,13 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFF521B),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text(
-                          'ðŸ”¥ BÃ¡n cháº¡y nháº¥t Ca TrÆ°a',
+                          '🔥 Bán chạy nhất Ca Trưa',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 10,
@@ -403,16 +376,13 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                       ),
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFF059669),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text(
-                          'Chuáº©n Vá»‹ SÃ i GÃ²n',
+                          'Chuẩn Vị Sài Gòn',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 10,
@@ -431,16 +401,13 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.65),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Text(
-                          'ðŸ“ KTX Khu B â€¢ Chá»‘t lÃºc 10:45 TrÆ°a nay',
+                          '📍 KTX Khu B • Chốt lúc 10:45 Trưa nay',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 10,
@@ -449,21 +416,14 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 3,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: const Row(
                           children: [
-                            Icon(
-                              Icons.star_rounded,
-                              color: Color(0xFFF59E0B),
-                              size: 14,
-                            ),
+                            Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 14),
                             SizedBox(width: 3),
                             Text(
                               '4.9 (1.2k+)',
@@ -482,7 +442,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
               ],
             ),
 
-            // 2. TiÃªu Ä‘á» mÃ³n & MÃ´ táº£
+            // 2. Tiêu đề món & Mô tả
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -499,18 +459,11 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(
-                        Icons.storefront_rounded,
-                        size: 14,
-                        color: Color(0xFF64748B),
-                      ),
+                      const Icon(Icons.storefront_rounded, size: 14, color: Color(0xFF64748B)),
                       const SizedBox(width: 4),
                       Text(
-                        '${widget.storeName} â€¢ KTX Khu B (Cá»•ng 2)',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF64748B),
-                        ),
+                        '${widget.storeName} • KTX Khu B (Cổng 2)',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                       ),
                     ],
                   ),
@@ -538,17 +491,14 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                       ],
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: const Color(0xFFFFF7ED),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: const Color(0xFFFFEDD5)),
                         ),
                         child: const Text(
-                          '-16% Trá»£ giÃ¡ KTX',
+                          '-16% Trợ giá KTX',
                           style: TextStyle(
                             color: Color(0xFFFF521B),
                             fontSize: 10,
@@ -560,10 +510,9 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.menuItem.description ?? 'Pháº§n cÆ¡m táº¥m sÆ°á»n que nÆ°á»›ng than hoa máº­t ong thÆ¡m lá»«ng, bÃ¬ riá»ng trá»™n thÃ­nh vÃ ng Ã³ng, cháº£ trá»©ng háº¥p bÃ©o bÃ¹i, kÃ¨m má»¡ hÃ nh tÃ³p má»¡ giÃ²n vÃ  Ä‘á»“ chua nhÃ  lÃ m tÆ°Æ¡i ngon.',
                     (widget.menuItem.description != null && widget.menuItem.description!.isNotEmpty)
                         ? widget.menuItem.description!
-                        : 'MÃ³n Äƒn thÆ¡m ngon, nÃ³ng há»•i cháº¿ biáº¿n phá»¥c vá»¥ sinh viÃªn KTX.',
+                        : 'Món ăn thơm ngon, nóng hổi chế biến phục vụ sinh viên KTX.',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF64748B),
@@ -572,10 +521,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                   ),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
                       color: const Color(0xFFECFDF5),
                       borderRadius: BorderRadius.circular(10),
@@ -583,19 +529,12 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                     ),
                     child: const Row(
                       children: [
-                        Icon(
-                          Icons.eco_rounded,
-                          color: Color(0xFF059669),
-                          size: 18,
-                        ),
+                        Icon(Icons.eco_rounded, color: Color(0xFF059669), size: 18),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Há»™p bÃ£ mÃ­a giá»¯ nhiá»‡t tá»± há»§y, Ä‘Ã³ng gÃ³i náº¯p kÃ­n vÃ  tÄƒm mÃ¨ diá»‡t khuáº©n cho sinh viÃªn.',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF065F46),
-                            ),
+                            'Hộp bã mía giữ nhiệt tự hủy, đóng gói nắp kín và tăm mè diệt khuẩn cho sinh viên.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF065F46)),
                           ),
                         ),
                       ],
@@ -606,13 +545,10 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
             ),
             const Divider(height: 1, color: Color(0xFFF1F5F9)),
 
-            // 3. Danh sÃ¡ch cÃ¡c nhÃ³m tÃ¹y biáº¿n (Figma 4 nhÃ³m)
+            // 3. Danh sách các nhóm tùy biến (Figma 4 nhóm)
             ...groups.map((group) {
               return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -641,10 +577,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                           ],
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: group.required
                                 ? const Color(0xFFFFF7ED)
@@ -652,9 +585,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            group.required
-                                ? 'Báº¯t buá»™c â€¢ Chá»n 1'
-                                : 'TÃ¹y chá»n â€¢ Tá»‘i Ä‘a 5',
+                            group.required ? 'Bắt buộc • Chọn 1' : 'Tùy chọn • Tối đa 5',
                             style: TextStyle(
                               color: group.required
                                   ? const Color(0xFFFF521B)
@@ -677,10 +608,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 6),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
@@ -718,9 +646,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                                 Text(
                                   opt.extraPrice > 0
                                       ? '+${_formatCurrency(opt.extraPrice)}'
-                                      : (opt.name.contains('Máº·c Ä‘á»‹nh')
-                                            ? 'Máº·c Ä‘á»‹nh'
-                                            : '+0Ä‘'),
+                                      : (opt.name.contains('Mặc định') ? 'Mặc định' : '+0đ'),
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: isSelected
@@ -752,10 +678,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 6),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
@@ -793,7 +716,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                                 Text(
                                   opt.extraPrice > 0
                                       ? '+${_formatCurrency(opt.extraPrice)}'
-                                      : 'Miá»…n phÃ­',
+                                      : 'Miễn phí',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: isChecked
@@ -815,7 +738,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
               );
             }),
 
-            // 4. Ghi chÃº cho QuÃ¡n CÃ´ Ba & 5 Quick Chips
+            // 4. Ghi chú cho Quán Cô Ba & 5 Quick Chips
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Container(
@@ -830,14 +753,10 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                   children: [
                     const Row(
                       children: [
-                        Icon(
-                          Icons.edit_note_rounded,
-                          color: Color(0xFF475569),
-                          size: 18,
-                        ),
+                        Icon(Icons.edit_note_rounded, color: Color(0xFF475569), size: 18),
                         SizedBox(width: 6),
                         Text(
-                          'Ghi chÃº cho QuÃ¡n CÃ´ Ba',
+                          'Ghi chú cho Quán Cô Ba',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
@@ -848,7 +767,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                     ),
                     const SizedBox(height: 2),
                     const Text(
-                      'QuÃ¡n luÃ´n cá»‘ gáº¯ng chuáº©n bá»‹ theo Ä‘Ãºng yÃªu cáº§u cá»§a báº¡n sinh viÃªn.',
+                      'Quán luôn cố gắng chuẩn bị theo đúng yêu cầu của bạn sinh viên.',
                       style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                     ),
                     const SizedBox(height: 8),
@@ -856,16 +775,12 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                       controller: _noteCtrl,
                       maxLines: 2,
                       decoration: InputDecoration(
-                        hintText: 'VÃ­ dá»¥: Äá»“ chua Ä‘á»ƒ riÃªng, cho xin thÃªm muá»—ng nÄ©a dÃ¹ng 1 láº§n, cÆ¡m sáº¥y khÃ´ rÃ¡o...',
-                        hintStyle: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF94A3B8),
-                        ),
+                        hintText:
+                            'Ví dụ: Đồ chua để riêng, cho xin thêm muỗng nĩa dùng 1 lần, cơm sấy khô ráo...',
+                        hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFE2E8F0),
-                          ),
+                          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                         ),
                         contentPadding: const EdgeInsets.all(10),
                       ),
@@ -879,10 +794,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                           onTap: () => _addQuickChip(chip),
                           borderRadius: BorderRadius.circular(14),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(14),
@@ -904,7 +816,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
               ),
             ),
 
-            // 5. Khung xanh cam káº¿t giao cháº·n ca trÆ°a KTX
+            // 5. Khung xanh cam kết giao chặn ca trưa KTX
             Padding(
               padding: const EdgeInsets.all(16),
               child: Container(
@@ -917,18 +829,14 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                 child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.schedule_rounded,
-                      color: Color(0xFF2563EB),
-                      size: 20,
-                    ),
+                    Icon(Icons.schedule_rounded, color: Color(0xFF2563EB), size: 20),
                     SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Cam káº¿t Giao Cháº·n Ca TrÆ°a KTX',
+                            'Cam kết Giao Chặn Ca Trưa KTX',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
@@ -937,11 +845,8 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                           ),
                           SizedBox(height: 2),
                           Text(
-                            'ÄÆ¡n hÃ ng Ä‘Æ°á»£c quÃ¡n nÆ°á»›ng nÃ³ng trÆ°á»›c giá» giao 15 phÃºt. Xe gom KTX táº­p káº¿t táº¡i Cá»•ng KTX Khu B Ä‘Ãºng 11:30.',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF3B82F6),
-                            ),
+                            'Đơn hàng được quán nướng nóng trước giờ giao 15 phút. Xe gom KTX tập kết tại Cổng KTX Khu B đúng 11:30.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF3B82F6)),
                           ),
                         ],
                       ),
