@@ -48,53 +48,8 @@ class OrderService {
         _localOrders.insert(0, created);
         return created;
       }
-      throw Exception(jsonMap['message'] ?? 'Không thể tạo đơn hàng');
+      throw Exception(jsonMap['message'] ?? 'Không thể tạo đơn hàng từ máy chủ (Mã: ${response.statusCode})');
     } catch (e) {
-      if (e.toString().contains('SocketException') ||
-          e.toString().contains('TimeoutException') ||
-          e.toString().contains('ClientException')) {
-        final subtotal =
-            items.fold(0.0, (sum, item) => sum + item.totalPrice);
-        const deliveryFee = 5000.0;
-        final id = DateTime.now().millisecondsSinceEpoch % 100000;
-        final fallbackOrder = OrderDetailModel(
-          id: id,
-          orderCode: 'KTX-20261104-$id',
-          userId: ApiConfig.currentBackendUserId,
-          storeId: storeId,
-          storeName: storeName,
-          slotTime: slotTime,
-          pickupLocation: pickupLocation,
-          subtotalAmount: subtotal,
-          deliveryFee: deliveryFee,
-          groupDiscountAmount: 0,
-          finalAmount: subtotal + deliveryFee,
-          status: paymentMethod == 'COD' ? 'CONFIRMED' : 'PENDING',
-          paymentMethod: paymentMethod,
-          paymentStatus: 'UNPAID',
-          pickupQrCode: 'QR_KTX_$id',
-          pickupPin: '3210',
-          note: note,
-          items: items
-              .asMap()
-              .entries
-              .map(
-                (entry) => OrderItemModel(
-                  id: entry.key + 1,
-                  menuItemId: entry.value.menuItemId,
-                  itemName: entry.value.itemName,
-                  unitPrice: entry.value.basePrice,
-                  quantity: entry.value.quantity,
-                  selectedOptions: entry.value.selectedOptions,
-                  itemTotalAmount: entry.value.totalPrice,
-                ),
-              )
-              .toList(),
-          createdAt: DateTime.now(),
-        );
-        _localOrders.insert(0, fallbackOrder);
-        return fallbackOrder;
-      }
       rethrow;
     }
   }

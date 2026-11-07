@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import 'restaurant_dashboard_screen.dart';
 import 'restaurant_menu_management_screen.dart';
@@ -26,6 +27,30 @@ class RestaurantShellScreen extends StatefulWidget {
 class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
   int _currentIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedTab();
+  }
+
+  Future<void> _loadSavedTab() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedIndex = prefs.getInt('saved_owner_tab_index') ?? 0;
+      if (mounted && savedIndex >= 0 && savedIndex <= 3) {
+        setState(() => _currentIndex = savedIndex);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _onSelectTab(int index) async {
+    setState(() => _currentIndex = index);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('saved_owner_tab_index', index);
+    } catch (_) {}
+  }
+
   Widget _buildTabItem({
     required int index,
     required IconData icon,
@@ -39,30 +64,28 @@ class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => setState(() => _currentIndex = index),
-          child: SizedBox(
-            height: 56,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  isSelected ? activeIcon : icon,
-                  size: 22,
+          onTap: () => _onSelectTab(index),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isSelected ? activeIcon : icon,
+                size: 22,
+                color: color,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
                   color: color,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: color,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
@@ -79,7 +102,10 @@ class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
       ),
       RestaurantMenuManagementScreen(ownerId: widget.ownerId),
       RestaurantRevenueScreen(ownerId: widget.ownerId),
-      RestaurantStoreSettingsScreen(ownerId: widget.ownerId),
+      RestaurantStoreSettingsScreen(
+        ownerId: widget.ownerId,
+        onSignOut: widget.onSignOut,
+      ),
     ];
 
     return Scaffold(
@@ -89,7 +115,6 @@ class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
         children: screens,
       ),
       bottomNavigationBar: Container(
-        height: 56.0,
         decoration: const BoxDecoration(
           color: Colors.white,
           border: Border(
@@ -105,33 +130,36 @@ class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
         ),
         child: SafeArea(
           top: false,
-          child: Row(
-            children: [
-              _buildTabItem(
-                index: 0,
-                icon: Icons.soup_kitchen_outlined,
-                activeIcon: Icons.soup_kitchen_rounded,
-                label: 'Bếp & Gom ca',
-              ),
-              _buildTabItem(
-                index: 1,
-                icon: Icons.restaurant_menu_outlined,
-                activeIcon: Icons.restaurant_menu_rounded,
-                label: 'Thực đơn',
-              ),
-              _buildTabItem(
-                index: 2,
-                icon: Icons.bar_chart_outlined,
-                activeIcon: Icons.bar_chart_rounded,
-                label: 'Doanh thu & COD',
-              ),
-              _buildTabItem(
-                index: 3,
-                icon: Icons.store_outlined,
-                activeIcon: Icons.store_rounded,
-                label: 'Cài đặt quán',
-              ),
-            ],
+          child: SizedBox(
+            height: 56.0,
+            child: Row(
+              children: [
+                _buildTabItem(
+                  index: 0,
+                  icon: Icons.soup_kitchen_outlined,
+                  activeIcon: Icons.soup_kitchen_rounded,
+                  label: 'Bếp & Gom ca',
+                ),
+                _buildTabItem(
+                  index: 1,
+                  icon: Icons.restaurant_menu_outlined,
+                  activeIcon: Icons.restaurant_menu_rounded,
+                  label: 'Thực đơn',
+                ),
+                _buildTabItem(
+                  index: 2,
+                  icon: Icons.bar_chart_outlined,
+                  activeIcon: Icons.bar_chart_rounded,
+                  label: 'Doanh thu & COD',
+                ),
+                _buildTabItem(
+                  index: 3,
+                  icon: Icons.store_outlined,
+                  activeIcon: Icons.store_rounded,
+                  label: 'Cài đặt quán',
+                ),
+              ],
+            ),
           ),
         ),
       ),

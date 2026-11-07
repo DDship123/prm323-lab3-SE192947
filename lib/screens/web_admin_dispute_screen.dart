@@ -66,13 +66,13 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
       final list = await widget.disputeService.fetchDisputes();
       if (mounted) {
         setState(() {
-          _disputes = list.isNotEmpty ? list : _mockDisputes();
+          _disputes = list;
           if (_selectedDispute == null && _disputes.isNotEmpty) {
             _selectedDispute = _disputes.first;
           } else if (_selectedDispute != null) {
             _selectedDispute = _disputes.firstWhere(
               (d) => d.id == _selectedDispute!.id,
-              orElse: () => _disputes.first,
+              orElse: () => _disputes.isNotEmpty ? _disputes.first : _selectedDispute!,
             );
           }
         });
@@ -80,57 +80,12 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
     } catch (_) {
       if (mounted) {
         setState(() {
-          _disputes = _mockDisputes();
-          if (_selectedDispute == null && _disputes.isNotEmpty) {
-            _selectedDispute = _disputes.first;
-          }
+          _disputes = [];
         });
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  List<DisputeModel> _mockDisputes() {
-    return [
-      DisputeModel(
-        id: 101,
-        orderId: 101,
-        storeName: 'Cơm Tấm Cô Ba KTX - Khu B',
-        reason: 'Món ăn có dị vật / Hỏng vị',
-        description:
-            'Món cơm sườn bị chua bốc mùi, nước mắm bị đổ bung nắp ra ngoài túi đựng khi shipper giao tới sảnh KTX BA1. Sinh viên yêu cầu hoàn tiền món cơm sườn.',
-        evidenceImageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900',
-        requestedRefundAmount: 45000,
-        status: DisputeStatus.pending,
-        createdAt: DateTime.now().subtract(const Duration(minutes: 35)),
-      ),
-      DisputeModel(
-        id: 102,
-        orderId: 102,
-        storeName: 'Bún Bò Huế O Phượng - KTX Khu A',
-        reason: 'Giao nhầm món ăn so với hóa đơn',
-        description:
-            'Đặt Bún bò gân đặc biệt nhưng nhận được bún chả cua thường, phần nước dùng bị nguội lạnh hoàn toàn.',
-        evidenceImageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=900',
-        requestedRefundAmount: 50000,
-        status: DisputeStatus.pending,
-        createdAt: DateTime.now().subtract(const Duration(hours: 1, minutes: 20)),
-      ),
-      DisputeModel(
-        id: 100,
-        orderId: 98,
-        storeName: 'Trà Sữa KTX Corner',
-        reason: 'Thiếu món trong đơn gom',
-        description: 'Đơn 3 ly trà sữa nhưng shipper chỉ bàn giao 2 ly. Quán xác nhận có quên đóng gói ly còn lại.',
-        evidenceImageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=900',
-        requestedRefundAmount: 28000,
-        approvedRefundAmount: 28000,
-        status: DisputeStatus.approved,
-        adminNote: 'Admin BQL xác minh với quán: Đã hoàn 28.000đ vào ví KTX Pay của Sinh viên.',
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      ),
-    ];
   }
 
   List<DisputeModel> get _filteredDisputes {
@@ -265,42 +220,68 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
   void _showZoomImage(String imageUrl) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(AppSpacing.lg),
-        child: Stack(
-          alignment: Alignment.topRight,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.9),
-                borderRadius: AppRadius.roundedLg,
-              ),
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 18),
-                      const SizedBox(width: AppSpacing.sm),
-                      const Text(
+      builder: (ctx) {
+        final screenHeight = MediaQuery.of(ctx).size.height;
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: 850,
+              maxHeight: screenHeight * 0.85,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F172A), // Chuẩn dark surface #0F172A
+              borderRadius: AppRadius.roundedLg,
+              border: Border.all(color: const Color(0xFF1E293B)),
+              boxShadow: const [
+                BoxShadow(
+                  color: Colors.black54,
+                  blurRadius: 24,
+                  offset: Offset(0, 8),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.verified_user_rounded,
+                      color: AppColors.primary,
+                      size: 18,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    const Expanded(
+                      child: Text(
                         'Ảnh bằng chứng độ phân giải cao (Cloud Storage Verified)',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const CircleAvatar(
-                          radius: 14,
-                          backgroundColor: Colors.white24,
-                          child: Icon(Icons.close, color: Colors.white, size: 16),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                         ),
-                        onPressed: () => Navigator.pop(ctx),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  InteractiveViewer(
+                    ),
+                    IconButton(
+                      icon: const CircleAvatar(
+                        radius: 14,
+                        backgroundColor: Colors.white24,
+                        child: Icon(Icons.close, color: Colors.white, size: 16),
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Flexible(
+                  child: InteractiveViewer(
                     panEnabled: true,
                     minScale: 0.5,
                     maxScale: 4.0,
@@ -312,22 +293,28 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                         errorBuilder: (context, error, stackTrace) => Container(
                           padding: const EdgeInsets.all(48),
                           color: const Color(0xFF1E293B),
-                          child: const Text('Không thể tải ảnh bằng chứng', style: TextStyle(color: Colors.white)),
+                          child: const Center(
+                            child: Text(
+                              'Không thể tải ảnh bằng chứng',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Text(
-                    'Dùng cuộn chuột hoặc thao tác kéo để phóng to / thu nhỏ kiểm tra chi tiết bằng chứng',
-                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                const Text(
+                  'Dùng cuộn chuột hoặc thao tác kéo để phóng to / thu nhỏ kiểm tra chi tiết bằng chứng',
+                  style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

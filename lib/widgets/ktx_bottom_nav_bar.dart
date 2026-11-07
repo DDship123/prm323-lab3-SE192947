@@ -1,17 +1,17 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 
-/// Footer chuẩn KTX Food:
-/// - Chiều cao chuẩn 56px, nền trắng #ffffff, viền trên #f3f4f6
-/// - 5 tab chuẩn tương ứng:
-///   Tab 0: Khám phá (Icon explore)
-///   Tab 1: Đặt món (Icon restaurant_menu)
-///   Tab 2: Thông báo (Icon notifications kèm badge số thông báo)
-///   Tab 3: Lịch sử (Icon history)
-///   Tab 4: Tài khoản (Icon person)
-/// - Tab đang chọn màu cam thương hiệu #ff5722, tab không chọn màu xám #9ca3af
+/// Footer chuáº©n KTX Food:
+/// - Chiá»u cao chuáº©n 56px, ná»n tráº¯ng #ffffff, viá»n trÃªn #f3f4f6
+/// - 5 tab chuáº©n tÆ°Æ¡ng á»©ng:
+///   Tab 0: KhÃ¡m phÃ¡ (Icon explore)
+///   Tab 1: Äáº·t mÃ³n (Icon restaurant_menu)
+///   Tab 2: ThÃ´ng bÃ¡o (Icon notifications kÃ¨m badge sá»‘ thÃ´ng bÃ¡o)
+///   Tab 3: Lá»‹ch sá»­ (Icon history)
+///   Tab 4: TÃ i khoáº£n (Icon person)
+/// - Tab Ä‘ang chá»n mÃ u cam thÆ°Æ¡ng hiá»‡u #ff5722, tab khÃ´ng chá»n mÃ u xÃ¡m #9ca3af
 class KtxBottomNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
@@ -59,7 +59,7 @@ class KtxBottomNavBar extends StatelessWidget {
         identifier: 'nav_tab_$index',
         button: true,
         selected: isSelected,
-        label: badgeCount > 0 ? 'Tab $label, $badgeCount mục' : 'Tab $label',
+        label: badgeCount > 0 ? 'Tab $label, $badgeCount má»¥c' : 'Tab $label',
         excludeSemantics: true,
         onTap: () => onTap(index),
         child: Material(
@@ -87,6 +87,26 @@ class KtxBottomNavBar extends StatelessWidget {
                 ],
               ),
             ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => onTap(index),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              iconWidget,
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: AppTypography.chipLabel.copyWith(
+                  color: color,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
@@ -96,7 +116,6 @@ class KtxBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 56.0,
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.border, width: 1.0)),
@@ -110,43 +129,46 @@ class KtxBottomNavBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Row(
+        child: SizedBox(
+          height: 56.0,
+          child: Row(
           children: [
             _buildTabItem(
               index: 0,
               icon: Icons.explore_outlined,
               activeIcon: Icons.explore,
-              label: 'Khám phá',
+              label: 'KhÃ¡m phÃ¡',
             ),
             _buildTabItem(
               index: 1,
               icon: Icons.restaurant_outlined,
               activeIcon: Icons.restaurant,
-              label: 'Đặt món',
+              label: 'Äáº·t mÃ³n',
             ),
             _buildTabItem(
               index: 2,
               icon: Icons.shopping_bag_outlined,
               activeIcon: Icons.shopping_bag_rounded,
-              label: 'Giỏ hàng',
+              label: 'Giá» hÃ ng',
               badgeCount: cartBadgeCount,
             ),
             _buildTabItem(
               index: 3,
               icon: Icons.access_time_rounded,
               activeIcon: Icons.access_time_filled_rounded,
-              label: 'Lịch sử',
+              label: 'Lá»‹ch sá»­',
               badgeCount: activeOrderBadgeCount,
             ),
             _buildTabItem(
               index: 4,
               icon: Icons.person_outline_rounded,
               activeIcon: Icons.person_rounded,
-              label: 'Tài khoản',
+              label: 'TÃ i khoáº£n',
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

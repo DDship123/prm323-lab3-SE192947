@@ -158,6 +158,14 @@ class WebAdminSidebar extends StatelessWidget {
                   badgeText: 'Ca trưa',
                   badgeColor: AppColors.primary,
                 ),
+                const SizedBox(height: 4),
+                _buildMenuItem(
+                  index: 3,
+                  title: 'Quản Lý Voucher',
+                  icon: Icons.confirmation_num_rounded,
+                  badgeText: 'Ưu đãi',
+                  badgeColor: AppColors.success,
+                ),
                 SizedBox(height: isCollapsed ? 6 : AppSpacing.sm),
 
                 if (!isCollapsed) ...[

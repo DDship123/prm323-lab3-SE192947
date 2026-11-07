@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../models/order_model.dart';
 import '../services/order_service.dart';
+import '../services/delivery_handshake_service.dart';
+import '../viewmodels/auth_vm.dart';
 import '../viewmodels/order_tracking_vm.dart';
+import '../widgets/screen_state.dart';
 import 'dispute_refund_screen.dart';
 import 'live_order_tracking_screen.dart';
 import 'review_feedback_screen.dart';
@@ -23,19 +27,49 @@ class PickupQrCodeScreen extends StatefulWidget {
 
 class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
   bool _isMaxBrightness = false;
+  final _currencyFmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.order.items.isEmpty && widget.order.id > 0) {
+        context.read<OrderTrackingViewModel>().loadOrderDetail(
+              widget.order.id,
+              initial: widget.order,
+            );
+      }
+    });
+  }
+
+  OrderDetailModel _resolveCurrentOrder(BuildContext context) {
+    final trackingState = context.watch<OrderTrackingViewModel>().trackingState;
+    if (trackingState is StateSuccess<OrderDetailModel>) {
+      final fetched = trackingState.data;
+      if (fetched.id == widget.order.id && fetched.items.isNotEmpty) {
+        return fetched;
+      }
+    }
+    return widget.order;
+  }
 
   Future<void> _handleConfirmPickup() async {
+    final currentOrder = _resolveCurrentOrder(context);
+    final handshake = context.read<DeliveryHandshakeService>();
+    handshake.confirmByStudent(currentOrder.id);
+    await handshake.saveToStorage();
+
     final vm = context.read<OrderTrackingViewModel>();
     final ok = await vm.confirmPickupAtGate(
-      order: widget.order,
+      order: currentOrder,
       verificationMethod: 'QR_SCAN',
-      code: widget.order.pickupPin.isNotEmpty ? widget.order.pickupPin : '4829',
+      code: currentOrder.pickupPin.isNotEmpty ? currentOrder.pickupPin : '4829',
     );
     if (!mounted || !ok) return;
 
     try {
       await OrderService().updateOrderStatus(
-        orderId: widget.order.id,
+        orderId: currentOrder.id,
         newStatus: 'DELIVERED',
       );
     } catch (_) {}
@@ -49,7 +83,7 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
       ),
     );
 
-    final delivered = widget.order.copyWith(status: 'DELIVERED');
+    final delivered = currentOrder.copyWith(status: 'DELIVERED');
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => ReviewFeedbackScreen(order: delivered),
@@ -66,24 +100,33 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
   }
 
   void _showLiveTrackingScreen() {
+    final currentOrder = _resolveCurrentOrder(context);
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => LiveOrderTrackingScreen(initialOrder: widget.order),
+        builder: (_) => LiveOrderTrackingScreen(initialOrder: currentOrder),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final orderCode = widget.order.orderCode.isNotEmpty
-        ? widget.order.orderCode.replaceAll('#', '')
+    final currentOrder = _resolveCurrentOrder(context);
+    final authVm = context.watch<AuthViewModel>();
+    final studentName = authVm.currentUser?.displayName.isNotEmpty == true
+        ? authVm.currentUser!.displayName
+        : 'Ngô Trường Đạt (Sinh viên)';
+
+    final orderCode = currentOrder.orderCode.isNotEmpty
+        ? currentOrder.orderCode.replaceAll('#', '')
         : '8829B';
-    final pinCode = widget.order.pickupPin.isNotEmpty
-        ? widget.order.pickupPin
+    final pinCode = currentOrder.pickupPin.isNotEmpty
+        ? currentOrder.pickupPin
         : '4829';
-    final qrPayload = widget.order.pickupQrCode.isNotEmpty
-        ? widget.order.pickupQrCode
-        : 'KTX-ORDER-8829B';
+    final qrPayload = currentOrder.pickupQrCode.isNotEmpty
+        ? currentOrder.pickupQrCode
+        : 'KTX-ORDER-$orderCode';
+    final isCod = currentOrder.paymentMethod.toUpperCase() == 'COD';
+    final totalItemQty = currentOrder.items.fold<int>(0, (sum, item) => sum + item.quantity);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -354,18 +397,20 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Lê Thùy Linh',
-                        style: TextStyle(
+                      Text(
+                        studentName,
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF1E293B),
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'Phòng 408 • Tòa B3',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      Text(
+                        currentOrder.pickupLocation.isNotEmpty
+                            ? currentOrder.pickupLocation
+                            : 'KTX Khu B – Trụ A1–A2 (Cổng B2)',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                       ),
                       const SizedBox(height: 10),
 
@@ -547,14 +592,16 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
                     color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF2563EB)),
-                      SizedBox(width: 4),
+                      const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF2563EB)),
+                      const SizedBox(width: 4),
                       Text(
-                        'Ca Trưa: 11:30 – 12:00',
-                        style: TextStyle(
+                        currentOrder.slotTime.contains('CHIEU')
+                            ? 'Ca Chiều: 17:30 – 18:00'
+                            : 'Ca Trưa: 11:30 – 12:00',
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1D4ED8),
@@ -565,23 +612,29 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
                 ),
                 const SizedBox(height: 6),
 
-                // ĐÃ THANH TOÁN (VIETQR) • KHÔNG THU TIỀN
+                // ĐÃ THANH TOÁN (VIETQR) • KHÔNG THU TIỀN hoặc COD
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
+                    color: isCod ? const Color(0xFFFFFBEB) : const Color(0xFFECFDF5),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                    border: Border.all(color: isCod ? const Color(0xFFFDE68A) : const Color(0xFFA7F3D0)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 14),
-                      SizedBox(width: 6),
+                      Icon(
+                        isCod ? Icons.payments_outlined : Icons.check_circle_rounded,
+                        color: isCod ? const Color(0xFFD97706) : const Color(0xFF059669),
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
                       Text(
-                        'ĐÃ THANH TOÁN (VIETQR) • KHÔNG THU TIỀN',
+                        isCod
+                            ? 'THU TIỀN MẶT (COD): ${_currencyFmt.format(currentOrder.finalAmount)}'
+                            : 'ĐÃ THANH TOÁN (VIETQR) • KHÔNG THU TIỀN',
                         style: TextStyle(
-                          color: Color(0xFF065F46),
+                          color: isCod ? const Color(0xFFB45309) : const Color(0xFF065F46),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -630,9 +683,9 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
                           ),
                           const SizedBox(height: 1),
                           Text(
-                            widget.order.shipperName?.isNotEmpty == true
-                                ? widget.order.shipperName!
-                                : 'Nguyễn Văn Minh',
+                            currentOrder.shipperName?.isNotEmpty == true
+                                ? currentOrder.shipperName!
+                                : 'Nguyễn Hùng (Đội xe KTX)',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -640,9 +693,11 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
                             ),
                           ),
                           const SizedBox(height: 1),
-                          const Text(
-                            '0912 ••• 829',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          Text(
+                            currentOrder.shipperPhone?.isNotEmpty == true
+                                ? currentOrder.shipperPhone!
+                                : '0912 ••• 829',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                           ),
                         ],
                       ),
@@ -680,7 +735,7 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // 5. Danh Sách Món Đối Soát (02 món)
+          // 5. Danh Sách Món Đối Soát Thực Tế từ đơn hàng đã đặt
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -694,13 +749,13 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.shopping_bag_outlined, color: Color(0xFFFF521B), size: 16),
-                        SizedBox(width: 6),
+                        const Icon(Icons.shopping_bag_outlined, color: Color(0xFFFF521B), size: 16),
+                        const SizedBox(width: 6),
                         Text(
-                          'Danh Sách Món Đối Soát (02 món)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                          'Danh Sách Món Đối Soát (${totalItemQty.toString().padLeft(2, '0')} món)',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
                         ),
                       ],
                     ),
@@ -719,110 +774,113 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Món 1
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF521B),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '1x',
-                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
+                if (currentOrder.items.isEmpty)
+                  Text(
+                    'Đơn hàng tại ${currentOrder.storeName} • Tổng: ${_currencyFmt.format(currentOrder.finalAmount)}',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                  )
+                else
+                  ...currentOrder.items.map((item) {
+                    final lineTotal = item.itemTotalAmount > 0
+                        ? item.itemTotalAmount
+                        : item.unitPrice * item.quantity;
+                    final optText = item.selectedOptions.isNotEmpty
+                        ? item.selectedOptions.map((o) => o.choice).join(', ')
+                        : null;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Cơm Tấm Sườn Bì Chả Đặc Biệt',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF1E293B)),
-                          ),
-                          const SizedBox(height: 4),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            width: 24,
+                            height: 22,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF7ED),
+                              color: const Color(0xFFFF521B),
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child: const Text(
-                              'Ghi chú: Ít mỡ hành, không ớt',
-                              style: TextStyle(fontSize: 10, color: Color(0xFFC2410C)),
+                            child: Center(
+                              child: Text(
+                                '${item.quantity}x',
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.itemName,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Color(0xFF1E293B)),
+                                ),
+                                if (optText != null) ...[
+                                  const SizedBox(height: 3),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFF7ED),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'Topping / Tùy chọn: $optText',
+                                      style: const TextStyle(fontSize: 10, color: Color(0xFFC2410C)),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _currencyFmt.format(lineTotal),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: Color(0xFF1E293B),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
+                    );
+                  }),
 
-                // Món 2
+                if (currentOrder.note != null && currentOrder.note!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFFFEDD5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Text('Ghi chú:  ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFC2410C))),
+                        Expanded(
+                          child: Text(
+                            currentOrder.note!,
+                            style: const TextStyle(fontSize: 10.5, color: Color(0xFF9A3412)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const Divider(height: 18, color: Color(0xFFF1F5F9)),
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF521B),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '1x',
-                          style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ),
+                    Text(
+                      'Quán: ${currentOrder.storeName}',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                     ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Trà Đào Cam Sả Tươi 500ml',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF1E293B)),
-                          ),
-                          SizedBox(height: 2),
-                          Text(
-                            'Mức đường đá bình thường',
-                            style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
-                          ),
-                        ],
-                      ),
+                    Text(
+                      'Tổng thanh toán: ${_currencyFmt.format(currentOrder.finalAmount)}',
+                      style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w800, color: Color(0xFFFF521B)),
                     ),
                   ],
-                ),
-                const SizedBox(height: 10),
-
-                // Gói kèm
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFA7F3D0)),
-                  ),
-                  child: const Row(
-                    children: [
-                      Text('Gói kèm  ', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF047857))),
-                      Expanded(
-                        child: Text(
-                          '01 canh chua nhỏ, 01 bịch nước mắm ngọt',
-                          style: TextStyle(fontSize: 10.5, color: Color(0xFF065F46)),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ],
             ),

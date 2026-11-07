@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../firebase/analytics_service.dart';
@@ -18,7 +18,7 @@ import '../widgets/ktx_loading_state.dart';
 import '../widgets/screen_state.dart';
 import 'store_detail_screen.dart';
 
-/// Màn hình S1: Trang chủ & Tìm kiếm Quán ăn Gom đơn KTX (Figma Prototype Standard)
+/// MÃ n hÃ¬nh S1: Trang chá»§ & TÃ¬m kiáº¿m QuÃ¡n Äƒn Gom Ä‘Æ¡n KTX (Figma Prototype Standard)
 class HomeScreen extends StatefulWidget {
   final VoidCallback onOpenNotifications;
   final VoidCallback onOpenCheckout;
@@ -42,22 +42,42 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _searchCtrl = TextEditingController();
   final Set<int> _favoriteStoreIds = {1};
+  String? _selectedCategory;
+
+  void _toggleCategoryFilter(
+      String categoryName, String keyword, HomeViewModel homeVm) {
+    if (_selectedCategory == categoryName) {
+      // Äang lá»c -> Báº¥m láº§n ná»¯a Ä‘á»ƒ Bá»Ž Lá»ŒC
+      setState(() {
+        _selectedCategory = null;
+        _searchCtrl.clear();
+      });
+      homeVm.searchStores('');
+    } else {
+      // ChÆ°a lá»c -> Báº¥m Ä‘á»ƒ lá»c vÃ  nÃºt lÃºn xuá»‘ng
+      setState(() {
+        _selectedCategory = categoryName;
+        _searchCtrl.text = categoryName;
+      });
+      homeVm.searchStores(keyword);
+    }
+  }
 
   static const _zones = [
-    {'code': 'ALL', 'label': 'Tất cả', 'icon': '🔥', 'dotColor': null},
+    {'code': 'ALL', 'label': 'Táº¥t cáº£', 'icon': 'ðŸ”¥', 'dotColor': null},
     {
       'code': 'KTX_KHU_B',
       'label': 'KTX Khu B',
-      'icon': '•',
+      'icon': 'â€¢',
       'dotColor': 0xFF10B981,
     },
     {
       'code': 'KTX_KHU_A',
       'label': 'KTX Khu A',
-      'icon': '•',
+      'icon': 'â€¢',
       'dotColor': 0xFFF59E0B,
     },
-    {'code': 'LANG_DH', 'label': 'Làng ĐH', 'icon': '🎓', 'dotColor': null},
+    {'code': 'LANG_DH', 'label': 'LÃ ng ÄH', 'icon': 'ðŸŽ“', 'dotColor': null},
   ];
 
   @override
@@ -89,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Chọn điểm giao nhận chuẩn KTX',
+                'Chá»n Ä‘iá»ƒm giao nháº­n chuáº©n KTX',
                 style: AppTypography.heading3,
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -137,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.background,
       appBar: KtxAppBar(
         variant: KtxAppBarVariant.homeHeader,
-        subtitle: 'GIAO ĐẾN',
+        subtitle: 'GIAO Äáº¾N',
         title: homeVm.selectedPickupLocation,
         unreadNotificationCount:
             homeVm.unreadNotificationCount + demoVm.unreadCount,
@@ -157,32 +177,32 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
-            // 1. Lời chào người dùng chuẩn Figma
+            // 1. Lá»i chÃ o ngÆ°á»i dÃ¹ng chuáº©n Figma
             _buildGreetingBar(greetingName),
             const SizedBox(height: AppSpacing.sm + 2),
 
-            // 2. Thanh tìm kiếm & lọc quán
+            // 2. Thanh tÃ¬m kiáº¿m & lá»c quÃ¡n
             _buildSearchBar(homeVm),
             const SizedBox(height: AppSpacing.md),
 
-            // 3. Banner Ca gom trưa đếm ngược
+            // 3. Banner Ca gom trÆ°a Ä‘áº¿m ngÆ°á»£c
             if (remoteConfig.promoBannerEnabled)
               _buildBatchCard(remoteConfig.promoBannerText),
             const SizedBox(height: AppSpacing.md),
 
-            // 4. Dải chip chọn phân khu KTX
+            // 4. Dáº£i chip chá»n phÃ¢n khu KTX
             _buildZoneChips(homeVm),
             const SizedBox(height: AppSpacing.lg),
 
-            // 5. Lưới 6 danh mục Món ngon sinh viên (Figma Grid 2x3)
+            // 5. LÆ°á»›i 6 danh má»¥c MÃ³n ngon sinh viÃªn (Figma Grid 2x3)
             _buildCategorySection(homeVm),
             const SizedBox(height: AppSpacing.lg),
 
-            // 6. Tiêu đề Quán quen được yêu thích
+            // 6. TiÃªu Ä‘á» QuÃ¡n quen Ä‘Æ°á»£c yÃªu thÃ­ch
             _buildSectionHeader(),
             const SizedBox(height: AppSpacing.sm),
 
-            // 7. Danh sách thẻ quán ăn dạng dọc chuẩn Figma
+            // 7. Danh sÃ¡ch tháº» quÃ¡n Äƒn dáº¡ng dá»c chuáº©n Figma
             _buildStoreList(homeVm),
           ],
         ),
@@ -208,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 2),
             Text(
-              'Chào $userName! Trưa nay ăn gì?',
+              'ChÃ o $userName! TrÆ°a nay Äƒn gÃ¬?',
               style: const TextStyle(
                 color: Color(0xFF1E293B),
                 fontWeight: FontWeight.w800,
@@ -311,42 +331,48 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCategorySection(HomeViewModel homeVm) {
     final categories = [
       {
-        'name': 'Cơm trưa',
-        'subtitle': 'Từ 25k',
+        'name': 'CÆ¡m trÆ°a',
+        'keyword': 'cÆ¡m',
+        'subtitle': 'Tá»« 25k',
         'icon': Icons.lunch_dining_rounded,
         'bgColor': const Color(0xFFFFF7ED),
         'iconColor': const Color(0xFFEA580C),
       },
       {
-        'name': 'Bún phở',
-        'subtitle': 'Nóng hổi',
+        'name': 'BÃºn phá»Ÿ',
+        'keyword': 'bÃºn',
+        'subtitle': 'NÃ³ng há»•i',
         'icon': Icons.ramen_dining_rounded,
         'bgColor': const Color(0xFFFEF3C7),
         'iconColor': const Color(0xFFD97706),
       },
       {
-        'name': 'Trà sữa',
-        'subtitle': 'Ưu đãi',
+        'name': 'TrÃ  sá»¯a',
+        'keyword': 'trÃ ',
+        'subtitle': 'Æ¯u Ä‘Ã£i',
         'icon': Icons.local_cafe_rounded,
         'bgColor': const Color(0xFFFDF2F8),
         'iconColor': const Color(0xFFDB2777),
       },
       {
-        'name': 'Ăn vặt',
-        'subtitle': 'Bánh tráng...',
+        'name': 'Ä‚n váº·t',
+        'keyword': 'Äƒn váº·t',
+        'subtitle': 'BÃ¡nh trÃ¡ng...',
         'icon': Icons.fastfood_rounded,
         'bgColor': const Color(0xFFFEF9C3),
         'iconColor': const Color(0xFFCA8A04),
       },
       {
-        'name': 'Bánh mì',
+        'name': 'BÃ¡nh mÃ¬',
+        'keyword': 'bÃ¡nh mÃ¬',
         'subtitle': 'Giao nhanh',
         'icon': Icons.bakery_dining_rounded,
         'bgColor': const Color(0xFFFFE4E6),
         'iconColor': const Color(0xFFE11D48),
       },
       {
-        'name': 'Nước ép',
+        'name': 'NÆ°á»›c Ã©p',
+        'keyword': 'nÆ°á»›c',
         'subtitle': 'Healthy',
         'icon': Icons.local_bar_rounded,
         'bgColor': const Color(0xFFECFDF5),
@@ -355,67 +381,134 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     Widget buildCatCard(Map<String, dynamic> cat) {
-      return InkWell(
-        onTap: () => homeVm.searchStores(cat['name'] as String),
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFF1F5F9)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 4,
-                offset: const Offset(0, 1),
+      final catName = cat['name'] as String;
+      final keyword = (cat['keyword'] as String?) ?? catName;
+      final isSelected = _selectedCategory == catName;
+
+      return Semantics(
+        button: true,
+        selected: isSelected,
+        label: 'Lá»c $catName ${isSelected ? "(Äang chá»n - cháº¡m Ä‘á»ƒ bá» lá»c)" : ""}',
+        child: InkWell(
+          onTap: () => _toggleCategoryFilter(catName, keyword, homeVm),
+          borderRadius: BorderRadius.circular(14),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeInOut,
+            // Hiá»‡u á»©ng váº­t lÃ½ lÃºn xuá»‘ng khi Ä‘ang lá»c (Pressed-down state)
+            margin: EdgeInsets.only(
+              top: isSelected ? 3.0 : 0.0,
+              bottom: isSelected ? 0.0 : 3.0,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: BoxDecoration(
+              // MÃ u ná»n: Chuyá»ƒn sang cam nháº¡t áº¥m khi Ä‘ang chá»n
+              color: isSelected ? const Color(0xFFFFF4EC) : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              // Viá»n cam Ä‘áº­m ná»•i báº­t khi Ä‘ang lá»c
+              border: Border.all(
+                color: isSelected
+                    ? const Color(0xFFFF521B)
+                    : const Color(0xFFF1F5F9),
+                width: isSelected ? 1.8 : 1.0,
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: cat['bgColor'] as Color,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  cat['icon'] as IconData,
-                  color: cat['iconColor'] as Color,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      cat['name'] as String,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: Color(0xFF1E293B),
+              // Äá»• bÃ³ng lÃºn pháº³ng khi Ä‘Æ°á»£c áº¥n xuá»‘ng
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFFFF521B).withValues(alpha: 0.18),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      cat['subtitle'] as String,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF94A3B8),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+            ),
+            child: Row(
+              children: [
+                // Khung Icon danh má»¥c
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFFFF521B)
+                        : (cat['bgColor'] as Color),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFFFF521B)
+                                  .withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Icon(
+                    cat['icon'] as IconData,
+                    color:
+                        isSelected ? Colors.white : (cat['iconColor'] as Color),
+                    size: 18,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              catName,
+                              style: TextStyle(
+                                fontWeight: isSelected
+                                    ? FontWeight.w800
+                                    : FontWeight.bold,
+                                fontSize: 12,
+                                color: isSelected
+                                    ? const Color(0xFFFF521B)
+                                    : const Color(0xFF1E293B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              size: 12,
+                              color: Color(0xFFFF521B),
+                            ),
+                        ],
+                      ),
+                      Text(
+                        isSelected ? 'â€¢ Äang lá»c' : (cat['subtitle'] as String),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected
+                              ? const Color(0xFFEA580C)
+                              : const Color(0xFF94A3B8),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -439,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(width: 8),
                 const Text(
-                  'MÓN NGON SINH VIÊN',
+                  'MÃ“N NGON SINH VIÃŠN',
                   style: TextStyle(
                     color: Color(0xFF1E293B),
                     fontWeight: FontWeight.w800,
@@ -450,11 +543,19 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             InkWell(
-              onTap: () => homeVm.searchStores(''),
-              child: const Text(
-                'Xem tất cả (12)',
+              onTap: () {
+                setState(() {
+                  _selectedCategory = null;
+                  _searchCtrl.clear();
+                });
+                homeVm.searchStores('');
+              },
+              child: Text(
+                _selectedCategory != null ? 'Bá» lá»c âœ•' : 'Xem táº¥t cáº£ (12)',
                 style: TextStyle(
-                  color: Color(0xFFFF521B),
+                  color: _selectedCategory != null
+                      ? const Color(0xFFDC2626)
+                      : const Color(0xFFFF521B),
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -499,7 +600,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 18),
                 SizedBox(width: 6),
                 Text(
-                  'Quán quen được yêu thích',
+                  'QuÃ¡n quen Ä‘Æ°á»£c yÃªu thÃ­ch',
                   style: TextStyle(
                     color: Color(0xFF1E293B),
                     fontWeight: FontWeight.w800,
@@ -510,7 +611,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 2),
             const Text(
-              'Sinh viên KTX đặt nhiều nhất tuần này',
+              'Sinh viÃªn KTX Ä‘áº·t nhiá»u nháº¥t tuáº§n nÃ y',
               style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
             ),
           ],
@@ -524,7 +625,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Text(
-                'Khu vực KTX',
+                'Khu vá»±c KTX',
                 style: TextStyle(
                   color: Color(0xFF64748B),
                   fontWeight: FontWeight.bold,
@@ -539,7 +640,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 size: 18,
                 color: AppColors.error,
               ),
-              tooltip: 'Khiếu nại S8',
+              tooltip: 'Khiáº¿u náº¡i S8',
               onPressed: widget.onOpenDispute,
             ),
           ],
@@ -572,7 +673,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   );
                 },
                 decoration: InputDecoration(
-                  hintText: 'Tìm món ngon, cơm, bún, trà sữa...',
+                  hintText: 'TÃ¬m mÃ³n ngon, cÆ¡m, bÃºn, trÃ  sá»¯a...',
                   hintStyle: const TextStyle(
                     color: Color(0xFF94A3B8),
                     fontSize: 14,
@@ -586,12 +687,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icons.mic_none_rounded,
                       color: Color(0xFF94A3B8),
                     ),
-                    tooltip: 'Tìm kiếm bằng giọng nói',
+                    tooltip: 'TÃ¬m kiáº¿m báº±ng giá»ng nÃ³i',
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text(
-                            'Tìm kiếm giọng nói đang được kết nối.',
+                            'TÃ¬m kiáº¿m giá»ng nÃ³i Ä‘ang Ä‘Æ°á»£c káº¿t ná»‘i.',
                           ),
                           duration: Duration(seconds: 1),
                         ),
@@ -623,7 +724,7 @@ class _HomeScreenState extends State<HomeScreen> {
               color: AppColors.primary,
               size: 22,
             ),
-            tooltip: 'Lọc quán ăn',
+            tooltip: 'Lá»c quÃ¡n Äƒn',
             onPressed: () {
               final term = _searchCtrl.text;
               homeVm.searchStores(term);
@@ -660,13 +761,13 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Ca gom + Badge đang mở
+          // Header: Ca gom + Badge Ä‘ang má»Ÿ
           Row(
             children: [
               const Icon(Icons.schedule_rounded, color: Colors.white, size: 18),
               const SizedBox(width: 8),
               const Text(
-                'Ca Trưa (11:30 - 12:00)',
+                'Ca TrÆ°a (11:30 - 12:00)',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -696,7 +797,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(width: 6),
                     const Text(
-                      'ĐANG MỞ',
+                      'ÄANG Má»ž',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -711,7 +812,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Body: Thời gian đếm ngược & Hạn chốt gom
+          // Body: Thá»i gian Ä‘áº¿m ngÆ°á»£c & Háº¡n chá»‘t gom
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -720,7 +821,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Thời gian gom còn lại',
+                      'Thá»i gian gom cÃ²n láº¡i',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 12,
@@ -729,7 +830,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        _buildTimeBox('00', 'GIỜ'),
+                        _buildTimeBox('00', 'GIá»œ'),
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 3),
                           child: Text(
@@ -741,7 +842,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-                        _buildTimeBox('28', 'PHÚT'),
+                        _buildTimeBox('28', 'PHÃšT'),
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 3),
                           child: Text(
@@ -753,7 +854,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-                        _buildTimeBox('45', 'GIÂY'),
+                        _buildTimeBox('45', 'GIÃ‚Y'),
                       ],
                     ),
                   ],
@@ -770,7 +871,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      'Hạn chốt gom',
+                      'Háº¡n chá»‘t gom',
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.85),
                         fontSize: 12,
@@ -778,7 +879,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 2),
                     const Text(
-                      'Chốt lúc 10:45',
+                      'Chá»‘t lÃºc 10:45',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -796,7 +897,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Text(
-                        'Trưa nay',
+                        'TrÆ°a nay',
                         style: TextStyle(
                           color: Color(0xFF7C2D12),
                           fontWeight: FontWeight.bold,
@@ -811,7 +912,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 14),
 
-          // Footer: Số đơn đã gom & nút xem chi tiết
+          // Footer: Sá»‘ Ä‘Æ¡n Ä‘Ã£ gom & nÃºt xem chi tiáº¿t
           Row(
             children: [
               Container(
@@ -834,9 +935,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 text: const TextSpan(
                   style: TextStyle(color: Colors.white, fontSize: 13),
                   children: [
-                    TextSpan(text: 'Đã gom '),
+                    TextSpan(text: 'ÄÃ£ gom '),
                     TextSpan(
-                      text: '42 đơn',
+                      text: '42 Ä‘Æ¡n',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     TextSpan(text: ' Khu B'),
@@ -859,7 +960,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Xem chi tiết',
+                      'Xem chi tiáº¿t',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -924,9 +1025,9 @@ class _HomeScreenState extends State<HomeScreen> {
         onRetry: homeVm.loadHomeData,
       ),
       StateEmpty(:final message) => KtxEmptyState(
-        title: 'Không tìm thấy quán ăn',
+        title: 'KhÃ´ng tÃ¬m tháº¥y quÃ¡n Äƒn',
         message: message,
-        actionLabel: 'Xem tất cả quán',
+        actionLabel: 'Xem táº¥t cáº£ quÃ¡n',
         onAction: () {
           _searchCtrl.clear();
           homeVm.searchStores('');
@@ -961,7 +1062,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Ảnh lớn tràn viền trên + Badges
+            // 1. áº¢nh lá»›n trÃ n viá»n trÃªn + Badges
             Stack(
               children: [
                 ClipRRect(
@@ -980,10 +1081,50 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _buildStorePlaceholder(),
                           )
                         : _buildStorePlaceholder(),
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: () => _openStoreDetail(store),
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. áº¢nh lá»›n trÃ n viá»n trÃªn + Badges
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: SizedBox(
+                      height: 145,
+                      width: double.infinity,
+                      child: store.avatarUrl != null &&
+                              store.avatarUrl!.isNotEmpty
+                          ? Image.network(
+                              store.avatarUrl!,
+                              fit: BoxFit.cover,
+                              cacheWidth: 600,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _buildStorePlaceholder(),
+                            )
+                          : _buildStorePlaceholder(),
+                    ),
                   ),
-                ),
 
-                // Badges góc trên bên trái
+                // Badges gÃ³c trÃªn bÃªn trÃ¡i
                 Positioned(
                   top: 8,
                   left: 8,
@@ -1019,7 +1160,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // Badge góc dưới bên phải (Chốt giờ / Giao tới)
+                // Badge gÃ³c dÆ°á»›i bÃªn pháº£i (Chá»‘t giá» / Giao tá»›i)
                 if (store.overlayInfo.isNotEmpty)
                   Positioned(
                     bottom: 8,
@@ -1046,13 +1187,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
 
-            // 2. Nội dung chi tiết
+            // 2. Ná»™i dung chi tiáº¿t
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Tên quán + Nút tim yêu thích
+                  // TÃªn quÃ¡n + NÃºt tim yÃªu thÃ­ch
                   Row(
                     children: [
                       Expanded(
@@ -1094,7 +1235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 4),
 
-                  // Đánh giá sao + Số review + Khoảng cách/Thời gian
+                  // ÄÃ¡nh giÃ¡ sao + Sá»‘ review + Khoáº£ng cÃ¡ch/Thá»i gian
                   Row(
                     children: [
                       const Icon(
@@ -1112,21 +1253,21 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const Text(
-                        ' • ',
+                        ' â€¢ ',
                         style: TextStyle(
                           color: Color(0xFF94A3B8),
                           fontSize: 12,
                         ),
                       ),
                       Text(
-                        '${store.ratingCount}+ đánh giá',
+                        '${store.ratingCount}+ Ä‘Ã¡nh giÃ¡',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF64748B),
                         ),
                       ),
                       const Text(
-                        ' • ',
+                        ' â€¢ ',
                         style: TextStyle(
                           color: Color(0xFF94A3B8),
                           fontSize: 12,
@@ -1148,7 +1289,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // Mức giá sinh viên + Nút Chọn món +
+                  // Má»©c giÃ¡ sinh viÃªn + NÃºt Chá»n mÃ³n +
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -1188,7 +1329,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             border: Border.all(color: const Color(0xFFFFD8BF)),
                           ),
                           child: const Text(
-                            'Chọn món +',
+                            'Chá»n mÃ³n +',
                             style: TextStyle(
                               color: Color(0xFFFF521B),
                               fontWeight: FontWeight.bold,
@@ -1205,8 +1346,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStorePlaceholder() {
     return Container(

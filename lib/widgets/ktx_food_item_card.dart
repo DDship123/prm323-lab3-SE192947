@@ -84,6 +84,8 @@ class KtxFoodItemCard extends StatelessWidget {
                   imageUrl!,
                   width: width,
                   height: height,
+                  cacheWidth: (width * 2).toInt(),
+                  cacheHeight: (height * 2).toInt(),
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => const Icon(
                     Icons.fastfood_rounded,

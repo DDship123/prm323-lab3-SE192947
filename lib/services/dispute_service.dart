@@ -65,8 +65,21 @@ class DisputeService {
     }
   }
 
-  /// Lấy danh sách toàn bộ khiếu nại cho Admin Web
+  /// Lấy danh sách toàn bộ khiếu nại cho Admin Web (API-011: /api/v1/admin/disputes)
   Future<List<DisputeModel>> fetchDisputes() async {
+    final url = Uri.parse('${ApiConfig.baseUrl}/admin/disputes');
+    try {
+      final response = await _client.get(
+        url,
+        headers: ApiConfig.headers(userId: '4'),
+      ).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final utf8Body = utf8.decode(response.bodyBytes);
+        final jsonMap = jsonDecode(utf8Body) as Map<String, dynamic>;
+        final rawList = (jsonMap['data'] as List?) ?? [];
+        return rawList.map((e) => DisputeModel.fromJson(e as Map<String, dynamic>)).toList();
+      }
+    } catch (_) {}
     return fetchMyDisputes(idToken: null, userId: '4');
   }
 

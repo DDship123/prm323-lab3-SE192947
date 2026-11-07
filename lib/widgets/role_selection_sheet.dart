@@ -48,36 +48,40 @@ class RoleSelectionBottomSheet extends StatelessWidget {
             const SizedBox(height: 16),
             ...UserAppRole.values.map((role) {
               final isSelected = role == currentRole;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Material(
                   color: isSelected ? AppColors.primaryLight.withOpacity(0.3) : AppColors.surface,
                   borderRadius: AppRadius.roundedMd,
-                  border: Border.all(
-                    color: isSelected ? AppColors.primary : AppColors.border,
-                    width: isSelected ? 1.5 : 1.0,
-                  ),
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: isSelected ? AppColors.primary : AppColors.surfaceVariant,
-                    child: Icon(
-                      _getRoleIcon(role),
-                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppRadius.roundedMd,
+                    side: BorderSide(
+                      color: isSelected ? AppColors.primary : AppColors.border,
+                      width: isSelected ? 1.5 : 1.0,
                     ),
                   ),
-                  title: Text(
-                    role.labelVi,
-                    style: AppTypography.bodyMedium.copyWith(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedMd),
+                    leading: CircleAvatar(
+                      backgroundColor: isSelected ? AppColors.primary : AppColors.surfaceVariant,
+                      child: Icon(
+                        _getRoleIcon(role),
+                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                      ),
                     ),
+                    title: Text(
+                      role.labelVi,
+                      style: AppTypography.bodyMedium.copyWith(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? AppColors.primaryDark : AppColors.textPrimary,
+                      ),
+                    ),
+                    subtitle: Text(role.defaultEmail, style: AppTypography.bodySmall),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                        : null,
+                    onTap: () => onRoleSelected(role),
                   ),
-                  subtitle: Text(role.defaultEmail, style: AppTypography.bodySmall),
-                  trailing: isSelected
-                      ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
-                      : null,
-                  onTap: () => onRoleSelected(role),
                 ),
               );
             }),

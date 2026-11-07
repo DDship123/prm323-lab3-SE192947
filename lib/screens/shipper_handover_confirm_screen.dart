@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/shipper_batch_model.dart';
+import '../services/delivery_handshake_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -32,7 +33,10 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
   @override
   void initState() {
     super.initState();
-    _pinController.text = widget.order.pickupPin ?? '4567';
+    // BẢO MẬT: Không tự động điền trước mã PIN.
+    // Ô mã PIN bắt buộc trống rỗng khi mở màn hình.
+    // Shipper phải quét mã QR của SV hoặc SV tự đọc 4 số cho shipper nhập tay.
+    _pinController.text = '';
   }
 
   @override
@@ -41,29 +45,81 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
     super.dispose();
   }
 
-  Future<void> _handleConfirmDelivery() async {
-    setState(() => _isLoading = true);
-    final success = await context.read<ShipperViewModel>().confirmDelivery(
-          orderId: widget.order.orderId,
-          shipperId: widget.shipperId,
-        );
-    setState(() => _isLoading = false);
+  String get _expectedPin {
+    if (widget.order.pickupPin != null && widget.order.pickupPin!.isNotEmpty) {
+      return widget.order.pickupPin!;
+    }
+    return '5450';
+  }
 
-    if (mounted && success) {
-      Navigator.pop(context, true);
+  Future<void> _handleConfirmDelivery() async {
+    final enteredPin = _pinController.text.trim();
+    if (enteredPin.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đã giao thành công đơn #${widget.order.orderCode} cho ${widget.order.customerName}!'),
-          backgroundColor: AppColors.success,
+        const SnackBar(
+          content: Text('Vui lòng Quét mã QR hoặc Nhập mã PIN 4 số của Sinh viên!'),
+          backgroundColor: AppColors.error,
+          duration: Duration(seconds: 2),
         ),
       );
+      return;
     }
+
+    if (enteredPin != _expectedPin) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Mã PIN "$enteredPin" không chính xác! Vui lòng hỏi sinh viên mã 4 số trên ứng dụng của họ.'),
+          backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final shipperVm = context.read<ShipperViewModel>();
+    final handshake = context.read<DeliveryHandshakeService>();
+
+    handshake.confirmByShipper(widget.order.orderId, snapshot: widget.order);
+    handshake.forceCompleteHandover(widget.order.orderId, snapshot: widget.order);
+    await handshake.saveToStorage();
+
+    await shipperVm.confirmDelivery(
+      orderId: widget.order.orderId,
+      shipperId: widget.shipperId,
+    );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      navigator.pop(true);
+    }
+
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Giao hàng thành công đơn #${widget.order.orderCode}! Đã cộng +15.000đ vào ví & chuyển sang Đơn đã hoàn tất.',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   void _openQrScanner() {
     final expectedQr = widget.order.pickupQrCode ?? 'QR_KTX_${widget.order.orderId}';
-    final expectedPin = widget.order.pickupPin ?? '4567';
-    final scanController = TextEditingController(text: expectedQr);
 
     showModalBottomSheet(
       context: context,
@@ -112,7 +168,7 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
             Container(
               height: 200,
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.85),
+                color: Colors.black.withOpacity(0.85),
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(color: AppColors.primary, width: 2),
               ),
@@ -154,7 +210,7 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'Mã QR hợp lệ của đơn: $expectedQr (Mã PIN: $expectedPin)',
+              'Quét mã QR trên máy sinh viên để hệ thống tự động trích xuất mã 4 số đối soát',
               style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
@@ -164,10 +220,12 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
               icon: Icons.check_circle_rounded,
               onPressed: () {
                 Navigator.pop(ctx);
-                _pinController.text = expectedPin;
+                setState(() {
+                  _pinController.text = _expectedPin;
+                });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('✅ Đã nhận diện mã QR: $expectedQr! Đang xác thực đơn hàng...'),
+                    content: Text('✅ Đã nhận diện mã QR: $expectedQr! Tự động điền mã PIN: $_expectedPin'),
                     backgroundColor: AppColors.success,
                     duration: const Duration(seconds: 2),
                   ),
@@ -190,6 +248,8 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
   Widget build(BuildContext context) {
     final o = widget.order;
     final isCod = o.paymentMethod.toUpperCase() == 'COD';
+    final handshake = context.watch<DeliveryHandshakeService>();
+    final isStudentConfirmed = handshake.isStudentConfirmed(o.orderId);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -206,6 +266,7 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
+          // Thẻ thông tin người nhận
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
@@ -265,6 +326,19 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
                 const SizedBox(height: 6),
                 Row(
                   children: [
+                    const Icon(Icons.storefront_rounded, size: 18, color: AppColors.textSecondary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        o.storeName,
+                        style: AppTypography.caption.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
                     const Icon(Icons.location_on, size: 18, color: AppColors.textSecondary),
                     const SizedBox(width: 8),
                     Expanded(
@@ -272,10 +346,100 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
                     ),
                   ],
                 ),
+                if (o.itemSummaries.isNotEmpty) ...[
+                  const Divider(height: 18),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.shopping_bag_outlined, size: 16, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Món trong đơn: ${o.itemSummaries.join(', ')}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.md),
+
+          // Thẻ quy trình đối soát 2 chiều
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.swap_horiz_rounded, size: 18, color: Color(0xFFFF521B)),
+                    SizedBox(width: 6),
+                    Text(
+                      'Cơ chế đối soát 2 chiều (Handshake):',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(
+                      isStudentConfirmed ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                      size: 16,
+                      color: isStudentConfirmed ? AppColors.success : const Color(0xFF94A3B8),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        isStudentConfirmed
+                            ? '1. Sinh viên: Đã bấm "Xác nhận đã nhận hàng"'
+                            : '1. Sinh viên: Chưa bấm xác nhận trên app',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isStudentConfirmed ? FontWeight.bold : FontWeight.normal,
+                          color: isStudentConfirmed ? AppColors.success : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(
+                      _pinController.text.trim() == _expectedPin ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                      size: 16,
+                      color: _pinController.text.trim() == _expectedPin ? AppColors.success : const Color(0xFF94A3B8),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _pinController.text.trim() == _expectedPin
+                            ? '2. Shipper: Đã đối soát mã QR / PIN thành công'
+                            : '2. Shipper: Cần quét QR hoặc nhập mã PIN 4 số',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: _pinController.text.trim() == _expectedPin ? FontWeight.bold : FontWeight.normal,
+                          color: _pinController.text.trim() == _expectedPin ? AppColors.success : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Khung số tiền cần thu & nhập mã PIN
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
@@ -313,16 +477,19 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Text('Mã PIN nhận hàng (4 số sinh viên cung cấp)', style: AppTypography.bodyMedium),
+                const Text('Mã PIN nhận hàng (4 số sinh viên cung cấp)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _pinController,
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
+                  maxLength: 4,
+                  onChanged: (_) => setState(() {}),
                   style: const TextStyle(fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: '----',
+                    counterText: '',
                   ),
                 ),
               ],
@@ -339,4 +506,3 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
     );
   }
 }
-

@@ -102,9 +102,7 @@ class ShipperViewModel extends ChangeNotifier {
       shipperId: shipperId,
       idToken: idToken,
     );
-    if (success) {
-      await fetchBatch(shipperId: shipperId, idToken: idToken);
-    }
+    await fetchBatch(shipperId: shipperId, idToken: idToken);
     return success;
   }
 

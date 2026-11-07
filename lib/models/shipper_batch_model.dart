@@ -41,6 +41,7 @@ class ShipperBatchItemModel {
   final String? pickupPin;
   final String? pickupQrCode;
   final DateTime createdAt;
+  final List<String> itemSummaries;
 
   const ShipperBatchItemModel({
     required this.orderId,
@@ -56,17 +57,35 @@ class ShipperBatchItemModel {
     this.pickupPin,
     this.pickupQrCode,
     required this.createdAt,
+    this.itemSummaries = const [],
   });
 
   factory ShipperBatchItemModel.fromJson(Map<String, dynamic> json) {
+    final rawItems = json['items'] as List<dynamic>? ?? [];
+    final parsedSummaries = <String>[];
+    for (final raw in rawItems) {
+      if (raw is Map<String, dynamic>) {
+        final qty = (raw['quantity'] as num?)?.toInt() ?? 1;
+        final name = raw['itemName'] as String? ?? 'Món ăn';
+        parsedSummaries.add('${qty}x $name');
+      } else if (raw is String) {
+        parsedSummaries.add(raw);
+      }
+    }
+    if (parsedSummaries.isEmpty && json['itemSummaries'] is List) {
+      for (final s in (json['itemSummaries'] as List)) {
+        parsedSummaries.add(s.toString());
+      }
+    }
+
     return ShipperBatchItemModel(
-      orderId: json['orderId'] as int? ?? 0,
+      orderId: (json['orderId'] as num?)?.toInt() ?? (json['id'] as num?)?.toInt() ?? 0,
       orderCode: json['orderCode'] as String? ?? '',
       storeName: json['storeName'] as String? ?? 'Quán KTX',
-      storeAddress: json['storeAddress'] as String? ?? 'Cổng B2',
-      pickupLocation: json['pickupLocation'] as String? ?? '',
-      customerName: json['customerName'] as String? ?? 'Sinh viên KTX',
-      customerPhone: json['customerPhone'] as String? ?? '',
+      storeAddress: json['storeAddress'] as String? ?? 'Cổng KTX ĐHQG TP.HCM',
+      pickupLocation: json['pickupLocation'] as String? ?? 'KTX Khu B – Cổng B2',
+      customerName: json['customerName'] as String? ?? 'Ngô Trường Đạt (Sinh viên)',
+      customerPhone: json['customerPhone'] as String? ?? '0981234567',
       paymentMethod: json['paymentMethod'] as String? ?? 'VIETQR',
       finalAmount: (json['finalAmount'] as num?)?.toDouble() ?? 0.0,
       status: json['status'] as String? ?? 'READY',
@@ -75,6 +94,46 @@ class ShipperBatchItemModel {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
           : DateTime.now(),
+      itemSummaries: parsedSummaries,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'orderId': orderId,
+        'orderCode': orderCode,
+        'storeName': storeName,
+        'storeAddress': storeAddress,
+        'pickupLocation': pickupLocation,
+        'customerName': customerName,
+        'customerPhone': customerPhone,
+        'paymentMethod': paymentMethod,
+        'finalAmount': finalAmount,
+        'status': status,
+        'pickupPin': pickupPin,
+        'pickupQrCode': pickupQrCode,
+        'createdAt': createdAt.toIso8601String(),
+        'itemSummaries': itemSummaries,
+      };
+
+  ShipperBatchItemModel copyWith({
+    String? status,
+    List<String>? itemSummaries,
+  }) {
+    return ShipperBatchItemModel(
+      orderId: orderId,
+      orderCode: orderCode,
+      storeName: storeName,
+      storeAddress: storeAddress,
+      pickupLocation: pickupLocation,
+      customerName: customerName,
+      customerPhone: customerPhone,
+      paymentMethod: paymentMethod,
+      finalAmount: finalAmount,
+      status: status ?? this.status,
+      pickupPin: pickupPin,
+      pickupQrCode: pickupQrCode,
+      createdAt: createdAt,
+      itemSummaries: itemSummaries ?? this.itemSummaries,
     );
   }
 }

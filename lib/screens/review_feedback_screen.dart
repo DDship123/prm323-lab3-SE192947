@@ -209,9 +209,13 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
                             ),
                           ),
                           const SizedBox(height: 2),
-                          const Text(
-                            '1x Cơm sườn bì chả đặc biệt, 1x Canh rong biển',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          Text(
+                            widget.order.items.isNotEmpty
+                                ? widget.order.items
+                                    .map((i) => '${i.quantity}x ${i.itemName}')
+                                    .join(', ')
+                                : 'Đơn hàng tại ${widget.order.storeName}',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                           ),
                         ],
                       ),

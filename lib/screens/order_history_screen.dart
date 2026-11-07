@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/order_model.dart';
 import '../viewmodels/order_tracking_vm.dart';
@@ -7,12 +8,9 @@ import 'live_order_tracking_screen.dart';
 import 'pickup_qr_code_screen.dart';
 import 'notification_board_screen.dart';
 import 'group_cart_checkout_screen.dart';
+import 'review_feedback_screen.dart';
 
 /// Màn hình Lịch Sử Đơn Hàng chuẩn 100% Figma
-/// Hỗ trợ đầy đủ:
-/// - Danh sách đơn hàng đang giao KTX-8829B + Đơn gần đây (Hình 1 mới)
-/// - Trạng thái rỗng: "Chưa có đơn hàng nào cần nhận" (Hình 1 cũ)
-/// - Trạng thái mất kết nối máy chủ (Hình 2 cũ)
 class OrderHistoryScreen extends StatefulWidget {
   final bool initialOfflineDemo;
 
@@ -26,9 +24,10 @@ class OrderHistoryScreen extends StatefulWidget {
 }
 
 class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
-  int _selectedTab = 1; // 0: Tất cả 18, 1: Đang diễn ra 1, 2: Hoàn tất 15
-  int _viewMode = 0; // 0: Có đơn hàng (Figma mới), 1: Trạng thái rỗng, 2: Mất kết nối mạng
+  int _selectedTab = 0; // 0: Tất cả, 1: Đang diễn ra, 2: Hoàn tất
+  int _viewMode = 0; // 0: Có đơn hàng, 1: Trạng thái rỗng, 2: Mất kết nối mạng
   final TextEditingController _searchCtrl = TextEditingController();
+  final _currencyFmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0);
 
   @override
   void initState() {
@@ -93,55 +92,33 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     );
   }
 
-  void _openQrScreen() {
-    final sampleOrder = OrderDetailModel(
-      id: 8829,
-      orderCode: '#KTX-8829B',
-      userId: 1,
-      storeId: 1,
-      storeName: 'Quán Cơm Tấm Cô Ba - ĐHQG',
-      status: 'DELIVERING',
-      paymentStatus: 'PAID',
-      paymentMethod: 'VIETQR',
-      slotTime: '11:30 - 12:00',
-      pickupLocation: 'Bàn số 2 – Cổng KTX Khu B (Đối diện nhà B5)',
-      note: 'Ít mỡ hành, không ớt',
-      subtotalAmount: 45000,
-      deliveryFee: 0,
-      groupDiscountAmount: 0,
-      finalAmount: 45000,
-      pickupQrCode: 'KTX-ORDER-8829B-LETHUYLINH',
-      pickupPin: '4829',
-      createdAt: DateTime.now(),
-      items: const [
-        OrderItemModel(
-          id: 1,
-          menuItemId: 101,
-          itemName: 'Cơm Tấm Sườn Bì Chả Đặc Biệt',
-          unitPrice: 35000,
-          quantity: 1,
-          itemTotalAmount: 35000,
-        ),
-        OrderItemModel(
-          id: 2,
-          menuItemId: 102,
-          itemName: 'Trà Đào Cam Sả Tươi 500ml',
-          unitPrice: 10000,
-          quantity: 1,
-          itemTotalAmount: 10000,
-        ),
-      ],
-    );
-
+  void _openQrScreenForOrder(OrderDetailModel order) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PickupQrCodeScreen(order: sampleOrder),
+        builder: (_) => PickupQrCodeScreen(order: order),
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        context.read<OrderTrackingViewModel>().loadOrderHistory();
+      }
+    });
+  }
+
+  OrderDetailModel? _getLatestActiveOrder() {
+    final state = context.watch<OrderTrackingViewModel>().historyState;
+    if (state is StateSuccess<List<OrderDetailModel>>) {
+      final sorted = List<OrderDetailModel>.from(state.data)
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return sorted
+          .where((o) => o.status != 'DELIVERED' && o.status != 'CANCELLED')
+          .firstOrNull;
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
+    final latestActive = _getLatestActiveOrder();
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -161,6 +138,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         ),
         centerTitle: true,
         actions: [
+          IconButton(
+            tooltip: 'Làm mới lịch sử đơn',
+            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF1E293B)),
+            onPressed: () => context.read<OrderTrackingViewModel>().loadOrderHistory(),
+          ),
           IconButton(
             icon: Stack(
               clipBehavior: Clip.none,
@@ -204,33 +186,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               );
             },
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: InkWell(
-              onTap: () {
-                // Nhấn vào Avatar để chuyển đổi qua lại giữa 3 chế độ: Có đơn -> Rỗng -> Mất mạng
-                setState(() => _viewMode = (_viewMode + 1) % 3);
-                final modeName = switch (_viewMode) {
-                  0 => 'Chế độ 1: Có đơn hàng đang giao & gần đây (Figma)',
-                  1 => 'Chế độ 2: Chưa có đơn hàng (Rỗng)',
-                  _ => 'Chế độ 3: Mất kết nối máy chủ (Offline)',
-                };
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(modeName), duration: const Duration(seconds: 1)),
-                );
-              },
-              child: CircleAvatar(
-                radius: 14,
-                backgroundImage: const NetworkImage(
-                  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-                ),
-                backgroundColor: Colors.grey.shade200,
-              ),
-            ),
-          ),
         ],
       ),
-      bottomNavigationBar: _shouldShowBottomQr()
+      bottomNavigationBar: (_shouldShowBottomQr() && latestActive != null)
           ? Container(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
               color: Colors.white,
@@ -246,11 +204,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: _openQrScreen,
+                  onPressed: () => _openQrScreenForOrder(latestActive),
                   icon: const Icon(Icons.qr_code_2_rounded, size: 20),
-                  label: const Text(
-                    'Mã QR Nhận Hàng',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  label: Text(
+                    'Mã QR Nhận Hàng (${latestActive.orderCode})',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
               ),
@@ -263,7 +221,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   bool _shouldShowBottomQr() {
     if (_viewMode == 1 || _viewMode == 2) return false;
     final state = context.watch<OrderTrackingViewModel>().historyState;
-    return state is StateSuccess;
+    return state is StateSuccess<List<OrderDetailModel>>;
   }
 
   Widget _buildBodyContent() {
@@ -277,12 +235,36 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         ),
       StateError() => _buildOfflineErrorState(),
       StateEmpty() => _buildEmptyState(),
-      StateSuccess() => _buildActiveHistoryList(),
+      StateSuccess(data: final orders) => _buildActiveHistoryList(orders),
     };
   }
 
-  // ==================== CHẾ ĐỘ 1: CÓ ĐƠN HÀNG ĐANG GIAO & GẦN ĐÂY (FIGMA MỚI) ====================
-  Widget _buildActiveHistoryList() {
+  // ==================== DANH SÁCH ĐƠN HÀNG THỰC TẾ TỪ BACKEND ====================
+  Widget _buildActiveHistoryList(List<OrderDetailModel> rawOrders) {
+    final query = _searchCtrl.text.trim().toLowerCase();
+    final sortedOrders = List<OrderDetailModel>.from(rawOrders)
+      ..sort((a, b) {
+        final cmp = b.createdAt.compareTo(a.createdAt);
+        if (cmp != 0) return cmp;
+        return b.id.compareTo(a.id);
+      });
+
+    final filteredOrders = query.isEmpty
+        ? sortedOrders
+        : sortedOrders.where((o) {
+            final matchCode = o.orderCode.toLowerCase().contains(query);
+            final matchStore = o.storeName.toLowerCase().contains(query);
+            final matchItems = o.items.any((i) => i.itemName.toLowerCase().contains(query));
+            return matchCode || matchStore || matchItems;
+          }).toList();
+
+    final activeOrders = filteredOrders
+        .where((o) => o.status != 'DELIVERED' && o.status != 'CANCELLED')
+        .toList();
+    final completedOrders = filteredOrders
+        .where((o) => o.status == 'DELIVERED' || o.status == 'CANCELLED')
+        .toList();
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -301,6 +283,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               Expanded(
                 child: TextField(
                   controller: _searchCtrl,
+                  onChanged: (_) => setState(() {}),
                   decoration: const InputDecoration(
                     hintText: 'Tìm theo mã đơn (#KTX-...) hoặc tên món...',
                     hintStyle: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
@@ -314,7 +297,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         ),
         const SizedBox(height: 12),
 
-        // 2. Banner GOM ĐƠN ĐHQG • THÁNG 10
+        // 2. Banner GOM ĐƠN ĐHQG
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
@@ -354,7 +337,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: const Text(
-                          'THÁNG 10',
+                          'KTX FOOD',
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
@@ -366,16 +349,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   ),
                   const SizedBox(height: 2),
                   RichText(
-                    text: const TextSpan(
-                      style: TextStyle(fontSize: 11, color: Color(0xFF047857)),
+                    text: TextSpan(
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF047857)),
                       children: [
-                        TextSpan(text: 'Đã gom '),
-                        TextSpan(text: '14 đơn', style: TextStyle(fontWeight: FontWeight.bold)),
-                        TextSpan(text: ' • Tiết kiệm '),
+                        const TextSpan(text: 'Tổng cộng '),
                         TextSpan(
-                          text: '168.000đ',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFEA580C)),
+                          text: '${sortedOrders.length} đơn',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
+                        const TextSpan(text: ' • Tiết kiệm phí ship nhờ gom ca KTX'),
                       ],
                     ),
                   ),
@@ -386,427 +368,99 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
         ),
         const SizedBox(height: 14),
 
-        // 3. 3 Tabs: Tất cả 18, Đang diễn ra 1, Hoàn tất 15
+        // 3. 3 Tabs: Tất cả, Đang diễn ra, Hoàn tất
         Row(
           children: [
-            _buildCustomTab(0, 'Tất cả 18', _selectedTab == 0),
+            _buildCustomTab(0, 'Tất cả (${filteredOrders.length})', _selectedTab == 0),
             const SizedBox(width: 8),
-            _buildCustomTab(1, '• Đang diễn ra 1', _selectedTab == 1),
+            _buildCustomTab(1, '• Đang giao (${activeOrders.length})', _selectedTab == 1),
             const SizedBox(width: 8),
-            _buildCustomTab(2, 'Hoàn tất 15', _selectedTab == 2),
+            _buildCustomTab(2, 'Hoàn tất (${completedOrders.length})', _selectedTab == 2),
           ],
         ),
         const SizedBox(height: 18),
 
         // 4. Section: ĐƠN HÀNG ĐANG GIAO
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.delivery_dining_rounded, color: Color(0xFFFF521B), size: 18),
-                SizedBox(width: 6),
-                Text(
-                  'ĐƠN HÀNG ĐANG GIAO',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E293B),
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-            const Text(
-              'Cập nhật 30s trước',
-              style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // Thẻ đơn hàng đang giao KTX-8829B
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        if ((_selectedTab == 0 || _selectedTab == 1) && activeOrders.isNotEmpty) ...[
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Hàng tag: #KTX-8829B, KTX Khu B, CA TRƯA
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF7ED),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      '#KTX-8829B',
-                      style: TextStyle(
-                        color: Color(0xFFFF521B),
-                        fontWeight: FontWeight.w800,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFECFDF5),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.apartment_rounded, color: Color(0xFF059669), size: 12),
-                        SizedBox(width: 3),
-                        Text(
-                          'KTX Khu B',
-                          style: TextStyle(
-                            color: Color(0xFF059669),
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFFFEDD5)),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.access_time_rounded, color: Color(0xFFFF521B), size: 12),
-                        SizedBox(width: 3),
-                        Text(
-                          'CA TRƯA',
-                          style: TextStyle(
-                            color: Color(0xFFFF521B),
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Thông tin quán
-              Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100',
-                      width: 44,
-                      height: 44,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Text(
-                              'Cơm Tấm Cô Ba – ĐHQG',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFECFDF5),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'Bàn số 2',
-                                style: TextStyle(
-                                  color: Color(0xFF059669),
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        const Text(
-                          '📍 Khung giờ: 11:30 – 12:00 • Cổng chính KTX Khu B',
-                          style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              // Trạng thái shipper đang tới cổng (~3 phút)
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF064E3B),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Icon(Icons.local_shipping_rounded, color: Color(0xFF34D399), size: 16),
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Shipper đang tới cổng KTX',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Bác tài đang mang thùng hàng gom tới Bàn số 2',
-                            style: TextStyle(color: Color(0xFFA7F3D0), fontSize: 9.5),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Text(
-                        '~3 phút',
-                        style: TextStyle(
-                          color: Color(0xFF34D399),
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Danh sách món
-              _buildDishItemRow('1x Cơm Tấm Sườn Bì Chả Đặc Biệt', '35.000đ', note: 'Ghi chú: Ít mỡ hành, không ớt'),
-              _buildDishItemRow('1x Trà Đào Cam Sả Tươi (500ml)', '10.000đ'),
-
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Divider(height: 1, color: Color(0xFFF1F5F9)),
-              ),
-
-              // Tổng tiền
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 14),
-                      SizedBox(width: 4),
-                      Text(
-                        'Đã thanh toán VietQR',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF059669),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  RichText(
-                    text: const TextSpan(
-                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                      children: [
-                        TextSpan(text: 'Tổng gom: '),
-                        TextSpan(
-                          text: '45.000đ',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            color: Color(0xFFFF521B),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // 2 Nút: Theo dõi trực tiếp & Mã QR Nhận Hàng
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF334155),
-                        side: const BorderSide(color: Color(0xFFCBD5E1)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                      ),
-                      onPressed: () {
-                        final sampleOrder = OrderDetailModel(
-                          id: 8829,
-                          orderCode: '#KTX-8829B',
-                          userId: 1,
-                          storeId: 1,
-                          storeName: 'Quán Cơm Tấm Cô Ba - ĐHQG',
-                          status: 'DELIVERING',
-                          paymentStatus: 'PAID',
-                          paymentMethod: 'VIETQR',
-                          slotTime: '11:30 - 12:00',
-                          pickupLocation: 'Bàn số 2 – Cổng KTX Khu B (Đối diện nhà B5)',
-                          subtotalAmount: 45000,
-                          deliveryFee: 0,
-                          groupDiscountAmount: 0,
-                          finalAmount: 45000,
-                          pickupQrCode: 'KTX-ORDER-8829B',
-                          pickupPin: '4829',
-                          createdAt: DateTime.now(),
-                        );
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => LiveOrderTrackingScreen(initialOrder: sampleOrder),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.receipt_long_outlined, size: 16),
-                      label: const Text('Theo dõi trực tiếp', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFF7ED),
-                        foregroundColor: const Color(0xFFFF521B),
-                        elevation: 0,
-                        side: const BorderSide(color: Color(0xFFFFEDD5)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                      ),
-                      onPressed: _openQrScreen,
-                      icon: const Icon(Icons.qr_code_2_rounded, size: 16),
-                      label: const Text('Mã QR Nhận Hàng', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  Icon(Icons.delivery_dining_rounded, color: Color(0xFFFF521B), size: 18),
+                  SizedBox(width: 6),
+                  Text(
+                    'ĐƠN HÀNG ĐANG DIỄN RA (MỚI NHẤT Ở TRÊN)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E293B),
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ],
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 20),
+          const SizedBox(height: 10),
+          ...activeOrders.map((order) => Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _buildActiveOrderCard(order),
+              )),
+          const SizedBox(height: 6),
+        ],
 
-        // 5. Section: ĐƠN HÀNG GẦN ĐÂY
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.history_rounded, color: Color(0xFF64748B), size: 18),
-                SizedBox(width: 6),
-                Text(
-                  'ĐƠN HÀNG GẦN ĐÂY',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E293B),
-                    letterSpacing: 0.5,
+        // 5. Section: ĐƠN HÀNG ĐÃ HOÀN TẤT
+        if ((_selectedTab == 0 || _selectedTab == 2) && completedOrders.isNotEmpty) ...[
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.history_rounded, color: Color(0xFF64748B), size: 18),
+                  SizedBox(width: 6),
+                  Text(
+                    'ĐƠN HÀNG ĐÃ HOÀN TẤT / LỊCH SỬ',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1E293B),
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            InkWell(
-              onTap: () {},
-              child: const Text(
-                'Xem theo tháng',
-                style: TextStyle(fontSize: 11, color: Color(0xFFFF521B), fontWeight: FontWeight.bold),
+                ],
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        // Card 1: Bún Đậu Mắm Tôm A-B ĐHQG
-        _buildPastOrderCard(
-          orderCode: '#KTX-8512A',
-          time: 'Hôm qua 18:30',
-          status: 'Giao thành công',
-          isDelivered: true,
-          storeName: 'Bún Đậu Mắm Tôm A-B ĐHQG',
-          dishSummary: '1x Bún đậu tá lả + Nem chua rán, 1x Nước sấu đá',
-          locationAndPrice: 'Cổng Bàn 1 • COD: 48.000đ',
-          extraTag: '★ 5.0 Đã đánh giá',
-          extraTagColor: const Color(0xFFD97706),
-        ),
-        const SizedBox(height: 10),
-
-        // Card 2: Trà Sữa Sinh Viên & Trà Đào
-        _buildPastOrderCard(
-          orderCode: '#KTX-7994B',
-          time: '15/10 • Ca Trưa',
-          status: 'Hoàn tất',
-          isDelivered: true,
-          storeName: 'Trà Sữa Sinh Viên & Trà Đào',
-          dishSummary: '2x Trà sữa trân châu hoàng kim (~30% đường)',
-          locationAndPrice: 'VietQR • 36.000đ',
-          extraTag: '🎁 Đánh giá (+50 Xu)',
-          extraTagColor: const Color(0xFFEA580C),
-        ),
-        const SizedBox(height: 10),
-
-        // Card 3: Bánh Mì Chảo KTX
-        _buildPastOrderCard(
-          orderCode: '#KTX-7420A',
-          time: '12/10 • Ca Trưa',
-          status: 'Hoàn tất',
-          isDelivered: true,
-          storeName: 'Bánh Mì Chảo KTX',
-          dishSummary: '1x Bánh mì chảo xíu mại trứng muối',
-          locationAndPrice: 'Cổng KTX Khu A • 32.000đ',
-          extraTag: 'Đã thanh toán',
-          extraTagColor: const Color(0xFF059669),
-        ),
-        const SizedBox(height: 20),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...completedOrders.map((order) {
+            final isCod = order.paymentMethod.toUpperCase() == 'COD';
+            final dishSummary = order.items.isNotEmpty
+                ? order.items.map((i) => '${i.quantity}x ${i.itemName}').join(', ')
+                : 'Đơn hàng tại ${order.storeName}';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _buildPastOrderCard(
+                order: order,
+                orderCode: order.orderCode.startsWith('#') ? order.orderCode : '#${order.orderCode}',
+                time: DateFormat('dd/MM HH:mm').format(order.createdAt),
+                status: order.status == 'CANCELLED' ? 'Đã hủy' : 'Đã giao thành công',
+                isDelivered: order.status == 'DELIVERED',
+                storeName: order.storeName,
+                dishSummary: dishSummary,
+                locationAndPrice:
+                    '${isCod ? "COD" : "VietQR"} • ${_currencyFmt.format(order.finalAmount)}',
+                extraTag: order.status == 'DELIVERED' ? '🎁 Đánh giá (+50 Xu)' : 'Đã hủy',
+                extraTagColor: order.status == 'DELIVERED'
+                    ? const Color(0xFFEA580C)
+                    : const Color(0xFF64748B),
+              ),
+            );
+          }),
+        ],
 
         // 6. Box trợ giúp
+        const SizedBox(height: 10),
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -836,19 +490,248 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               ),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: () {},
-                child: const Text(
-                  'Chat với Trưởng Bàn Giao Hàng >',
-                  style: TextStyle(fontSize: 11, color: Color(0xFFFF521B), fontWeight: FontWeight.bold),
-                ),
-              ),
             ],
           ),
         ),
         const SizedBox(height: 20),
       ],
+    );
+  }
+
+  Widget _buildActiveOrderCard(OrderDetailModel order) {
+    final isCod = order.paymentMethod.toUpperCase() == 'COD';
+    final displayCode = order.orderCode.startsWith('#') ? order.orderCode : '#${order.orderCode}';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Hàng tag: Mã đơn, KTX Khu B, Ca gom
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  displayCode,
+                  style: const TextStyle(
+                    color: Color(0xFFFF521B),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  order.statusLabel,
+                  style: const TextStyle(
+                    color: Color(0xFF059669),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFFFEDD5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.access_time_rounded, color: Color(0xFFFF521B), size: 12),
+                    const SizedBox(width: 3),
+                    Text(
+                      order.slotTime.contains('CHIEU') ? 'CA CHIỀU' : 'CA TRƯA',
+                      style: const TextStyle(
+                        color: Color(0xFFFF521B),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Thông tin quán
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100',
+                  width: 44,
+                  height: 44,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      order.storeName,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '📍 Điểm nhận: ${order.pickupLocation}',
+                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Danh sách món thực tế đã đặt
+          if (order.items.isNotEmpty)
+            ...order.items.map((item) {
+              final linePrice = item.itemTotalAmount > 0
+                  ? item.itemTotalAmount
+                  : item.unitPrice * item.quantity;
+              final optNote = item.selectedOptions.isNotEmpty
+                  ? 'Topping/Tùy chọn: ${item.selectedOptions.map((o) => o.choice).join(", ")}'
+                  : null;
+              return _buildDishItemRow(
+                '${item.quantity}x ${item.itemName}',
+                _currencyFmt.format(linePrice),
+                note: optNote,
+              );
+            })
+          else
+            _buildDishItemRow('Đơn hàng tại ${order.storeName}', _currencyFmt.format(order.finalAmount)),
+
+          if (order.note != null && order.note!.trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'Ghi chú đơn: ${order.note}',
+                style: const TextStyle(fontSize: 10.5, color: Color(0xFFC2410C), fontStyle: FontStyle.italic),
+              ),
+            ),
+
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+          ),
+
+          // Tổng tiền
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    isCod ? Icons.payments_outlined : Icons.check_circle_rounded,
+                    color: isCod ? const Color(0xFFD97706) : const Color(0xFF059669),
+                    size: 14,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    isCod ? 'Thanh toán COD khi nhận' : 'Đã thanh toán VietQR',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isCod ? const Color(0xFFD97706) : const Color(0xFF059669),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              RichText(
+                text: TextSpan(
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  children: [
+                    const TextSpan(text: 'Tổng gom: '),
+                    TextSpan(
+                      text: _currencyFmt.format(order.finalAmount),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFFFF521B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // 2 Nút: Theo dõi trực tiếp & Mã QR Nhận Hàng (truyền đúng order thực tế)
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF334155),
+                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => LiveOrderTrackingScreen(initialOrder: order),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.receipt_long_outlined, size: 16),
+                  label: const Text('Theo dõi trực tiếp', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFF7ED),
+                    foregroundColor: const Color(0xFFFF521B),
+                    elevation: 0,
+                    side: const BorderSide(color: Color(0xFFFFEDD5)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  onPressed: () => _openQrScreenForOrder(order),
+                  icon: const Icon(Icons.qr_code_2_rounded, size: 16),
+                  label: const Text('Mã QR Nhận Hàng', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -899,6 +782,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
   }
 
   Widget _buildPastOrderCard({
+    required OrderDetailModel order,
     required String orderCode,
     required String time,
     required String status,
@@ -929,12 +813,16 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFECFDF5),
+                  color: isDelivered ? const Color(0xFFECFDF5) : const Color(0xFFFEF2F2),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   status,
-                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.bold,
+                    color: isDelivered ? const Color(0xFF059669) : const Color(0xFFDC2626),
+                  ),
                 ),
               ),
             ],
@@ -964,7 +852,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     Text(
                       dishSummary,
                       style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -976,10 +864,14 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                locationAndPrice,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+              Expanded(
+                child: Text(
+                  locationAndPrice,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               Text(
                 extraTag,
                 style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: extraTagColor),
@@ -1000,9 +892,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(vertical: 6),
                   ),
-                  onPressed: () {},
+                  onPressed: () => _openQrScreenForOrder(order),
                   icon: const Icon(Icons.receipt_outlined, size: 14),
-                  label: const Text('Hóa đơn', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  label: const Text('Hóa đơn & Món', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1014,9 +906,16 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     padding: const EdgeInsets.symmetric(vertical: 6),
                   ),
-                  onPressed: () {},
-                  icon: const Icon(Icons.refresh_rounded, size: 14),
-                  label: const Text('Đặt lại đơn này', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ReviewFeedbackScreen(order: order),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.star_outline_rounded, size: 14),
+                  label: const Text('Đánh giá món', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

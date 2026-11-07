@@ -11,6 +11,7 @@ import '../widgets/web_admin_topbar.dart';
 import 'web_admin_dashboard_screen.dart';
 import 'web_admin_dispute_screen.dart';
 import 'web_admin_orders_screen.dart';
+import 'web_admin_voucher_screen.dart';
 
 /// Khung giao diện Web tổng thể dành cho Ban Quản Lý KTX (Web Admin Portal)
 /// Menu nằm ở bên trái với 1 nút đóng mở duy nhất, tối ưu 60fps mượt mà
@@ -32,7 +33,15 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentTabIndex = 0;
   bool _isSidebarCollapsed = false;
-  AdminDashboardStatsModel _stats = AdminDashboardStatsModel.mockData();
+  AdminDashboardStatsModel _stats = const AdminDashboardStatsModel(
+    totalRevenue: 0,
+    totalOrders: 0,
+    activeOrders: 0,
+    pendingDisputes: 0,
+    totalUsers: 0,
+    disputeResolutionRate: 0,
+    recentActivities: [],
+  );
 
   @override
   void initState() {
@@ -131,6 +140,9 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
                           child: WebAdminOrdersScreen(
                             orderService: context.read<OrderService>(),
                           ),
+                        ),
+                        const RepaintBoundary(
+                          child: WebAdminVoucherScreen(),
                         ),
                       ],
                     ),

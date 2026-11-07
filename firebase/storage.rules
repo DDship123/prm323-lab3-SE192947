@@ -1,0 +1,28 @@
+rules_version = '2';
+
+// Firebase Cloud Storage Security Rules cho KTX Food Ordering (PRM393 Lab 3)
+// Đảm bảo nguyên tắc bảo mật: Chỉ cho phép người dùng đã xác thực đọc/ghi vào thư mục UID của chính mình.
+// Tuyệt đối KHÔNG sử dụng quy tắc mở công khai: "allow read, write: if true".
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // 1. Phân hệ Báo cáo & Bằng chứng khiếu nại (Dispute Evidence): reports/{userId}/...
+    match /reports/{userId}/{allPaths=**} {
+      // Chỉ chủ sở hữu (authenticated user có UID khớp với userId trên path) mới có quyền đọc và ghi
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 2. Phân hệ Ảnh món ăn & Cửa hàng công khai (Công khai xem, chỉ Chủ quán/Admin tải lên)
+    match /stores/{storeId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // 3. Mặc định chặn tất cả các đường dẫn khác
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
