@@ -40,29 +40,27 @@ class _ShipperShellScreenState extends State<ShipperShellScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => setState(() => _currentIndex = index),
-          child: SizedBox(
-            height: 56,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  isSelected ? activeIcon : icon,
-                  size: 22,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isSelected ? activeIcon : icon,
+                size: 22,
+                color: color,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
                   color: color,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: color,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
@@ -79,7 +77,10 @@ class _ShipperShellScreenState extends State<ShipperShellScreen> {
       ),
       const ShipperRouteScreen(),
       ShipperWalletScreen(shipperId: widget.shipperId),
-      ShipperShiftRegistrationScreen(shipperId: widget.shipperId),
+      ShipperShiftRegistrationScreen(
+        shipperId: widget.shipperId,
+        onSignOut: widget.onSignOut,
+      ),
     ];
 
     return Scaffold(
@@ -89,7 +90,6 @@ class _ShipperShellScreenState extends State<ShipperShellScreen> {
         children: screens,
       ),
       bottomNavigationBar: Container(
-        height: 56.0,
         decoration: const BoxDecoration(
           color: Colors.white,
           border: Border(
@@ -105,33 +105,36 @@ class _ShipperShellScreenState extends State<ShipperShellScreen> {
         ),
         child: SafeArea(
           top: false,
-          child: Row(
-            children: [
-              _buildTabItem(
-                index: 0,
-                icon: Icons.local_shipping_outlined,
-                activeIcon: Icons.local_shipping_rounded,
-                label: 'Chuyến gom',
-              ),
-              _buildTabItem(
-                index: 1,
-                icon: Icons.map_outlined,
-                activeIcon: Icons.map_rounded,
-                label: 'Lộ trình',
-              ),
-              _buildTabItem(
-                index: 2,
-                icon: Icons.account_balance_wallet_outlined,
-                activeIcon: Icons.account_balance_wallet_rounded,
-                label: 'Ví thu nhập',
-              ),
-              _buildTabItem(
-                index: 3,
-                icon: Icons.event_available_outlined,
-                activeIcon: Icons.event_available_rounded,
-                label: 'Đăng ký ca',
-              ),
-            ],
+          child: SizedBox(
+            height: 56.0,
+            child: Row(
+              children: [
+                _buildTabItem(
+                  index: 0,
+                  icon: Icons.local_shipping_outlined,
+                  activeIcon: Icons.local_shipping_rounded,
+                  label: 'Chuyến gom',
+                ),
+                _buildTabItem(
+                  index: 1,
+                  icon: Icons.map_outlined,
+                  activeIcon: Icons.map_rounded,
+                  label: 'Lộ trình',
+                ),
+                _buildTabItem(
+                  index: 2,
+                  icon: Icons.account_balance_wallet_outlined,
+                  activeIcon: Icons.account_balance_wallet_rounded,
+                  label: 'Ví thu nhập',
+                ),
+                _buildTabItem(
+                  index: 3,
+                  icon: Icons.event_available_outlined,
+                  activeIcon: Icons.event_available_rounded,
+                  label: 'Đăng ký ca',
+                ),
+              ],
+            ),
           ),
         ),
       ),

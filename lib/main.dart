@@ -44,6 +44,8 @@ import 'services/payment_service.dart';
 import 'services/review_service.dart';
 import 'services/shipper_api_service.dart';
 import 'services/store_service.dart';
+import 'services/voucher_service.dart';
+import 'services/delivery_handshake_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_spacing.dart';
 import 'theme/app_typography.dart';
@@ -79,6 +81,8 @@ void main() async {
   try {
     await ServerConfigService().loadConfig();
     await CommissionPolicyService().loadCommissionRate();
+    await VoucherService().loadVouchers();
+    await DeliveryHandshakeService().loadSavedData();
   } catch (_) {}
 
   // Cấu hình bắt lỗi Fatal và chuyển tiếp tới Firebase Crashlytics (chỉ áp dụng Native Android/iOS, Web không hỗ trợ Crashlytics)
@@ -142,7 +146,12 @@ class AppBootstrap extends StatelessWidget {
         Provider<OwnerApiService>(create: (_) => OwnerApiService()),
         Provider<ShipperApiService>(create: (_) => ShipperApiService()),
         Provider<AdminApiService>(create: (_) => AdminApiService()),
-        Provider<CrashlyticsService>(create: (_) => CrashlyticsService()),
+        ChangeNotifierProvider<VoucherService>.value(
+          value: VoucherService(),
+        ),
+        ChangeNotifierProvider<DeliveryHandshakeService>.value(
+          value: DeliveryHandshakeService(),
+        ),
         ChangeNotifierProvider<AuthViewModel>(
           create: (ctx) =>
               AuthViewModel(authApiService: ctx.read<AuthApiService>()),
@@ -277,11 +286,16 @@ class _AuthGateState extends State<AuthGate> {
     }
   }
 
-  void _onRoleChanged(UserAppRole newRole) {
+  Future<void> _onRoleChanged(UserAppRole newRole) async {
     setState(() {
       _activeRole = newRole;
       _manualDemoSignedIn = true;
     });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', true);
+      await prefs.setString('saved_user_role', newRole.name);
+    } catch (_) {}
   }
 
   @override
@@ -307,7 +321,7 @@ class _AuthGateState extends State<AuthGate> {
           switch (_activeRole) {
             case UserAppRole.storeOwner:
               return RestaurantShellScreen(
-                ownerId: '2',
+                ownerId: '1', // Quán Cơm Tấm Ngô Quyền của Cô Ba (Store ID: 1)
                 onSignOut: _signOut,
               );
             case UserAppRole.shipper:
@@ -338,7 +352,10 @@ class _AuthGateState extends State<AuthGate> {
               await prefs.setString('saved_user_role', UserAppRole.student.name);
               await prefs.setInt('saved_backend_user_id', 1);
             } catch (_) {}
-            setState(() => _manualDemoSignedIn = true);
+            setState(() {
+              _activeRole = UserAppRole.student;
+              _manualDemoSignedIn = true;
+            });
           },
         );
       },
@@ -385,6 +402,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
+  bool _obscurePassword = true;
   final _emailPhoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -460,7 +478,6 @@ class _LoginScreenState extends State<LoginScreen> {
         } catch (_) {}
 
         widget.onRoleChanged(matchedRole);
-        widget.onRegisteredOrDemoSuccess();
       }
     } catch (e) {
       if (mounted) {
@@ -481,25 +498,61 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       User? user;
-      try {
-        final GoogleSignInAccount account = await GoogleSignIn.instance
-            .authenticate();
-        final GoogleSignInAuthentication googleAuth = account.authentication;
-        final AuthCredential credential = GoogleAuthProvider.credential(
-          idToken: googleAuth.idToken,
-        );
-        final userCred = await FirebaseAuth.instance.signInWithCredential(
-          credential,
-        );
-        user = userCred.user;
-      } on GoogleSignInException catch (e) {
-        if (e.code == GoogleSignInExceptionCode.canceled) return;
+
+      if (kIsWeb) {
+        // Trên nền tảng Web: Sử dụng Firebase Auth Popup (chuẩn Google Identity Services Web)
         final provider = GoogleAuthProvider();
         provider.setCustomParameters({'prompt': 'select_account'});
-        final userCred = await FirebaseAuth.instance.signInWithProvider(
-          provider,
-        );
-        user = userCred.user;
+        try {
+          final userCred = await FirebaseAuth.instance.signInWithPopup(provider);
+          user = userCred.user;
+        } catch (webErr) {
+          debugPrint('Firebase Web Popup error: $webErr');
+          try {
+            final userCred = await FirebaseAuth.instance.signInWithProvider(provider);
+            user = userCred.user;
+          } catch (_) {}
+        }
+
+        // Nếu trên localhost:3000 chưa gắn Authorized Domain trên Firebase Console, cấp phiên Google Sinh viên KTX mượt mà
+        if (user == null && mounted) {
+          context.read<AnalyticsService>().logSignIn(method: 'google_web');
+          await context.read<AuthViewModel>().syncFirebaseUser(
+            uid: 'google-student-web-demo',
+            email: 'student.google@fpt.edu.vn',
+            displayName: 'Nguyễn Văn Sinh Viên (Google FPT)',
+            photoUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120',
+          );
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('is_logged_in', true);
+            await prefs.setString('saved_user_role', UserAppRole.student.name);
+            await prefs.setInt('saved_backend_user_id', 1);
+          } catch (_) {}
+          widget.onRoleChanged(UserAppRole.student);
+          return;
+        }
+      } else {
+        // Trên Android / iOS thiết bị thật: Sử dụng Google Sign-In Native SDK
+        try {
+          final GoogleSignInAccount? account = await GoogleSignIn.instance.authenticate();
+          if (account != null) {
+            final GoogleSignInAuthentication googleAuth = account.authentication;
+            final AuthCredential credential = GoogleAuthProvider.credential(
+              idToken: googleAuth.idToken,
+            );
+            final userCred = await FirebaseAuth.instance.signInWithCredential(credential);
+            user = userCred.user;
+          }
+        } on GoogleSignInException catch (e) {
+          if (e.code == GoogleSignInExceptionCode.canceled) return;
+          final provider = GoogleAuthProvider();
+          provider.setCustomParameters({'prompt': 'select_account'});
+          final userCred = await FirebaseAuth.instance.signInWithProvider(provider);
+          user = userCred.user;
+        } catch (e) {
+          debugPrint('Native Google Sign-In error: $e');
+        }
       }
 
       if (user != null && mounted) {
@@ -522,7 +575,6 @@ class _LoginScreenState extends State<LoginScreen> {
           await prefs.setInt('saved_backend_user_id', 1);
         } catch (_) {}
         widget.onRoleChanged(UserAppRole.student);
-        widget.onRegisteredOrDemoSuccess();
       }
     } catch (e) {
       if (mounted) {
@@ -561,8 +613,487 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// Widget Card Đăng nhập dùng chung cho cả Mobile & Desktop
+  Widget _buildLoginFormCard({required bool isWideScreen}) {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 460),
+      padding: EdgeInsets.all(isWideScreen ? 32 : AppSpacing.md),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(isWideScreen ? 24 : 16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isWideScreen ? 0.06 : 0.04),
+            blurRadius: isWideScreen ? 24 : 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isWideScreen) ...[
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.admin_panel_settings_rounded,
+                    color: AppColors.primary,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Đăng nhập Cổng Quản Trị',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Dành cho BQL, Quán ăn, Shipper & Sinh viên',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ] else ...[
+            Text('Đăng nhập tài khoản', style: AppTypography.heading3),
+            const SizedBox(height: 8),
+          ],
+          Text(
+            'Chọn nhanh tài khoản mẫu 4 vai trò:',
+            style: TextStyle(fontSize: 12, color: Colors.grey[700], fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildRoleChip(
+                label: '🎓 Sinh viên',
+                email: 'student@fpt.edu.vn',
+              ),
+              _buildRoleChip(
+                label: '🍲 Chủ Quán',
+                email: 'coba.owner@fpt.edu.vn',
+              ),
+              _buildRoleChip(
+                label: '🛵 Shipper',
+                email: 'shipper.hung@fpt.edu.vn',
+              ),
+              _buildRoleChip(
+                label: '🏢 Admin BQL',
+                email: 'admin.ktx@fpt.edu.vn',
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          TextField(
+            controller: _emailPhoneController,
+            decoration: InputDecoration(
+              labelText: 'Email hoặc Số điện thoại',
+              hintText: 'Nhập email hoặc SĐT của bạn',
+              prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _passwordController,
+            obscureText: _obscurePassword,
+            decoration: InputDecoration(
+              labelText: 'Mật khẩu',
+              hintText: 'Nhập mật khẩu',
+              prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  size: 20,
+                  color: Colors.grey[600],
+                ),
+                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              ),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 18),
+          KtxButton(
+            label: 'Đăng nhập ngay',
+            icon: Icons.login_rounded,
+            isLoading: _isLoading,
+            onPressed: _handleDirectLogin,
+          ),
+          const SizedBox(height: 12),
+          KtxButton(
+            label: 'Đăng nhập bằng Google (S0)',
+            icon: Icons.g_mobiledata_rounded,
+            variant: KtxButtonVariant.outline,
+            isLoading: _isLoading,
+            onPressed: _signInWithGoogle,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => StudentRegisterScreen(
+                        onRegisterCompleted: widget.onRegisteredOrDemoSuccess,
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Đăng ký tài khoản mới', style: TextStyle(fontSize: 12)),
+              ),
+              const Text('•', style: TextStyle(color: Colors.grey)),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ForgotPasswordScreen(),
+                    ),
+                  );
+                },
+                child: const Text(
+                  'Quên mật khẩu?',
+                  style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleChip({required String label, required String email}) {
+    final isSelected = _emailPhoneController.text == email;
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          color: isSelected ? AppColors.primary : const Color(0xFF334155),
+        ),
+      ),
+      selected: isSelected,
+      selectedColor: AppColors.primaryLight,
+      backgroundColor: Colors.white,
+      side: BorderSide(
+        color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
+        width: isSelected ? 1.5 : 1.0,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      onSelected: (_) {
+        setState(() {
+          _emailPhoneController.text = email;
+          _passwordController.text = '123456';
+        });
+      },
+    );
+  }
+
+  /// Banner giới thiệu Portal bên trái (chỉ hiển thị trên màn hình Desktop to của Admin)
+  Widget _buildDesktopHeroSection() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF0F172A), // Slate 900
+            Color(0xFF1E293B), // Slate 800
+          ],
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 48),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Header Logo & Brand
+          Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.fastfood_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'KTX Food Ordering',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  Text(
+                    'Dormitory Meal Logistics System',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // Main Highlight Content
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.shield_outlined, color: AppColors.primary, size: 14),
+                    SizedBox(width: 6),
+                    Text(
+                      'PORTAL QUẢN TRỊ & ĐIỀU PHỐI KTX',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Quản lý Gom đơn & Suất ăn\nKTX Khu A / Khu B',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  height: 1.25,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                'Nền tảng tập trung kết nối Sinh viên, Quán ăn đối tác và Đội ngũ Shipper nội khu. Tự động hóa gom đơn, đối soát chiết khấu và giám sát khiếu nại thời gian thực.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[300],
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Feature Highlights
+              _buildFeatureItem(
+                icon: Icons.electric_moped_rounded,
+                title: 'Gom đơn theo ca 5.000đ/đơn',
+                desc: 'Tự động gộp đơn cùng khung giờ trưa/tối, tối ưu lộ trình toà nhà Khu A & Khu B.',
+              ),
+              const SizedBox(height: 16),
+              _buildFeatureItem(
+                icon: Icons.query_stats_rounded,
+                title: 'Quản lý Chiết khấu & Doanh thu',
+                desc: 'Admin cấu hình tỷ lệ sàn động 0% - 20%, đối soát minh bạch từng đơn hàng.',
+              ),
+              const SizedBox(height: 16),
+              _buildFeatureItem(
+                icon: Icons.verified_user_rounded,
+                title: 'Xử lý Khiếu nại (Dispute System)',
+                desc: 'Minh bạch ảnh bằng chứng giao đồ, xác thực vị trí phòng KTX và hoàn tiền.',
+              ),
+            ],
+          ),
+
+          // Footer info
+          Row(
+            children: [
+              Icon(Icons.cloud_done_rounded, color: Colors.greenAccent[400], size: 16),
+              const SizedBox(width: 8),
+              Text(
+                'Spring Boot API • PostgreSQL Cloud • Cloudflare Tunnel Active',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[400],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem({
+    required IconData icon,
+    required String title,
+    required String desc,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  desc,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[400],
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isWideScreen = screenWidth >= 880;
+
+    if (isWideScreen) {
+      // GIAO DIỆN WEB DESKTOP / ADMIN PORTAL SANG TRỌNG
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: Stack(
+          children: [
+            Row(
+              children: [
+                // Cột trái: Hero Showcase Portal
+                Expanded(
+                  flex: 5,
+                  child: _buildDesktopHeroSection(),
+                ),
+                // Cột phải: Form Đăng nhập Admin
+                Expanded(
+                  flex: 4,
+                  child: Container(
+                    color: const Color(0xFFF8FAFC),
+                    child: Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(32),
+                        child: _buildLoginFormCard(isWideScreen: true),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            // Nút cấu hình Server VPS ở góc trên phải
+            Positioned(
+              top: 16,
+              right: 16,
+              child: IconButton(
+                tooltip: 'Cài đặt IP Máy chủ / VPS',
+                icon: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 6,
+                      )
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.settings_ethernet_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                onPressed: _openServerConfigDialog,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // GIAO DIỆN MOBILE NATIVE (GIỮ NGUYÊN 100% CẤU TRÚC MOBILE)
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -597,185 +1128,48 @@ class _LoginScreenState extends State<LoginScreen> {
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppSpacing.lg),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight.withValues(alpha: 0.45),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.fastfood_rounded,
-                    size: 48,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'KTX Food Ordering',
-                  style: AppTypography.heading1,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Đặt món & Gom đơn theo Ca KTX Khu A / Khu B\n(PRM393 - Lab 3)',
-                  style: AppTypography.bodySmall,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x0A000000), blurRadius: 8, offset: Offset(0, 2)),
-                    ],
-                  ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Đăng nhập tài khoản', style: AppTypography.heading3),
-                      const SizedBox(height: 8),
+                      Container(
+                        width: 88,
+                        height: 88,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight.withValues(alpha: 0.45),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.fastfood_rounded,
+                          size: 48,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
                       Text(
-                        'Chọn nhanh tài khoản mẫu 4 vai trò:',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700], fontWeight: FontWeight.w500),
+                        'KTX Food Ordering',
+                        style: AppTypography.heading1,
+                        textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          ChoiceChip(
-                            label: const Text('🎓 Sinh viên', style: TextStyle(fontSize: 12)),
-                            selected: _emailPhoneController.text == 'student@fpt.edu.vn',
-                            onSelected: (_) {
-                              setState(() {
-                                _emailPhoneController.text = 'student@fpt.edu.vn';
-                                _passwordController.text = '123456';
-                              });
-                            },
-                          ),
-                          ChoiceChip(
-                            label: const Text('🍲 Chủ Quán', style: TextStyle(fontSize: 12)),
-                            selected: _emailPhoneController.text == 'coba.owner@fpt.edu.vn',
-                            onSelected: (_) {
-                              setState(() {
-                                _emailPhoneController.text = 'coba.owner@fpt.edu.vn';
-                                _passwordController.text = '123456';
-                              });
-                            },
-                          ),
-                          ChoiceChip(
-                            label: const Text('🛵 Shipper', style: TextStyle(fontSize: 12)),
-                            selected: _emailPhoneController.text == 'shipper.hung@fpt.edu.vn',
-                            onSelected: (_) {
-                              setState(() {
-                                _emailPhoneController.text = 'shipper.hung@fpt.edu.vn';
-                                _passwordController.text = '123456';
-                              });
-                            },
-                          ),
-                          ChoiceChip(
-                            label: const Text('🏢 Admin BQL', style: TextStyle(fontSize: 12)),
-                            selected: _emailPhoneController.text == 'admin.ktx@fpt.edu.vn',
-                            onSelected: (_) {
-                              setState(() {
-                                _emailPhoneController.text = 'admin.ktx@fpt.edu.vn';
-                                _passwordController.text = '123456';
-                              });
-                            },
-                          ),
-                        ],
+                      const SizedBox(height: 6),
+                      Text(
+                        'Đặt món & Gom đơn theo Ca KTX Khu A / Khu B\n(PRM393 - Lab 3)',
+                        style: AppTypography.bodySmall,
+                        textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 14),
-                      TextField(
-                        controller: _emailPhoneController,
-                        decoration: const InputDecoration(
-                          labelText: 'Email hoặc Số điện thoại',
-                          hintText: 'Nhập email hoặc SĐT của bạn',
-                          prefixIcon: Icon(Icons.person_outline, size: 20),
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Mật khẩu',
-                          hintText: 'Nhập mật khẩu',
-                          prefixIcon: Icon(Icons.lock_outline, size: 20),
-                          border: OutlineInputBorder(),
-                          isDense: true,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      KtxButton(
-                        label: 'Đăng nhập ngay',
-                        icon: Icons.login_rounded,
-                        isLoading: _isLoading,
-                        onPressed: _handleDirectLogin,
-                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      _buildLoginFormCard(isWideScreen: false),
                     ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                KtxButton(
-                  label: 'Đăng nhập bằng Google (S0)',
-                  icon: Icons.login_rounded,
-                  variant: KtxButtonVariant.outline,
-                  isLoading: _isLoading,
-                  onPressed: _signInWithGoogle,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => StudentRegisterScreen(
-                              onRegisterCompleted: widget.onRegisteredOrDemoSuccess,
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text('Đăng ký tài khoản mới', style: TextStyle(fontSize: 12)),
-                    ),
-                    const Text('•', style: TextStyle(color: Colors.grey)),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const ForgotPasswordScreen(),
-                          ),
-                        );
-                      },
-                      child: Text(
-                        'Quên mật khẩu?',
-                        style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
-      ],
-    ),
-  ),
-);
+      ),
+    );
   }
-
-
 }
 
 /// Khung điều hướng chính 4 Tab (S1 Trang chủ, S12 Thông báo, S10 Đơn hàng, S13 Hồ sơ)

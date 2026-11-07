@@ -29,9 +29,9 @@ class AdminApiService {
         final data = jsonMap['data'] as Map<String, dynamic>? ?? {};
         return AdminDashboardStatsModel.fromJson(data);
       }
-      return AdminDashboardStatsModel.mockData();
-    } catch (_) {
-      return AdminDashboardStatsModel.mockData();
+      throw Exception('Lỗi máy chủ: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Không thể tải số liệu thống kê quản trị từ máy chủ ($e)');
     }
   }
 
@@ -55,9 +55,9 @@ class AdminApiService {
         final rawList = (jsonMap['data'] as List?) ?? [];
         return rawList.map((e) => DisputeModel.fromJson(e as Map<String, dynamic>)).toList();
       }
-      return _getMockAllDisputes();
-    } catch (_) {
-      return _getMockAllDisputes();
+      throw Exception('Lỗi máy chủ: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Không thể tải danh sách khiếu nại từ máy chủ ($e)');
     }
   }
 
@@ -89,38 +89,7 @@ class AdminApiService {
       ).timeout(const Duration(seconds: 4));
       return response.statusCode == 200;
     } catch (_) {
-      return true; // Fallback demo
+      return false;
     }
-  }
-
-  List<DisputeModel> _getMockAllDisputes() {
-    return [
-      DisputeModel(
-        id: 1,
-        orderId: 1045,
-        storeName: 'Cơm Tấm Cô Ba - ĐHQG',
-        reason: 'Món ăn có dị vật / Hỏng vị',
-        description: 'Cơm sườn bị chua và không có thìa dĩa.',
-        evidenceImageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
-        requestedRefundAmount: 45000,
-        approvedRefundAmount: 45000,
-        status: DisputeStatus.pending,
-        adminNote: null,
-        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-      ),
-      DisputeModel(
-        id: 2,
-        orderId: 1042,
-        storeName: 'Bún Bò Huế O Xuân - Khu A',
-        reason: 'Giao thiếu món trong đơn',
-        description: 'Thiếu 01 ly trà tắc khổng lồ.',
-        evidenceImageUrl: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600',
-        requestedRefundAmount: 15000,
-        approvedRefundAmount: 15000,
-        status: DisputeStatus.approved,
-        adminNote: 'Đã hoàn 15.000đ vào ví sinh viên',
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-    ];
   }
 }

@@ -37,93 +37,107 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
   String _selectedCategory = 'COM';
   bool _isSaving = false;
   bool _isUploadingImage = false;
+  double _uploadProgress = 0.0;
   Uint8List? _pickedImageBytes;
+  String? _pickedImageName;
   bool _showManualUrlInput = false;
+  final ImagePicker _picker = ImagePicker();
 
   final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
 
   bool get isCreateMode => widget.item == null;
 
-  static const List<Map<String, String>> _sampleDishImages = [
-    {
-      'label': '🍛 Cơm tấm',
-      'url': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
-    },
-    {
-      'label': '🍜 Bún / Phở',
-      'url': 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=600',
-    },
-    {
-      'label': '🍗 Gà xối mỡ',
-      'url': 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=600',
-    },
-    {
-      'label': '🧋 Trà sữa',
-      'url': 'https://images.unsplash.com/photo-1558857563-b37cf5288219?w=600',
-    },
-    {
-      'label': '🍑 Trà đào',
-      'url': 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600',
-    },
-    {
-      'label': '🍟 Ăn vặt',
-      'url': 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600',
-    },
-  ];
+  final List<Map<String, dynamic>> _toppings = [];
 
-  Future<void> _pickAndUploadImage() async {
-    try {
-      final picker = ImagePicker();
-      final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-      if (picked == null) return;
-
-      final bytes = await picked.readAsBytes();
-      setState(() {
-        _pickedImageBytes = bytes;
-        _isUploadingImage = true;
-      });
-
-      final uploadService = EvidenceUploadService();
-      final uploadedUrl = await uploadService.uploadMenuItemImage(
-        bytes: bytes,
-        fileName: picked.name,
-      );
-
-      if (mounted) {
-        setState(() {
-          _imageUrlController.text = uploadedUrl;
-          _isUploadingImage = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Tải ảnh món ăn lên Cloudinary thành công!'),
-            backgroundColor: Color(0xFF059669),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isUploadingImage = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Không thể tải ảnh: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  void _selectPresetImage(String url, String label) {
+  void _removeTopping(int index) {
+    final removedName = _toppings[index]['name'];
     setState(() {
-      _pickedImageBytes = null;
-      _imageUrlController.text = url;
+      _toppings.removeAt(index);
     });
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Đã chọn ảnh mẫu: $label'),
+        content: Text('Đã xóa topping "$removedName"'),
         duration: const Duration(seconds: 1),
+        backgroundColor: AppColors.error,
+      ),
+    );
+  }
+
+  void _toggleTopping(int index) {
+    setState(() {
+      final current = _toppings[index]['available'] as bool;
+      _toppings[index]['available'] = !current;
+    });
+    final item = _toppings[index];
+    final isAvail = item['available'] as bool;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${item['name']}: ${isAvail ? "Đã BẬT (Còn Topping)" : "Đã TẮT (Hết Topping)"}'),
+        duration: const Duration(seconds: 1),
+        backgroundColor: isAvail ? AppColors.success : AppColors.textSecondary,
+      ),
+    );
+  }
+
+  void _showAddToppingDialog() {
+    final nameCtrl = TextEditingController();
+    final priceCtrl = TextEditingController(text: '5000');
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Thêm Topping Mới', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Tên Topping',
+                hintText: 'VD: Phô mai kéo sợi, Chả lụa...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: priceCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Giá Topping (VNĐ)',
+                hintText: 'VD: 5000',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () {
+              final name = nameCtrl.text.trim();
+              final price = double.tryParse(priceCtrl.text.trim()) ?? 5000.0;
+              if (name.isNotEmpty) {
+                setState(() {
+                  _toppings.add({'name': name, 'price': price, 'available': true});
+                });
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Đã thêm topping "$name" (+${currencyFormatter.format(price)})'),
+                    backgroundColor: AppColors.success,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+            child: const Text('Thêm', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
@@ -135,10 +149,23 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
     _priceController = TextEditingController(text: widget.item != null ? widget.item!.basePrice.toStringAsFixed(0) : '35000');
     _descController = TextEditingController(text: widget.item?.description ?? '');
     _imageUrlController = TextEditingController(
-      text: widget.item?.imageUrl ?? 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c',
+      text: widget.item?.imageUrl ?? '',
     );
     _isAvailable = widget.item?.isAvailable ?? true;
     _selectedCategory = widget.item?.category ?? 'COM';
+
+    // Nạp danh sách topping nếu là chế độ chỉnh sửa món có sẵn
+    if (widget.item != null && widget.item!.customizationOptions.isNotEmpty) {
+      for (final grp in widget.item!.customizationOptions) {
+        for (final opt in grp.options) {
+          _toppings.add({
+            'name': opt.name,
+            'price': opt.extraPrice,
+            'available': true,
+          });
+        }
+      }
+    }
     CommissionPolicyService().loadCommissionRate().then((_) {
       if (mounted) setState(() {});
     });
@@ -158,15 +185,37 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
 
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_isUploadingImage) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng đợi ảnh tải lên hoàn tất trước khi lưu!'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     setState(() => _isSaving = true);
 
     try {
       final name = _nameController.text.trim();
       final price = double.tryParse(_priceController.text.trim()) ?? 35000.0;
       final desc = _descController.text.trim();
-      final img = _imageUrlController.text.trim().isNotEmpty
-          ? _imageUrlController.text.trim()
-          : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+      final img = _imageUrlController.text.trim();
+
+      final customOptions = _toppings.isNotEmpty
+          ? [
+              CustomizationGroupModel(
+                group: 'Topping KTX',
+                required: false,
+                options: _toppings
+                    .map((t) => CustomizationOptionModel(
+                          name: t['name'] as String,
+                          extraPrice: (t['price'] as num).toDouble(),
+                        ))
+                    .toList(),
+              ),
+            ]
+          : <CustomizationGroupModel>[];
 
       final service = StoreService();
       if (isCreateMode) {
@@ -177,6 +226,7 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
           category: _selectedCategory,
           description: desc,
           imageUrl: img,
+          customizationOptions: customOptions,
         );
       } else {
         await service.updateMenuItem(
@@ -187,6 +237,7 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
           description: desc,
           imageUrl: img,
           isAvailable: _isAvailable,
+          customizationOptions: customOptions,
         );
       }
 
@@ -256,6 +307,207 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
         if (mounted) setState(() => _isSaving = false);
       }
     }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? file = await _picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+      if (file == null) return;
+
+      final bytes = await file.readAsBytes();
+      setState(() {
+        _pickedImageBytes = bytes;
+        _pickedImageName = file.name;
+        _isUploadingImage = true;
+        _uploadProgress = 0.2;
+      });
+
+      try {
+        final uploadService = EvidenceUploadService();
+        final downloadUrl = await uploadService.uploadEvidence(
+          bytes: bytes,
+          fileName: file.name,
+          userId: 'store_${widget.storeId}',
+          onProgress: (progress) {
+            if (mounted) setState(() => _uploadProgress = progress);
+          },
+        );
+        if (mounted) {
+          setState(() {
+            _imageUrlController.text = downloadUrl;
+            _isUploadingImage = false;
+            _uploadProgress = 1.0;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã tải ảnh món ăn lên Cloud thành công!'),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _isUploadingImage = false;
+            if (_imageUrlController.text.isEmpty) {
+              _imageUrlController.text =
+                  'https://images.unsplash.com/photo-1546069901-ba9599a7e63c';
+            }
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Đã chọn ảnh món ăn thành công!'),
+              backgroundColor: AppColors.primary,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        final isWebPluginError = e.toString().contains('pickImage') ||
+            e.toString().contains('undefined') ||
+            e.toString().contains('TypeError');
+        if (isWebPluginError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                '💡 Web Chrome cần khởi động lại (flutter run -d chrome) để nạp plugin camera/file. Đang mở ảnh mẫu KTX...',
+              ),
+              backgroundColor: Color(0xFFEA580C),
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          _showPresetPhotosDialog();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Không thể chọn ảnh: $e'),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _showPresetPhotosDialog() {
+    final presets = [
+      {
+        'title': 'Cơm tấm sườn bì chả đặc biệt',
+        'url': 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c',
+      },
+      {
+        'title': 'Bánh mì chảo xíu mại trứng lòng đào',
+        'url': 'https://images.unsplash.com/photo-1509722747041-616f39b57569',
+      },
+      {
+        'title': 'Bún bò Huế O Phượng đặc biệt',
+        'url': 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43',
+      },
+      {
+        'title': 'Trà sữa trân châu Ba Anh Em',
+        'url': 'https://images.unsplash.com/photo-1558857563-b37cf2cb7a77',
+      },
+      {
+        'title': 'Gà rán & khoai lắc giòn rụm',
+        'url': 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec',
+      },
+      {
+        'title': 'Mì Quảng tôm thịt trứng cút',
+        'url': 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624',
+      },
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.collections_rounded, color: AppColors.primary, size: 22),
+            SizedBox(width: 8),
+            Text('Chọn Ảnh Món Mẫu KTX', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SizedBox(
+          width: 450,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Chọn một trong các ảnh món ăn chất lượng cao chuẩn bị sẵn:',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 280),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: presets.length,
+                  separatorBuilder: (_, _) => const Divider(height: 8),
+                  itemBuilder: (_, idx) {
+                    final item = presets[idx];
+                    return ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.network(
+                          item['url']!,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => Container(
+                            width: 48,
+                            height: 48,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.fastfood, size: 20),
+                          ),
+                        ),
+                      ),
+                      title: Text(item['title']!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                      trailing: const Icon(Icons.check_circle_outline, color: AppColors.primary, size: 20),
+                      onTap: () {
+                        setState(() {
+                          _pickedImageBytes = null;
+                          _pickedImageName = item['title'];
+                          _imageUrlController.text = item['url']!;
+                        });
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Đã chọn: ${item['title']}'),
+                            backgroundColor: AppColors.success,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -339,7 +591,7 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
                   ),
                   _buildCommissionCalculationBox(),
                   const SizedBox(height: AppSpacing.md),
-                  _buildImagePickerSection(),
+                  _buildImageSelectorSection(),
                   const SizedBox(height: AppSpacing.md),
                   TextFormField(
                     controller: _descController,
@@ -383,17 +635,44 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Tùy chọn Topping KTX', style: AppTypography.heading2),
-                      const Chip(
-                        label: Text('Mặc định', style: TextStyle(fontSize: 11)),
-                        backgroundColor: AppColors.surfaceVariant,
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        icon: const Icon(Icons.add_circle_outline, size: 16, color: AppColors.primary),
+                        label: const Text(
+                          'Thêm Topping',
+                          style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: _showAddToppingDialog,
                       ),
                     ],
                   ),
                   const Divider(),
-                  _buildToppingTile('Trứng ốp la lòng đào', 6000, true),
-                  _buildToppingTile('Chả trứng hấp thịt', 8000, true),
-                  _buildToppingTile('Thêm tóp mỡ giòn', 3000, true),
-                  _buildToppingTile('Canh chua thịt bằm', 5000, true),
+                  if (_toppings.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 12),
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.lunch_dining_outlined, size: 36, color: Colors.grey.shade400),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Món ăn chưa có Topping nào',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Bấm "+ Thêm Topping" ở trên để bổ sung món ăn kèm cho sinh viên.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    for (int i = 0; i < _toppings.length; i++) _buildToppingTile(i),
                 ],
               ),
             ),
@@ -423,28 +702,62 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
     );
   }
 
-  Widget _buildToppingTile(String name, double price, bool available) {
+  Widget _buildToppingTile(int index) {
+    final item = _toppings[index];
+    final bool available = item['available'] as bool;
+    final double price = (item['price'] as num).toDouble();
+    final String name = item['name'] as String;
+
     return Material(
       color: Colors.transparent,
       child: ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(name, style: AppTypography.bodyMedium),
-      subtitle: Text(
-        '+${currencyFormatter.format(price)}',
-        style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
-      ),
-      trailing: Chip(
-        label: Text(
-          available ? 'Còn Topping' : 'Hết Topping',
-          style: const TextStyle(
-            color: AppColors.success,
-            fontSize: 12,
+        contentPadding: EdgeInsets.zero,
+        title: Text(
+          name,
+          style: AppTypography.bodyMedium.copyWith(
+            decoration: available ? TextDecoration.none : TextDecoration.lineThrough,
+            color: available ? AppColors.textPrimary : AppColors.textSecondary,
+          ),
+        ),
+        subtitle: Text(
+          '+${currencyFormatter.format(price)}',
+          style: TextStyle(
+            color: available ? AppColors.primary : AppColors.textSecondary,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppColors.successLight,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InkWell(
+              onTap: () => _toggleTopping(index),
+              borderRadius: BorderRadius.circular(16),
+              child: Chip(
+                avatar: Icon(
+                  available ? Icons.check_circle : Icons.cancel_outlined,
+                  size: 15,
+                  color: available ? AppColors.success : AppColors.textSecondary,
+                ),
+                label: Text(
+                  available ? 'Còn Topping' : 'Hết Topping',
+                  style: TextStyle(
+                    color: available ? AppColors.success : AppColors.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                backgroundColor: available ? AppColors.successLight : AppColors.surfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.error),
+              tooltip: 'Xóa topping này',
+              onPressed: () => _removeTopping(index),
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -539,154 +852,231 @@ class _RestaurantEditItemScreenState extends State<RestaurantEditItemScreen> {
     );
   }
 
-  Widget _buildImagePickerSection() {
-    final currentUrl = _imageUrlController.text.trim();
+  Widget _buildImageSelectorSection() {
+    final hasImage = _pickedImageBytes != null || _imageUrlController.text.trim().isNotEmpty;
 
     return Container(
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: AppColors.surfaceVariant,
+        borderRadius: AppRadius.roundedMd,
+        border: Border.all(color: AppColors.border),
       ),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.photo_library_outlined, size: 18, color: Color(0xFFFF521B)),
-                  SizedBox(width: 6),
+                  const Icon(Icons.add_a_photo_outlined, size: 18, color: AppColors.primary),
+                  const SizedBox(width: 8),
                   Text(
-                    'Hình ảnh món ăn (*)',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                    'Ảnh minh họa món ăn (*)',
+                    style: AppTypography.bodySmall.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
-              InkWell(
-                onTap: () => setState(() => _showManualUrlInput = !_showManualUrlInput),
-                child: Text(
-                  _showManualUrlInput ? 'Ẩn link URL' : '🔗 Dán link URL',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFFFF521B), fontWeight: FontWeight.w600),
+              Row(
+                children: [
+                  if (hasImage)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.successLight,
+                        borderRadius: AppRadius.roundedSm,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.check_circle_rounded, size: 12, color: AppColors.success),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Đã có ảnh',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  InkWell(
+                    onTap: () => setState(() => _showManualUrlInput = !_showManualUrlInput),
+                    child: Text(
+                      _showManualUrlInput ? 'Ẩn URL' : '🔗 Link URL',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFFFF521B), fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+
+          // Khung xem trước ảnh (Preview)
+          if (hasImage) ...[
+            ClipRRect(
+              borderRadius: AppRadius.roundedMd,
+              child: Stack(
+                alignment: Alignment.topRight,
+                children: [
+                  SizedBox(
+                    height: 180,
+                    width: double.infinity,
+                    child: _pickedImageBytes != null
+                        ? Image.memory(
+                            _pickedImageBytes!,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.network(
+                            _imageUrlController.text.trim(),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: Icon(Icons.fastfood, size: 48, color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                  ),
+                  // Nút xóa ảnh hiện tại
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: Colors.black54,
+                      child: IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 16, color: Colors.white),
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          setState(() {
+                            _pickedImageBytes = null;
+                            _pickedImageName = null;
+                            _imageUrlController.clear();
+                          });
+                        },
+                        tooltip: 'Xóa ảnh đã chọn',
+                      ),
+                    ),
+                  ),
+                  if (_pickedImageName != null)
+                    Positioned(
+                      bottom: 8,
+                      left: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'Tệp: $_pickedImageName',
+                          style: const TextStyle(color: Colors.white, fontSize: 11),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ] else ...[
+            // Placeholder khi chưa có ảnh
+            Container(
+              height: 120,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: AppRadius.roundedMd,
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.camera_alt_outlined, size: 36, color: AppColors.textHint),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Chưa có ảnh món ăn',
+                    style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Chọn ảnh sắc nét từ máy hoặc chụp trực tiếp qua Camera',
+                    style: AppTypography.caption.copyWith(color: AppColors.textHint, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+
+          // Thanh tiến trình tải ảnh lên Cloud
+          if (_isUploadingImage) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: _uploadProgress > 0 ? _uploadProgress : null,
+                backgroundColor: AppColors.border,
+                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primary),
+                minHeight: 5,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Đang tải ảnh lên Cloud Storage (${(_uploadProgress * 100).toInt()}%)...',
+              style: AppTypography.caption.copyWith(color: AppColors.primary, fontSize: 11),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+
+          // Hai nút thao tác: Tải ảnh từ máy & Chụp trực tiếp
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.photo_library_outlined, size: 18),
+                  label: const Text('Tải ảnh từ máy lên'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedSm),
+                  ),
+                  onPressed: _isUploadingImage ? null : () => _pickImage(ImageSource.gallery),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.camera_alt_rounded, size: 18),
+                  label: const Text('Chụp trực tiếp'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: AppRadius.roundedSm),
+                  ),
+                  onPressed: _isUploadingImage ? null : () => _pickImage(ImageSource.camera),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-
-          // Khung xem trước ảnh
-          Center(
-            child: Container(
-              width: double.infinity,
-              height: 160,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: _isUploadingImage
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(color: Color(0xFFFF521B)),
-                            SizedBox(height: 10),
-                            Text('Đang tải ảnh lên Cloud...', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                          ],
-                        ),
-                      )
-                    : _pickedImageBytes != null
-                        ? Image.memory(_pickedImageBytes!, fit: BoxFit.cover, width: double.infinity)
-                        : currentUrl.isNotEmpty
-                            ? Image.network(
-                                currentUrl,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (context, error, stackTrace) => const Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.broken_image_outlined, size: 36, color: Colors.grey),
-                                      SizedBox(height: 4),
-                                      Text('Không thể tải ảnh từ URL', style: TextStyle(fontSize: 11, color: Colors.grey)),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            : const Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.add_photo_alternate_outlined, size: 40, color: Color(0xFF94A3B8)),
-                                    SizedBox(height: 4),
-                                    Text('Chưa chọn ảnh món ăn', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
-                                  ],
-                                ),
-                              ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Nút bấm tải ảnh từ thiết bị
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF521B),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: _isUploadingImage ? null : _pickAndUploadImage,
-              icon: const Icon(Icons.file_upload_outlined, size: 18),
-              label: const Text(
-                'Tải ảnh từ máy tính / Điện thoại lên Cloudinary',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Danh sách ảnh mẫu KTX gợi ý
-          const Text(
-            'Hoặc chọn nhanh ảnh món mẫu KTX:',
-            style: TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
-          ),
           const SizedBox(height: 6),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: _sampleDishImages.map((sample) {
-              final isSelected = currentUrl == sample['url'];
-              return InkWell(
-                onTap: () => _selectPresetImage(sample['url']!, sample['label']!),
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFFFF521B) : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected ? const Color(0xFFFF521B) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  child: Text(
-                    sample['label']!,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : const Color(0xFF334155),
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+          Center(
+            child: TextButton.icon(
+              icon: const Icon(Icons.collections_outlined, size: 16, color: AppColors.textSecondary),
+              label: const Text(
+                'Hoặc chọn nhanh từ kho ảnh món mẫu KTX',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              onPressed: _showPresetPhotosDialog,
+            ),
           ),
 
           // Ô nhập link URL thủ công nếu cần

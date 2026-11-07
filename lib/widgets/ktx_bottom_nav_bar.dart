@@ -56,24 +56,22 @@ class KtxBottomNavBar extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => onTap(index),
-          child: SizedBox(
-            height: 56,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                iconWidget,
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: AppTypography.chipLabel.copyWith(
-                    color: color,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              iconWidget,
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: AppTypography.chipLabel.copyWith(
+                  color: color,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 ),
-              ],
-            ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ),
@@ -83,7 +81,6 @@ class KtxBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 56.0,
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(
@@ -99,7 +96,9 @@ class KtxBottomNavBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Row(
+        child: SizedBox(
+          height: 56.0,
+          child: Row(
           children: [
             _buildTabItem(
               index: 0,
@@ -136,6 +135,7 @@ class KtxBottomNavBar extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

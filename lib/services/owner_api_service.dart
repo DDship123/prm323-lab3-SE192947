@@ -30,9 +30,9 @@ class OwnerApiService {
         final rawList = (jsonMap['data'] as List?) ?? [];
         return rawList.map((e) => OwnerOrderSummaryModel.fromJson(e as Map<String, dynamic>)).toList();
       }
-      return _getMockKitchenOrders();
-    } catch (_) {
-      return _getMockKitchenOrders();
+      throw Exception('Lỗi máy chủ: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Không thể tải danh sách đơn bếp từ máy chủ ($e)');
     }
   }
 
@@ -58,7 +58,7 @@ class OwnerApiService {
       ).timeout(const Duration(seconds: 4));
       return response.statusCode == 200;
     } catch (_) {
-      return true; // Fallback demo
+      return false;
     }
   }
 
@@ -83,70 +83,9 @@ class OwnerApiService {
         final data = jsonMap['data'] as Map<String, dynamic>;
         return StoreRevenueModel.fromJson(data);
       }
-      return _getMockRevenue();
-    } catch (_) {
-      return _getMockRevenue();
+      throw Exception('Lỗi máy chủ: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Không thể tải báo cáo doanh thu từ máy chủ ($e)');
     }
-  }
-
-  StoreRevenueModel _getMockRevenue() {
-    return StoreRevenueModel(
-      totalRevenue: 2850000,
-      codAmount: 850000,
-      onlineAmount: 2000000,
-      totalOrders: 65,
-      completedOrders: 62,
-      shiftName: 'CA_TRUA_11H30',
-      orderDetails: _getMockKitchenOrders(),
-    );
-  }
-
-  List<OwnerOrderSummaryModel> _getMockKitchenOrders() {
-    return [
-      OwnerOrderSummaryModel(
-        id: 1045,
-        orderCode: 'KTX-1045',
-        customerName: 'Ngô Trường Đạt',
-        customerPhone: '0981234567',
-        slotTime: 'CA_TRUA_11H30',
-        pickupLocation: 'KTX Khu B – Trụ A1–A2 (Cổng B2)',
-        finalAmount: 45000,
-        status: 'PREPARING',
-        paymentMethod: 'VIETQR',
-        note: 'Sườn chín vàng, thêm nhiều mỡ hành',
-        createdAt: DateTime.now().subtract(const Duration(minutes: 15)),
-        items: const [
-          OwnerOrderItemModel(
-            itemName: 'Cơm Tấm Sườn Nướng',
-            quantity: 1,
-            unitPrice: 35000,
-            itemTotalAmount: 40000,
-            selectedOptions: 'Thêm cơm (+5.000đ), Mỡ hành',
-          ),
-        ],
-      ),
-      OwnerOrderSummaryModel(
-        id: 1046,
-        orderCode: 'KTX-1046',
-        customerName: 'Trần Sanh Điền',
-        customerPhone: '0903334444',
-        slotTime: 'CA_TRUA_11H30',
-        pickupLocation: 'KTX Khu B – Trụ A1–A2 (Cổng B2)',
-        finalAmount: 42000,
-        status: 'READY',
-        paymentMethod: 'COD',
-        note: 'Canh nóng, muỗng đũa đầy đủ',
-        createdAt: DateTime.now().subtract(const Duration(minutes: 25)),
-        items: const [
-          OwnerOrderItemModel(
-            itemName: 'Cơm Sườn Bì Chả Đặc Biệt',
-            quantity: 1,
-            unitPrice: 42000,
-            itemTotalAmount: 42000,
-            selectedOptions: 'Tiêu chuẩn',
-          ),
-        ],
-      ),
-    ];
   }
 }

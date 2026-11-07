@@ -46,11 +46,13 @@ class WebAdminTopbar extends StatelessWidget {
       'Bảng Điều Khiển Tổng Quan KPI',
       'Xử Lý Khiếu Nại & Bồi Hoàn',
       'Giám Sát Toàn Bộ Đơn Hàng KTX',
+      'Quản Lý Voucher & Khuyến Mãi KTX',
     ];
     final breadcrumbs = [
       'Hệ thống / Tổng quan KPI',
       'Nghiệp vụ / Xử lý Khiếu nại',
       'Nghiệp vụ / Giám sát Gom ca',
+      'Cấu hình / Quản trị Voucher',
     ];
 
     final nowStr = _formatDate(DateTime.now());

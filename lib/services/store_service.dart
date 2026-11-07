@@ -14,6 +14,7 @@ class StoreService {
   Future<List<StoreModel>> fetchStores({
     String? keyword,
     String? campusZone,
+    bool onlyActive = true,
   }) async {
     final queryParams = <String, String>{};
     if (keyword != null && keyword.trim().isNotEmpty) {
@@ -23,6 +24,9 @@ class StoreService {
         campusZone.isNotEmpty &&
         campusZone != 'ALL') {
       queryParams['campusZone'] = campusZone;
+    }
+    if (onlyActive) {
+      queryParams['isActive'] = 'true';
     }
 
     final uri = Uri.parse(ApiConfig.stores).replace(
@@ -59,27 +63,21 @@ class StoreService {
 
   /// API-004: Lấy thông tin chi tiết quán ăn
   Future<StoreModel> fetchStoreById(int storeId) async {
-    try {
-      final response = await _client
-          .get(
-            Uri.parse('${ApiConfig.stores}/$storeId'),
-            headers: ApiConfig.headers(),
-          )
-          .timeout(const Duration(seconds: 5));
-      if (response.statusCode == 200) {
-        final jsonMap =
-            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-        final data = jsonMap['data'] as Map<String, dynamic>?;
-        if (data != null) {
-          return StoreModel.fromJson(data);
-        }
+    final response = await _client
+        .get(
+          Uri.parse('${ApiConfig.stores}/$storeId'),
+          headers: ApiConfig.headers(),
+        )
+        .timeout(const Duration(seconds: 5));
+    if (response.statusCode == 200) {
+      final jsonMap =
+          jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final data = jsonMap['data'] as Map<String, dynamic>?;
+      if (data != null) {
+        return StoreModel.fromJson(data);
       }
-    } catch (_) {}
-
-    return _fallbackStores().firstWhere(
-      (s) => s.id == storeId,
-      orElse: () => _fallbackStores().first,
-    );
+    }
+    throw Exception('Không tìm thấy thông tin quán ăn với ID: $storeId');
   }
 
   /// API-005: Lấy danh sách thực đơn của quán
@@ -101,7 +99,7 @@ class StoreService {
       }
     } catch (_) {}
 
-    return _fallbackMenuItems(storeId);
+    return [];
   }
 
   /// API Thêm món ăn mới vào thực đơn quán (POST /api/v1/stores/{storeId}/menu-items)
@@ -112,8 +110,18 @@ class StoreService {
     required String category,
     required String description,
     required String imageUrl,
+    List<CustomizationGroupModel>? customizationOptions,
   }) async {
     final uri = Uri.parse('${ApiConfig.stores}/$storeId/menu-items');
+    final formattedCustomization = (customizationOptions ?? []).map((g) => {
+      'group': g.group,
+      'required': g.required,
+      'options': g.options.map((o) => {
+        'name': o.name,
+        'extraPrice': o.extraPrice,
+      }).toList(),
+    }).toList();
+
     final body = jsonEncode({
       'name': name,
       'basePrice': basePrice,
@@ -121,7 +129,7 @@ class StoreService {
       'description': description,
       'imageUrl': imageUrl,
       'isAvailable': true,
-      'customizationOptions': [],
+      'customizationOptions': formattedCustomization,
     });
 
     try {
@@ -141,7 +149,7 @@ class StoreService {
       category: category,
       imageUrl: imageUrl,
       isAvailable: true,
-      customizationOptions: [],
+      customizationOptions: customizationOptions ?? [],
     );
   }
 
@@ -154,8 +162,18 @@ class StoreService {
     required String description,
     required String imageUrl,
     bool? isAvailable,
+    List<CustomizationGroupModel>? customizationOptions,
   }) async {
     final uri = Uri.parse('${ApiConfig.menuItems}/$id');
+    final formattedCustomization = (customizationOptions ?? []).map((g) => {
+      'group': g.group,
+      'required': g.required,
+      'options': g.options.map((o) => {
+        'name': o.name,
+        'extraPrice': o.extraPrice,
+      }).toList(),
+    }).toList();
+
     final body = jsonEncode({
       'name': name,
       'basePrice': basePrice,
@@ -163,7 +181,7 @@ class StoreService {
       'description': description,
       'imageUrl': imageUrl,
       if (isAvailable != null) 'isAvailable': isAvailable,
-      'customizationOptions': [],
+      'customizationOptions': formattedCustomization,
     });
 
     try {
@@ -189,163 +207,35 @@ class StoreService {
     return false;
   }
 
-  List<StoreModel> _fallbackStores() => const [
-        StoreModel(
-          id: 1,
-          name: 'Cơm Tấm Sườn Bì Khu B - Cổng 3',
-          description: 'Cơm tấm sườn nướng mật ong, giao gom đơn tận trụ KTX Khu B',
-          address: 'Cổng 3 KTX (150m)',
-          campusZone: 'KTX_KHU_B',
-          phoneNumber: '0901234567',
-          avatarUrl:
-              'https://images.unsplash.com/photo-1544025162-d76694265947?w=600',
-          isActive: true,
-          ratingAvg: 4.9,
-          ratingCount: 350,
-        ),
-        StoreModel(
-          id: 2,
-          name: 'Bún Đậu Mắm Tôm Cô Bông KTX',
-          description: 'Bún đậu mắm tôm thập cẩm giòn rụm, giao tới các cổng KTX',
-          address: 'Giao tới: Cổng KTX A & B',
-          campusZone: 'KTX_KHU_B',
-          phoneNumber: '0909888777',
-          avatarUrl:
-              'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600',
-          isActive: true,
-          ratingAvg: 4.8,
-          ratingCount: 210,
-        ),
-        StoreModel(
-          id: 3,
-          name: 'Trà Sữa Đậm Vị KTX Khu B',
-          description: 'Trà sữa đậm vị lá trà Bảo Lộc, trân châu hoàng kim',
-          address: 'Sảnh Tòa BA1 KTX Khu B',
-          campusZone: 'KTX_KHU_B',
-          phoneNumber: '0903111222',
-          avatarUrl:
-              'https://images.unsplash.com/photo-1556881286-fc6915169721?w=600',
-          isActive: true,
-          ratingAvg: 4.7,
-          ratingCount: 480,
-        ),
-      ];
-
-  List<MenuItemModel> _fallbackMenuItems(int storeId) {
-    if (storeId == 2) {
-      return const [
-        MenuItemModel(
-          id: 3,
-          storeId: 2,
-          name: 'Bún Bò Đặc Biệt Tái Nạm Chả Cua',
-          description: 'Đầy đủ thịt tái, nạm bò, chả cua Huế và rau sống tươi',
-          imageUrl:
-              'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=600',
-          basePrice: 40000,
-          category: 'BUN_PHO',
-          isAvailable: true,
-          customizationOptions: [
-            CustomizationGroupModel(
-              group: 'Độ cay',
-              required: true,
-              options: [
-                CustomizationOptionModel(name: 'Không cay', extraPrice: 0),
-                CustomizationOptionModel(name: 'Cay vừa', extraPrice: 0),
-                CustomizationOptionModel(name: 'Cay nồng Huế', extraPrice: 0),
-              ],
-            ),
-            CustomizationGroupModel(
-              group: 'Topping thêm',
-              required: false,
-              options: [
-                CustomizationOptionModel(name: 'Thêm chả cua', extraPrice: 10000),
-                CustomizationOptionModel(name: 'Thêm bún', extraPrice: 5000),
-              ],
-            ),
-          ],
-        ),
-      ];
-    }
-
-    return const [
-      MenuItemModel(
-        id: 1,
-        storeId: 1,
-        name: 'Cơm Sườn Bì Chả Đặc Biệt',
-        description: 'Sườn nướng than hoa, bì giòn thính thơm, chả trứng hấp béo ngậy',
-        imageUrl:
-            'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
-        basePrice: 35000,
-        category: 'COM',
-        isAvailable: true,
-        customizationOptions: [
-          CustomizationGroupModel(
-            group: 'Kích cỡ phần ăn',
-            required: true,
-            options: [
-              CustomizationOptionModel(name: 'Phần tiêu chuẩn', extraPrice: 0),
-              CustomizationOptionModel(name: 'Thêm cơm (+5.000đ)', extraPrice: 5000),
-            ],
-          ),
-          CustomizationGroupModel(
-            group: 'Topping thêm',
-            required: false,
-            options: [
-              CustomizationOptionModel(name: 'Trứng ốp la lòng đào', extraPrice: 6000),
-              CustomizationOptionModel(name: 'Thêm miếng sườn nướng', extraPrice: 15000),
-              CustomizationOptionModel(name: 'Bì thính thêm', extraPrice: 7000),
-            ],
-          ),
-        ],
-      ),
-      MenuItemModel(
-        id: 2,
-        storeId: 1,
-        name: 'Cơm Sườn Nướng Muối Ớt',
-        description: 'Sườn cốt lết ướp muối ớt cay nhẹ, nướng xém cạnh đậm đà',
-        imageUrl:
-            'https://images.unsplash.com/photo-1555126634-323283e090fa?w=600',
-        basePrice: 32000,
-        category: 'COM',
-        isAvailable: true,
-        customizationOptions: [],
-      ),
-      MenuItemModel(
-        id: 3,
-        storeId: 1,
-        name: 'Cơm Đùi Gà Nướng Teriyaki',
-        description: 'Đùi gà góc tư sốt Teriyaki Nhật Bản thơm lừng, da giòn rụm',
-        imageUrl:
-            'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=600',
-        basePrice: 38000,
-        category: 'COM',
-        isAvailable: true,
-        customizationOptions: [],
-      ),
-      MenuItemModel(
-        id: 4,
-        storeId: 1,
-        name: 'Canh Rong Biển Thịt Bằm',
-        description: 'Canh rong biển nấu thịt nạc bằm thanh mát, bổ dưỡng',
-        imageUrl:
-            'https://images.unsplash.com/photo-1547592180-85f173990554?w=600',
-        basePrice: 8000,
-        category: 'TOPPING',
-        isAvailable: true,
-        customizationOptions: [],
-      ),
-      MenuItemModel(
-        id: 5,
-        storeId: 1,
-        name: 'Trà Đào Cam Sả Tươi 500ml',
-        description: 'Trà đào sả tươi thanh mát kèm miếng đào giòn ngọt',
-        imageUrl:
-            'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600',
-        basePrice: 15000,
-        category: 'TOPPING',
-        isAvailable: true,
-        customizationOptions: [],
-      ),
-    ];
+  /// API Cập nhật thông tin cửa hàng (PUT /api/v1/stores/{id})
+  Future<StoreModel?> updateStore({
+    required int id,
+    required String name,
+    required String address,
+    required String phoneNumber,
+    required String description,
+    required String avatarUrl,
+    required String campusZone,
+    bool isActive = true,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.stores}/$id');
+    final body = jsonEncode({
+      'name': name,
+      'address': address,
+      'phoneNumber': phoneNumber,
+      'description': description,
+      'avatarUrl': avatarUrl,
+      'campusZone': campusZone,
+      'isActive': isActive,
+    });
+    try {
+      final response = await _client.put(uri, headers: ApiConfig.headers(), body: body).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
+        final jsonMap = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final data = jsonMap['data'] as Map<String, dynamic>;
+        return StoreModel.fromJson(data);
+      }
+    } catch (_) {}
+    return null;
   }
 }

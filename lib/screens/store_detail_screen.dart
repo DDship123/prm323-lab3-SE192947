@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -39,12 +40,14 @@ class StoreDetailScreen extends StatefulWidget {
 class _StoreDetailScreenState extends State<StoreDetailScreen> {
   bool _isFavorite = false;
 
-  static const _categories = [
-    {'code': 'ALL', 'label': 'Tất cả'},
-    {'code': 'BEST_SELLER', 'label': 'Món Bán Chạy 🔥'},
-    {'code': 'COM', 'label': 'Cơm Tấm'},
-    {'code': 'TOPPING', 'label': 'Món Thêm'},
-  ];
+  static const Map<String, String> _categoryLabels = {
+    'COM': 'Cơm',
+    'BUN_PHO': 'Bún / Phở',
+    'DO_UONG': 'Đồ uống',
+    'NUOC': 'Đồ uống',
+    'AN_VAT': 'Ăn vặt',
+    'TOPPING': 'Món thêm',
+  };
 
   @override
   void initState() {
@@ -547,27 +550,58 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
   }
 
   Widget _buildCategorySelector(StoreDetailViewModel vm) {
+    final state = vm.menuState;
+    final allItems = (state is StateSuccess<List<MenuItemModel>>) ? state.data : <MenuItemModel>[];
+
+    // Tạo danh sách danh mục ĐỘNG từ các món thực tế của quán
+    final dynamicCategories = <Map<String, String>>[
+      {'code': 'ALL', 'label': 'Tất cả'},
+    ];
+
+    final presentCategories = <String>{};
+    for (final item in allItems) {
+      final rawCat = item.category.trim().toUpperCase();
+      if (rawCat.isNotEmpty && !presentCategories.contains(rawCat)) {
+        presentCategories.add(rawCat);
+      }
+    }
+
+    for (final cat in presentCategories) {
+      final label = _categoryLabels[cat] ?? cat;
+      dynamicCategories.add({'code': cat, 'label': label});
+    }
+
     return SizedBox(
       height: 44,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        scrollDirection: Axis.horizontal,
-        itemCount: _categories.length,
-        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
-        itemBuilder: (_, index) {
-          final cat = _categories[index];
-          final isSelected = vm.selectedCategory == cat['code'];
-          return ChoiceChip(
-            label: Text(cat['label']!),
-            selected: isSelected,
-            selectedColor: AppColors.primary,
-            labelStyle: TextStyle(
-              color: isSelected ? Colors.white : AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-            onSelected: (_) => vm.selectCategory(cat['code']!),
-          );
-        },
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(
+          dragDevices: {
+            PointerDeviceKind.touch,
+            PointerDeviceKind.mouse,
+            PointerDeviceKind.trackpad,
+          },
+        ),
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          itemCount: dynamicCategories.length,
+          separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
+          itemBuilder: (_, index) {
+            final cat = dynamicCategories[index];
+            final isSelected = vm.selectedCategory == cat['code'];
+            return ChoiceChip(
+              label: Text(cat['label']!),
+              selected: isSelected,
+              selectedColor: AppColors.primary,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+              onSelected: (_) => vm.selectCategory(cat['code']!),
+            );
+          },
+        ),
       ),
     );
   }

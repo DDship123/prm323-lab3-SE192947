@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../firebase/analytics_service.dart';
 import '../firebase/remote_config_service.dart';
 import '../models/order_model.dart';
+import '../models/voucher_model.dart';
+import '../services/voucher_service.dart';
 import '../viewmodels/cart_checkout_vm.dart';
 import '../widgets/ktx_dialog.dart';
 import '../services/order_service.dart';
@@ -34,7 +36,8 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
   int _selectedLocationIndex = 0;
   int _selectedShiftIndex = 0; // 0: Ca Trưa, 1: Ca Tối
   String _paymentMethod = 'VIETQR';
-  bool _voucherApplied = true;
+  VoucherModel? _appliedVoucher;
+  bool _voucherInitialized = false;
 
   final List<Map<String, dynamic>> _pickupPoints = [
     {
@@ -66,6 +69,18 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
           context.read<RemoteConfigService>().groupShipFee.toDouble();
       context.read<CartCheckoutViewModel>().updateDeliveryFee(remoteFee);
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_voucherInitialized) {
+      final v = context.read<VoucherService>().findByCode('SINHVIENKTX');
+      if (v != null && v.isActive) {
+        _appliedVoucher = v;
+      }
+      _voucherInitialized = true;
+    }
   }
 
   @override
@@ -217,12 +232,43 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final cartVm = context.watch<CartCheckoutViewModel>();
+    final voucherService = context.watch<VoucherService>();
+
+    // Nếu voucher đang chọn bị Admin Disable ở chế độ nền -> Tự động ngắt áp dụng ngay tức thì
+    if (_appliedVoucher != null) {
+      final latest = voucherService.findByCode(_appliedVoucher!.code);
+      if (latest == null || !latest.isActive) {
+        _appliedVoucher = null;
+      } else {
+        _appliedVoucher = latest;
+      }
+    }
 
     final double itemsSubtotal = cartVm.totalItemCount > 0 ? cartVm.subtotalAmount : 50000;
     const double originalShipFee = 15000;
     final double shipFee = cartVm.deliveryFee > 0 ? cartVm.deliveryFee : 5000;
-    final double voucherDiscount = _voucherApplied ? 10000 : 0;
-    final double totalPayment = (itemsSubtotal + shipFee - voucherDiscount).clamp(0, double.infinity);
+
+    // Tính toán giảm giá:
+    // QUY TẮC BẢO VỆ TIỀN MÓN ĂN:
+    // - Voucher phí ship CHỈ ĐƯỢC GIẢM TỐI ĐA BẰNG TIỀN SHIP min(voucherDiscount, shipFee). Tuyệt đối KHÔNG trừ lẹm vào tiền món ăn!
+    // - Voucher tiền món CHỈ ĐƯỢC GIẢM TỐI ĐA BẰNG TIỀN MÓN min(voucherDiscount, itemsSubtotal).
+    double voucherDiscount = 0.0;
+    if (_appliedVoucher != null) {
+      voucherDiscount = _appliedVoucher!.calculateActualDiscount(
+        itemsSubtotal: itemsSubtotal,
+        deliveryFee: shipFee,
+      );
+    }
+
+    final double effectiveShipFee = _appliedVoucher?.type == VoucherType.shipping
+        ? (shipFee - voucherDiscount).clamp(0, double.infinity)
+        : shipFee;
+
+    final double effectiveItemsSubtotal = _appliedVoucher?.type == VoucherType.order
+        ? (itemsSubtotal - voucherDiscount).clamp(0, double.infinity)
+        : itemsSubtotal;
+
+    final double totalPayment = effectiveItemsSubtotal + effectiveShipFee;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -838,78 +884,132 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFA7F3D0)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF059669),
-                          borderRadius: BorderRadius.circular(8),
+                if (_appliedVoucher != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECFDF5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFA7F3D0)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF059669),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.confirmation_num_rounded, color: Colors.white, size: 18),
                         ),
-                        child: const Icon(Icons.confirmation_num_rounded, color: Colors.white, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Text(
-                                  'SINHVIENKTX',
-                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF065F46)),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF059669),
-                                    borderRadius: BorderRadius.circular(4),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    _appliedVoucher!.code,
+                                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFF065F46)),
                                   ),
-                                  child: const Text(
-                                    'Đã áp dụng',
-                                    style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF059669),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'Đã áp dụng',
+                                      style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            const Text(
-                              'Giảm 10.000đ phí giao gom chung',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF047857)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      InkWell(
-                        onTap: () {
-                          setState(() => _voucherApplied = !_voucherApplied);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(_voucherApplied ? 'Đã áp dụng mã SINHVIENKTX' : 'Đã gỡ mã ưu đãi'),
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          _voucherApplied ? 'Đổi mã' : 'Áp dụng',
-                          style: const TextStyle(
-                            color: Color(0xFF059669),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _appliedVoucher!.type == VoucherType.shipping
+                                    ? 'Giảm tối đa ${_formatCurrency(_appliedVoucher!.discountAmount)} phí giao gom chung'
+                                    : 'Giảm ${_formatCurrency(_appliedVoucher!.discountAmount)} tiền món ăn',
+                                style: const TextStyle(fontSize: 11, color: Color(0xFF047857)),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        InkWell(
+                          onTap: () => _showVoucherPickerModal(context, itemsSubtotal, shipFee),
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            child: Text(
+                              'Đổi mã',
+                              style: TextStyle(
+                                color: Color(0xFF059669),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE2E8F0),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.confirmation_num_outlined, color: Color(0xFF64748B), size: 18),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Chưa chọn mã ưu đãi',
+                                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155)),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Bấm chọn mã để được giảm phí ship hoặc tiền món',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () => _showVoucherPickerModal(context, itemsSubtotal, shipFee),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF521B),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'Chọn mã',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -1143,14 +1243,16 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                     ),
                   ],
                 ),
-                if (_voucherApplied) ...[
+                if (_appliedVoucher != null && voucherDiscount > 0) ...[
                   const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Giảm giá voucher [SINHVIENKTX]',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF059669)),
+                      Text(
+                        _appliedVoucher!.type == VoucherType.shipping
+                            ? 'Giảm phí gom đơn [${_appliedVoucher!.code}]'
+                            : 'Giảm giá món ăn [${_appliedVoucher!.code}]',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF059669)),
                       ),
                       Text(
                         '-${_formatCurrency(voucherDiscount)}',
@@ -1325,4 +1427,287 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
     );
   }
 
+  void _showVoucherPickerModal(
+    BuildContext context,
+    double itemsSubtotal,
+    double shipFee,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Consumer<VoucherService>(
+          builder: (context, voucherService, child) {
+            final allVouchers = voucherService.vouchers;
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.72,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.confirmation_num_rounded, color: Color(0xFFFF521B), size: 22),
+                            SizedBox(width: 8),
+                            Text(
+                              'Mã giảm giá & Ưu đãi KTX',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        // Option: Không dùng voucher
+                        InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            setState(() => _appliedVoucher = null);
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã gỡ mã ưu đãi')),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8FAFC),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _appliedVoucher == null ? const Color(0xFFFF521B) : const Color(0xFFE2E8F0),
+                                width: _appliedVoucher == null ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _appliedVoucher == null ? Icons.radio_button_checked : Icons.radio_button_off,
+                                  color: _appliedVoucher == null ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'Không sử dụng mã giảm giá',
+                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF475569)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        ...allVouchers.map((v) {
+                          final isApplied = _appliedVoucher?.code == v.code;
+                          final bool isDisabled = !v.isActive;
+                          final bool notEnoughSubtotal = itemsSubtotal < v.minOrderValue;
+                          final discount = v.calculateActualDiscount(itemsSubtotal: itemsSubtotal, deliveryFee: shipFee);
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: isDisabled ? const Color(0xFFF8FAFC) : Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isApplied
+                                    ? const Color(0xFF059669)
+                                    : const Color(0xFFE2E8F0),
+                                width: isApplied ? 1.5 : 1,
+                              ),
+                            ),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(14),
+                              onTap: () {
+                                if (isDisabled) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Mã "${v.code}" đã bị Ban Quản Lý KTX tạm ngưng kích hoạt!'),
+                                      backgroundColor: const Color(0xFFDC2626),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                if (notEnoughSubtotal) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Đơn hàng chưa đạt tối thiểu ${_formatCurrency(v.minOrderValue)} để áp dụng mã này!'),
+                                      backgroundColor: const Color(0xFFEA580C),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                setState(() => _appliedVoucher = v);
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Đã áp dụng mã ${v.code} (${_formatCurrency(discount)})'),
+                                    backgroundColor: const Color(0xFF059669),
+                                  ),
+                                );
+                              },
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: isDisabled
+                                            ? Colors.grey.shade200
+                                            : (v.type == VoucherType.shipping
+                                                ? const Color(0xFFEFF6FF)
+                                                : const Color(0xFFFFF7ED)),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        v.type == VoucherType.shipping
+                                            ? Icons.local_shipping_rounded
+                                            : Icons.restaurant_rounded,
+                                        color: isDisabled
+                                            ? Colors.grey
+                                            : (v.type == VoucherType.shipping
+                                                ? const Color(0xFF2563EB)
+                                                : const Color(0xFFEA580C)),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Text(
+                                                v.code,
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 14,
+                                                  color: isDisabled ? Colors.grey : const Color(0xFF1E293B),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              if (isDisabled)
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFFEF2F2),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                    border: Border.all(color: const Color(0xFFFECACA)),
+                                                  ),
+                                                  child: const Text(
+                                                    'Tạm khóa bởi Admin',
+                                                    style: TextStyle(color: Color(0xFFDC2626), fontSize: 9, fontWeight: FontWeight.bold),
+                                                  ),
+                                                )
+                                              else if (isApplied)
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFECFDF5),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                                                  ),
+                                                  child: const Text(
+                                                    'Đang áp dụng',
+                                                    style: TextStyle(color: Color(0xFF059669), fontSize: 9, fontWeight: FontWeight.bold),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 3),
+                                          Text(
+                                            v.title,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 12,
+                                              color: isDisabled ? Colors.grey : const Color(0xFF334155),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            v.description,
+                                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Wrap(
+                                            spacing: 6,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFF1F5F9),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  'Tối đa ${v.maxUsagePerAccount} lượt/SV',
+                                                  style: const TextStyle(fontSize: 10, color: Color(0xFF475569)),
+                                                ),
+                                              ),
+                                              if (v.minOrderValue > 0)
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFFF1F5F9),
+                                                    borderRadius: BorderRadius.circular(4),
+                                                  ),
+                                                  child: Text(
+                                                    'Đơn từ ${_formatCurrency(v.minOrderValue)}',
+                                                    style: const TextStyle(fontSize: 10, color: Color(0xFF475569)),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (!isDisabled)
+                                      Icon(
+                                        isApplied ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
+                                        color: isApplied ? const Color(0xFF059669) : const Color(0xFFCBD5E1),
+                                        size: 22,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 }

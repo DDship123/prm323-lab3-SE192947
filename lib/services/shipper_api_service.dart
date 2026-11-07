@@ -32,9 +32,9 @@ class ShipperApiService {
           return ShipperBatchModel.fromJson(data);
         }
       }
-      return _getMockBatch();
-    } catch (_) {
-      return _getMockBatch();
+      throw Exception('Lỗi máy chủ: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Không thể tải danh sách chuyến gom đơn từ máy chủ ($e)');
     }
   }
 
@@ -55,7 +55,7 @@ class ShipperApiService {
       final response = await _client.patch(url, headers: headers).timeout(const Duration(seconds: 4));
       return response.statusCode == 200;
     } catch (_) {
-      return true; // Fallback demo
+      return false;
     }
   }
 
@@ -78,7 +78,7 @@ class ShipperApiService {
       final response = await _client.patch(uri, headers: headers).timeout(const Duration(seconds: 4));
       return response.statusCode == 200;
     } catch (_) {
-      return true;
+      return false;
     }
   }
 
@@ -101,7 +101,7 @@ class ShipperApiService {
       final response = await _client.post(uri, headers: headers).timeout(const Duration(seconds: 4));
       return response.statusCode == 200;
     } catch (_) {
-      return true;
+      return false;
     }
   }
 
@@ -122,7 +122,7 @@ class ShipperApiService {
       final response = await _client.patch(url, headers: headers).timeout(const Duration(seconds: 4));
       return response.statusCode == 200;
     } catch (_) {
-      return true;
+      return false;
     }
   }
 
@@ -148,9 +148,9 @@ class ShipperApiService {
           return ShipperWalletModel.fromJson(data);
         }
       }
-      return _getMockWallet();
-    } catch (_) {
-      return _getMockWallet();
+      throw Exception('Lỗi máy chủ: ${response.statusCode}');
+    } catch (e) {
+      throw Exception('Không thể tải thông tin ví shipper từ máy chủ ($e)');
     }
   }
 
@@ -180,74 +180,7 @@ class ShipperApiService {
       final response = await _client.post(url, headers: headers, body: body).timeout(const Duration(seconds: 4));
       return response.statusCode == 200;
     } catch (_) {
-      return true;
+      return false;
     }
-  }
-
-  ShipperWalletModel _getMockWallet() {
-    return ShipperWalletModel(
-      walletBalance: 350000,
-      pendingEarnings: 30000,
-      completedEarnings: 350000,
-      completedTrips: 12,
-      codCollectedToday: 87000,
-      recentTransactions: [
-        WalletTransactionItem(
-          transactionId: 'TX-KTX-101',
-          type: 'CONG_THU_LAO',
-          title: 'Thù lao ca gom trưa 11:30 KTX Khu B',
-          amount: 30000,
-          createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-          status: 'SUCCESS',
-        ),
-        WalletTransactionItem(
-          transactionId: 'TX-KTX-099',
-          type: 'RUT_TIEN',
-          title: 'Rút tiền thù lao về Vietcombank (*9876)',
-          amount: -200000,
-          createdAt: DateTime.now().subtract(const Duration(days: 1)),
-          status: 'SUCCESS',
-        ),
-      ],
-    );
-  }
-
-  ShipperBatchModel _getMockBatch() {
-    return ShipperBatchModel(
-      slotTime: 'CA_TRUA_11H30',
-      campusZone: 'KTX Khu B – Trụ A1–A2',
-      totalOrders: 2,
-      totalDeliveryEarnings: 10000,
-      orders: [
-        ShipperBatchItemModel(
-          orderId: 1045,
-          orderCode: 'KTX-1045',
-          storeName: 'Cơm Tấm Cô Ba - ĐHQG',
-          storeAddress: 'Cổng B2 KTX ĐHQG TP.HCM',
-          pickupLocation: 'KTX Khu B – Trụ A1–A2 (Cổng B2)',
-          customerName: 'Ngô Trường Đạt',
-          customerPhone: '0981234567',
-          paymentMethod: 'VIETQR',
-          finalAmount: 45000,
-          status: 'DELIVERING',
-          pickupPin: '4567',
-          createdAt: DateTime.now().subtract(const Duration(minutes: 20)),
-        ),
-        ShipperBatchItemModel(
-          orderId: 1046,
-          orderCode: 'KTX-1046',
-          storeName: 'Cơm Tấm Cô Ba - ĐHQG',
-          storeAddress: 'Cổng B2 KTX ĐHQG TP.HCM',
-          pickupLocation: 'KTX Khu B – Trụ A1–A2 (Cổng B2)',
-          customerName: 'Trần Sanh Điền',
-          customerPhone: '0903334444',
-          paymentMethod: 'COD',
-          finalAmount: 42000,
-          status: 'READY',
-          pickupPin: '4444',
-          createdAt: DateTime.now().subtract(const Duration(minutes: 25)),
-        ),
-      ],
-    );
   }
 }

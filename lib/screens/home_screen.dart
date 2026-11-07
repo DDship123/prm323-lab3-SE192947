@@ -41,6 +41,26 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _searchCtrl = TextEditingController();
   final Set<int> _favoriteStoreIds = {1};
+  String? _selectedCategory;
+
+  void _toggleCategoryFilter(
+      String categoryName, String keyword, HomeViewModel homeVm) {
+    if (_selectedCategory == categoryName) {
+      // Đang lọc -> Bấm lần nữa để BỎ LỌC
+      setState(() {
+        _selectedCategory = null;
+        _searchCtrl.clear();
+      });
+      homeVm.searchStores('');
+    } else {
+      // Chưa lọc -> Bấm để lọc và nút lún xuống
+      setState(() {
+        _selectedCategory = categoryName;
+        _searchCtrl.text = categoryName;
+      });
+      homeVm.searchStores(keyword);
+    }
+  }
 
   static const _zones = [
     {'code': 'ALL', 'label': 'Tất cả', 'icon': '🔥', 'dotColor': null},
@@ -297,6 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final categories = [
       {
         'name': 'Cơm trưa',
+        'keyword': 'cơm',
         'subtitle': 'Từ 25k',
         'icon': Icons.lunch_dining_rounded,
         'bgColor': const Color(0xFFFFF7ED),
@@ -304,6 +325,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       {
         'name': 'Bún phở',
+        'keyword': 'bún',
         'subtitle': 'Nóng hổi',
         'icon': Icons.ramen_dining_rounded,
         'bgColor': const Color(0xFFFEF3C7),
@@ -311,6 +333,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       {
         'name': 'Trà sữa',
+        'keyword': 'trà',
         'subtitle': 'Ưu đãi',
         'icon': Icons.local_cafe_rounded,
         'bgColor': const Color(0xFFFDF2F8),
@@ -318,6 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       {
         'name': 'Ăn vặt',
+        'keyword': 'ăn vặt',
         'subtitle': 'Bánh tráng...',
         'icon': Icons.fastfood_rounded,
         'bgColor': const Color(0xFFFEF9C3),
@@ -325,6 +349,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       {
         'name': 'Bánh mì',
+        'keyword': 'bánh mì',
         'subtitle': 'Giao nhanh',
         'icon': Icons.bakery_dining_rounded,
         'bgColor': const Color(0xFFFFE4E6),
@@ -332,6 +357,7 @@ class _HomeScreenState extends State<HomeScreen> {
       },
       {
         'name': 'Nước ép',
+        'keyword': 'nước',
         'subtitle': 'Healthy',
         'icon': Icons.local_bar_rounded,
         'bgColor': const Color(0xFFECFDF5),
@@ -340,67 +366,134 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     Widget buildCatCard(Map<String, dynamic> cat) {
-      return InkWell(
-        onTap: () => homeVm.searchStores(cat['name'] as String),
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFF1F5F9)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 4,
-                offset: const Offset(0, 1),
+      final catName = cat['name'] as String;
+      final keyword = (cat['keyword'] as String?) ?? catName;
+      final isSelected = _selectedCategory == catName;
+
+      return Semantics(
+        button: true,
+        selected: isSelected,
+        label: 'Lọc $catName ${isSelected ? "(Đang chọn - chạm để bỏ lọc)" : ""}',
+        child: InkWell(
+          onTap: () => _toggleCategoryFilter(catName, keyword, homeVm),
+          borderRadius: BorderRadius.circular(14),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeInOut,
+            // Hiệu ứng vật lý lún xuống khi đang lọc (Pressed-down state)
+            margin: EdgeInsets.only(
+              top: isSelected ? 3.0 : 0.0,
+              bottom: isSelected ? 0.0 : 3.0,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: BoxDecoration(
+              // Màu nền: Chuyển sang cam nhạt ấm khi đang chọn
+              color: isSelected ? const Color(0xFFFFF4EC) : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              // Viền cam đậm nổi bật khi đang lọc
+              border: Border.all(
+                color: isSelected
+                    ? const Color(0xFFFF521B)
+                    : const Color(0xFFF1F5F9),
+                width: isSelected ? 1.8 : 1.0,
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: cat['bgColor'] as Color,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  cat['icon'] as IconData,
-                  color: cat['iconColor'] as Color,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      cat['name'] as String,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: Color(0xFF1E293B),
+              // Đổ bóng lún phẳng khi được ấn xuống
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFFFF521B).withValues(alpha: 0.18),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      cat['subtitle'] as String,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF94A3B8),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                    ],
+            ),
+            child: Row(
+              children: [
+                // Khung Icon danh mục
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFFFF521B)
+                        : (cat['bgColor'] as Color),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFFFF521B)
+                                  .withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Icon(
+                    cat['icon'] as IconData,
+                    color:
+                        isSelected ? Colors.white : (cat['iconColor'] as Color),
+                    size: 18,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              catName,
+                              style: TextStyle(
+                                fontWeight: isSelected
+                                    ? FontWeight.w800
+                                    : FontWeight.bold,
+                                fontSize: 12,
+                                color: isSelected
+                                    ? const Color(0xFFFF521B)
+                                    : const Color(0xFF1E293B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              size: 12,
+                              color: Color(0xFFFF521B),
+                            ),
+                        ],
+                      ),
+                      Text(
+                        isSelected ? '• Đang lọc' : (cat['subtitle'] as String),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected
+                              ? const Color(0xFFEA580C)
+                              : const Color(0xFF94A3B8),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -435,11 +528,19 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             InkWell(
-              onTap: () => homeVm.searchStores(''),
-              child: const Text(
-                'Xem tất cả (12)',
+              onTap: () {
+                setState(() {
+                  _selectedCategory = null;
+                  _searchCtrl.clear();
+                });
+                homeVm.searchStores('');
+              },
+              child: Text(
+                _selectedCategory != null ? 'Bỏ lọc ✕' : 'Xem tất cả (12)',
                 style: TextStyle(
-                  color: Color(0xFFFF521B),
+                  color: _selectedCategory != null
+                      ? const Color(0xFFDC2626)
+                      : const Color(0xFFFF521B),
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -927,46 +1028,48 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildStoreCard(StoreModel store, BuildContext context) {
     final isFav = _favoriteStoreIds.contains(store.id);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: () => _openStoreDetail(store),
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Ảnh lớn tràn viền trên + Badges
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(16)),
-                  child: SizedBox(
-                    height: 145,
-                    width: double.infinity,
-                    child: store.avatarUrl != null &&
-                            store.avatarUrl!.isNotEmpty
-                        ? Image.network(
-                            store.avatarUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                _buildStorePlaceholder(),
-                          )
-                        : _buildStorePlaceholder(),
+    return RepaintBoundary(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: InkWell(
+          onTap: () => _openStoreDetail(store),
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. Ảnh lớn tràn viền trên + Badges
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
+                    child: SizedBox(
+                      height: 145,
+                      width: double.infinity,
+                      child: store.avatarUrl != null &&
+                              store.avatarUrl!.isNotEmpty
+                          ? Image.network(
+                              store.avatarUrl!,
+                              fit: BoxFit.cover,
+                              cacheWidth: 600,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _buildStorePlaceholder(),
+                            )
+                          : _buildStorePlaceholder(),
+                    ),
                   ),
-                ),
 
                 // Badges góc trên bên trái
                 Positioned(
@@ -1171,8 +1274,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildStorePlaceholder() {
     return Container(

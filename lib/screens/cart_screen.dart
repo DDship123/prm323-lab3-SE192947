@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../models/voucher_model.dart';
+import '../services/voucher_service.dart';
 import '../theme/app_colors.dart';
 import '../viewmodels/cart_checkout_vm.dart';
 
@@ -54,12 +56,17 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cartVm = context.watch<CartCheckoutViewModel>();
+    final voucherService = context.watch<VoucherService>();
     final items = cartVm.items;
     final selectedCount = cartVm.selectedItemCount;
     final selectedSubtotal = cartVm.selectedSubtotalAmount;
+    final defaultVoucher = voucherService.findByCode('SINHVIENKTX');
     const double shipFee = 5000.0;
-    const double voucherDiscount = 10000.0;
-    final double estimatedFinal = selectedCount > 0 ? (selectedSubtotal + shipFee - voucherDiscount).clamp(0, double.infinity) : 0;
+    final double voucherDiscount = (defaultVoucher != null && defaultVoucher.isActive)
+        ? defaultVoucher.calculateActualDiscount(itemsSubtotal: selectedSubtotal, deliveryFee: shipFee)
+        : 0.0;
+    final double effectiveShipFee = (shipFee - voucherDiscount).clamp(0, double.infinity);
+    final double estimatedFinal = selectedCount > 0 ? (selectedSubtotal + effectiveShipFee) : 0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -374,8 +381,10 @@ class CartScreen extends StatelessWidget {
                             _buildPriceRow('Tiền món ($selectedCount món đã chọn)', _formatCurrency(selectedSubtotal)),
                             const SizedBox(height: 6),
                             _buildPriceRow('Phí ship gom đơn KTX', _formatCurrency(shipFee), subtitle: '(Tiết kiệm 10k so với ship riêng)'),
-                            const SizedBox(height: 6),
-                            _buildPriceRow('Voucher giảm giá KTX', '-${_formatCurrency(voucherDiscount)}', highlightColor: const Color(0xFF059669)),
+                            if (voucherDiscount > 0) ...[
+                              const SizedBox(height: 6),
+                              _buildPriceRow('Voucher giảm phí ship KTX', '-${_formatCurrency(voucherDiscount)}', highlightColor: const Color(0xFF059669)),
+                            ],
                             const Divider(height: 18, color: Color(0xFFF1F5F9)),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -12,6 +12,7 @@ import '../widgets/ktx_button.dart';
 import '../widgets/ktx_empty_state.dart';
 import '../widgets/ktx_error_state.dart';
 import '../widgets/ktx_loading_state.dart';
+import '../services/delivery_handshake_service.dart';
 import '../widgets/screen_state.dart';
 import 'shipper_handover_confirm_screen.dart';
 import 'shipper_pickup_detail_screen.dart';
@@ -38,6 +39,7 @@ class ShipperBatchPickupScreen extends StatefulWidget {
 
 class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
   final currencyFormatter = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ');
+  int _selectedTabIndex = 0; // 0: Cần phát, 1: Đã hoàn tất
 
   @override
   void initState() {
@@ -45,6 +47,30 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ShipperViewModel>().fetchBatch(shipperId: widget.shipperId);
     });
+  }
+
+  void _confirmSignOut(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản Shipper không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Ở lại'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () {
+              Navigator.pop(ctx);
+              widget.onSignOut?.call();
+            },
+            child: const Text('Đăng xuất', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -106,9 +132,13 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Text(
-                              'Trực Bàn số 2 • Cổng KTX Khu B (Ca Trưa)',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                            const Expanded(
+                              child: Text(
+                                'Trực Bàn số 2 • Cổng KTX Khu B (Ca Trưa)',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -125,16 +155,47 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                     icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B), size: 22),
                     onPressed: () => vm.fetchBatch(shipperId: widget.shipperId),
                   ),
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFFF521B), width: 1.5),
-                    ),
-                    child: const CircleAvatar(
-                      radius: 16,
-                      backgroundImage: NetworkImage(
-                        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120',
+                  PopupMenuButton<String>(
+                    tooltip: 'Tài khoản & Đăng xuất',
+                    onSelected: (val) {
+                      if (val == 'logout') {
+                        _confirmSignOut(context);
+                      }
+                    },
+                    itemBuilder: (ctx) => [
+                      const PopupMenuItem(
+                        enabled: false,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Nguyễn Hùng (Shipper)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                            Text('shipper.hung@fpt.edu.vn', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'logout',
+                        child: Row(
+                          children: [
+                            Icon(Icons.logout_rounded, color: AppColors.error, size: 20),
+                            SizedBox(width: 8),
+                            Text('Đăng xuất', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ],
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFFF521B), width: 1.5),
+                      ),
+                      child: const CircleAvatar(
+                        radius: 16,
+                        backgroundImage: NetworkImage(
+                          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120',
+                        ),
                       ),
                     ),
                   ),
@@ -155,30 +216,213 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
             errorMessage: err,
             onRetry: () => vm.fetchBatch(shipperId: widget.shipperId),
           ),
-        StateSuccess(data: final batch) => ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _buildBatchSummaryCard(batch),
-              const SizedBox(height: 16),
-              const Row(
-                children: [
-                  Icon(Icons.inventory_2_outlined, size: 18, color: Color(0xFFFF521B)),
-                  SizedBox(width: 6),
-                  Text(
-                    'Danh sách đơn gom cần phát tại bàn:',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ...batch.orders.map((o) => _buildShipperOrderCard(o, vm)),
-            ],
-          ),
+        StateSuccess(data: final batch) => _buildSuccessBatchView(batch, vm),
       },
     );
   }
 
-  Widget _buildBatchSummaryCard(ShipperBatchModel batch) {
+  Widget _buildSuccessBatchView(ShipperBatchModel batch, ShipperViewModel vm) {
+    final handshake = context.watch<DeliveryHandshakeService>();
+
+    // 1. Sắp xếp đơn hàng: Đơn mới nhất nằm ở trên, đơn cũ hơn nằm ở dưới
+    final allOrders = List<ShipperBatchItemModel>.from(batch.orders)
+      ..sort((a, b) {
+        final cmp = b.createdAt.compareTo(a.createdAt);
+        if (cmp != 0) return cmp;
+        return b.orderId.compareTo(a.orderId);
+      });
+
+    // 2. Phân loại đơn: Đơn hoàn tất tách riêng sang tab "Đã hoàn thành"
+    final completedOrders = allOrders.where((o) =>
+        o.status == 'DELIVERED' ||
+        o.status == 'COMPLETED' ||
+        handshake.isFullyDelivered(o.orderId)
+    ).toList();
+
+    final activeOrders = allOrders.where((o) =>
+        !completedOrders.contains(o) &&
+        o.status != 'CANCELLED' &&
+        o.status != 'FAILED'
+    ).toList();
+
+    final liveEarnings = (completedOrders.length * 15000.0) + handshake.extraShipperEarnings;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Thẻ tổng quan ca gom & thù lao
+        _buildBatchSummaryCard(
+          batch: batch,
+          completedCount: completedOrders.length,
+          totalCount: allOrders.length,
+          accumulatedEarnings: liveEarnings,
+        ),
+        const SizedBox(height: 16),
+
+        // 3. Tab chuyển đổi rõ ràng giữa: Đơn cần phát vs Đơn đã hoàn tất
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _selectedTabIndex = 0),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _selectedTabIndex == 0 ? Colors.white : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: _selectedTabIndex == 0
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.local_shipping_rounded,
+                          size: 16,
+                          color: _selectedTabIndex == 0 ? const Color(0xFFFF521B) : const Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Cần giao (${activeOrders.length})',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: _selectedTabIndex == 0 ? const Color(0xFFFF521B) : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _selectedTabIndex = 1),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _selectedTabIndex == 1 ? Colors.white : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: _selectedTabIndex == 1
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.check_circle_rounded,
+                          size: 16,
+                          color: _selectedTabIndex == 1 ? const Color(0xFF059669) : const Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Đã hoàn tất (${completedOrders.length})',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: _selectedTabIndex == 1 ? const Color(0xFF059669) : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Danh sách đơn hàng theo Tab
+        if (_selectedTabIndex == 0) ...[
+          if (activeOrders.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: [
+                  const Icon(Icons.task_alt_rounded, size: 48, color: Color(0xFF059669)),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Đã giao xong toàn bộ đơn!',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Bạn đã hoàn tất phát thành công ${completedOrders.length} đơn gom trong ca này. Mở tab "Đã hoàn tất" để xem chi tiết.',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          else
+            ...activeOrders.map((o) => _buildShipperOrderCard(o, vm, handshake)),
+        ] else ...[
+          if (completedOrders.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: const Column(
+                children: [
+                  Icon(Icons.inventory_2_outlined, size: 48, color: Color(0xFF94A3B8)),
+                  SizedBox(height: 10),
+                  Text(
+                    'Chưa có đơn hoàn tất',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Khi bạn quét mã QR hoặc nhập đúng mã PIN đối soát của sinh viên, đơn sẽ lập tức chuyển sang mục này và cộng tiền thù lao vào ví.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            )
+          else
+            ...completedOrders.map((o) => _buildCompletedShipperOrderCard(o)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildBatchSummaryCard({
+    required ShipperBatchModel batch,
+    required int completedCount,
+    required int totalCount,
+    required double accumulatedEarnings,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -199,16 +443,23 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.access_time_rounded, size: 18, color: Color(0xFFFF521B)),
-                  SizedBox(width: 6),
-                  Text(
-                    'Chuyến gom Ca Trưa 11:30',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
-                  ),
-                ],
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.access_time_rounded, size: 18, color: Color(0xFFFF521B)),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Chuyến gom Ca Trưa 11:30',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -217,21 +468,21 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                   border: Border.all(color: const Color(0xFFA7F3D0)),
                 ),
                 child: Text(
-                  '${batch.totalOrders} đơn gom',
+                  'Đã phát: $completedCount / $totalCount đơn',
                   style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF64748B)),
-              const SizedBox(width: 4),
+              Icon(Icons.location_on_outlined, size: 16, color: Color(0xFF64748B)),
+              SizedBox(width: 4),
               Expanded(
                 child: Text(
                   'Điểm tập kết: Bàn số 2 • Cổng KTX Khu B',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                  style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
                 ),
               ),
             ],
@@ -239,18 +490,18 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
           const SizedBox(height: 6),
           Row(
             children: [
-              const Icon(Icons.payments_outlined, size: 16, color: Color(0xFF10B981)),
+              const Icon(Icons.account_balance_wallet_rounded, size: 16, color: Color(0xFF10B981)),
               const SizedBox(width: 4),
-              Text(
-                'Thù lao ước tính: ',
-                style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
+              const Text(
+                'Thù lao đã cộng ví: ',
+                style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
               ),
               Text(
-                currencyFormatter.format(batch.totalDeliveryEarnings),
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFFF521B)),
+                currencyFormatter.format(accumulatedEarnings > 0 ? accumulatedEarnings : (completedCount * 15000.0)),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
               ),
               const Text(
-                ' (15k ship / đơn)',
+                ' (+15k / đơn hoàn tất)',
                 style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
               ),
             ],
@@ -347,8 +598,13 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
     );
   }
 
-  Widget _buildShipperOrderCard(ShipperBatchItemModel order, ShipperViewModel vm) {
+  Widget _buildShipperOrderCard(
+    ShipperBatchItemModel order,
+    ShipperViewModel vm,
+    DeliveryHandshakeService handshake,
+  ) {
     final isDelivering = order.status == 'DELIVERING';
+    final isStudentConfirmed = handshake.isStudentConfirmed(order.orderId);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -418,16 +674,35 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
                 ),
               ),
+              // BẢO MẬT: Tuyệt đối KHÔNG hiển thị mã 4 số của Sinh viên tại đây.
+              // Thay bằng trạng thái đối soát bảo mật 2 chiều.
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFBEB),
+                  color: isStudentConfirmed ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFFDE68A)),
+                  border: Border.all(
+                    color: isStudentConfirmed ? const Color(0xFFA7F3D0) : const Color(0xFFBFDBFE),
+                  ),
                 ),
-                child: Text(
-                  'PIN: ${order.pickupPin ?? "4829"}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFFB45309)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isStudentConfirmed ? Icons.check_circle_rounded : Icons.lock_outline_rounded,
+                      size: 13,
+                      color: isStudentConfirmed ? const Color(0xFF047857) : const Color(0xFF1D4ED8),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      isStudentConfirmed ? 'SV đã bấm nhận món' : 'Cần quét QR / PIN',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 10,
+                        color: isStudentConfirmed ? const Color(0xFF047857) : const Color(0xFF1D4ED8),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -456,8 +731,16 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                 children: [
                   const Text('Tiền thu: ', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                   Text(
-                    currencyFormatter.format(order.finalAmount),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFFFF521B)),
+                    order.paymentMethod.toUpperCase() == 'COD'
+                        ? currencyFormatter.format(order.finalAmount)
+                        : '0đ (Online)',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: order.paymentMethod.toUpperCase() == 'COD'
+                          ? const Color(0xFFFF521B)
+                          : const Color(0xFF059669),
+                    ),
                   ),
                 ],
               ),
@@ -506,9 +789,11 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                           orderId: order.orderId,
                           shipperId: widget.shipperId,
                         );
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Đã nhận đơn tại quán! Bắt đầu giao KTX.')),
-                        );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Đã nhận đơn tại quán! Bắt đầu giao KTX.')),
+                          );
+                        }
                       },
                     ),
                   ],
@@ -548,11 +833,147 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                               shipperId: widget.shipperId,
                             ),
                           ),
-                        );
+                        ).then((_) {
+                          vm.fetchBatch(shipperId: widget.shipperId);
+                        });
                       },
                     ),
                   ],
                 ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompletedShipperOrderCard(ShipperBatchItemModel order) {
+    final isCod = order.paymentMethod.toUpperCase() == 'COD';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFA7F3D0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(0, 0, 0, 0.03),
+            offset: Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  '#${order.orderCode}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Color(0xFF334155),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle_rounded, size: 13, color: Color(0xFF047857)),
+                    SizedBox(width: 4),
+                    Text(
+                      'ĐÃ HOÀN TẤT',
+                      style: TextStyle(
+                        color: Color(0xFF047857),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.person_rounded, size: 16, color: Color(0xFF059669)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${order.customerName} • ${order.customerPhone}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  '+15.000đ vào ví',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: Color(0xFF047857)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              const Icon(Icons.storefront_outlined, size: 16, color: Color(0xFF64748B)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${order.storeName} (${order.storeAddress})',
+                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isCod ? 'Đã thu tiền mặt COD: ${currencyFormatter.format(order.finalAmount)}' : 'VietQR - Đã thanh toán trước',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isCod ? const Color(0xFFD97706) : const Color(0xFF059669),
+                ),
+              ),
+              const Row(
+                children: [
+                  Icon(Icons.verified_rounded, size: 14, color: Color(0xFF059669)),
+                  SizedBox(width: 4),
+                  Text(
+                    'Đối soát 2 chiều thành công',
+                    style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
             ],
           ),
         ],
@@ -762,7 +1183,7 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                     child: const Icon(Icons.person, color: AppColors.primary),
                   ),
                   title: Text('#${ord.orderCode} - ${ord.customerName}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('SĐT: ${ord.customerPhone} • PIN: ${ord.pickupPin ?? "4567"}'),
+                  subtitle: Text('SĐT: ${ord.customerPhone} • ${ord.storeName}'),
                   trailing: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
