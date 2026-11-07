@@ -2,12 +2,16 @@
 class ApiConfig {
   ApiConfig._();
 
+  static const String _envApiUrl = String.fromEnvironment('API_URL');
   static const String _envBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://seconds-fitness-academic-media.trycloudflare.com/api/v1',
+    defaultValue: 'https://breath-levy-importantly-mailman.trycloudflare.com/api/v1',
   );
 
-  static String _dynamicBaseUrl = _envBaseUrl;
+  static String get defaultBaseUrl =>
+      _envApiUrl.isNotEmpty ? _envApiUrl : _envBaseUrl;
+
+  static String _dynamicBaseUrl = defaultBaseUrl;
 
   /// Địa chỉ Base URL kết nối Backend
   static String get baseUrl => _dynamicBaseUrl;
