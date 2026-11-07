@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_colors.dart';
 import 'restaurant_dashboard_screen.dart';
 import 'restaurant_menu_management_screen.dart';
@@ -26,6 +27,30 @@ class RestaurantShellScreen extends StatefulWidget {
 class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
   int _currentIndex = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedTab();
+  }
+
+  Future<void> _loadSavedTab() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedIndex = prefs.getInt('saved_owner_tab_index') ?? 0;
+      if (mounted && savedIndex >= 0 && savedIndex <= 3) {
+        setState(() => _currentIndex = savedIndex);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _onSelectTab(int index) async {
+    setState(() => _currentIndex = index);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('saved_owner_tab_index', index);
+    } catch (_) {}
+  }
+
   Widget _buildTabItem({
     required int index,
     required IconData icon,
@@ -39,7 +64,7 @@ class _RestaurantShellScreenState extends State<RestaurantShellScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => setState(() => _currentIndex = index),
+          onTap: () => _onSelectTab(index),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,

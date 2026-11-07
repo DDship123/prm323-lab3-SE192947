@@ -980,7 +980,6 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
       ),
     );
   }
-  }
 
   Future<void> _showCancelPickupDialog(
     BuildContext context,

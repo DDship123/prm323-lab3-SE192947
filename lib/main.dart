@@ -286,11 +286,16 @@ class _AuthGateState extends State<AuthGate> {
     }
   }
 
-  void _onRoleChanged(UserAppRole newRole) {
+  Future<void> _onRoleChanged(UserAppRole newRole) async {
     setState(() {
       _activeRole = newRole;
       _manualDemoSignedIn = true;
     });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_logged_in', true);
+      await prefs.setString('saved_user_role', newRole.name);
+    } catch (_) {}
   }
 
   @override
@@ -347,7 +352,10 @@ class _AuthGateState extends State<AuthGate> {
               await prefs.setString('saved_user_role', UserAppRole.student.name);
               await prefs.setInt('saved_backend_user_id', 1);
             } catch (_) {}
-            setState(() => _manualDemoSignedIn = true);
+            setState(() {
+              _activeRole = UserAppRole.student;
+              _manualDemoSignedIn = true;
+            });
           },
         );
       },
@@ -470,7 +478,6 @@ class _LoginScreenState extends State<LoginScreen> {
         } catch (_) {}
 
         widget.onRoleChanged(matchedRole);
-        widget.onRegisteredOrDemoSuccess();
       }
     } catch (e) {
       if (mounted) {
@@ -523,7 +530,6 @@ class _LoginScreenState extends State<LoginScreen> {
             await prefs.setInt('saved_backend_user_id', 1);
           } catch (_) {}
           widget.onRoleChanged(UserAppRole.student);
-          widget.onRegisteredOrDemoSuccess();
           return;
         }
       } else {
@@ -569,7 +575,6 @@ class _LoginScreenState extends State<LoginScreen> {
           await prefs.setInt('saved_backend_user_id', 1);
         } catch (_) {}
         widget.onRoleChanged(UserAppRole.student);
-        widget.onRegisteredOrDemoSuccess();
       }
     } catch (e) {
       if (mounted) {
