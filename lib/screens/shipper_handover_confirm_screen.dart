@@ -77,27 +77,45 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
     }
 
     setState(() => _isLoading = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final shipperVm = context.read<ShipperViewModel>();
     final handshake = context.read<DeliveryHandshakeService>();
-    handshake.confirmByShipper(widget.order.orderId);
-    handshake.forceCompleteHandover(widget.order.orderId);
+
+    handshake.confirmByShipper(widget.order.orderId, snapshot: widget.order);
+    handshake.forceCompleteHandover(widget.order.orderId, snapshot: widget.order);
     await handshake.saveToStorage();
 
-    final success = await context.read<ShipperViewModel>().confirmDelivery(
-          orderId: widget.order.orderId,
-          shipperId: widget.shipperId,
-        );
-    setState(() => _isLoading = false);
+    await shipperVm.confirmDelivery(
+      orderId: widget.order.orderId,
+      shipperId: widget.shipperId,
+    );
 
     if (mounted) {
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('✅ Đã giao thành công đơn #${widget.order.orderCode}! Đã cộng +15.000đ thù lao vào ví.'),
-          backgroundColor: AppColors.success,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      setState(() => _isLoading = false);
+      navigator.pop(true);
     }
+
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Giao hàng thành công đơn #${widget.order.orderCode}! Đã cộng +15.000đ vào ví & chuyển sang Đơn đã hoàn tất.',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   void _openQrScanner() {
@@ -308,6 +326,19 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
                 const SizedBox(height: 6),
                 Row(
                   children: [
+                    const Icon(Icons.storefront_rounded, size: 18, color: AppColors.textSecondary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        o.storeName,
+                        style: AppTypography.caption.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
                     const Icon(Icons.location_on, size: 18, color: AppColors.textSecondary),
                     const SizedBox(width: 8),
                     Expanded(
@@ -315,6 +346,22 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
                     ),
                   ],
                 ),
+                if (o.itemSummaries.isNotEmpty) ...[
+                  const Divider(height: 18),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.shopping_bag_outlined, size: 16, color: AppColors.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Món trong đơn: ${o.itemSummaries.join(', ')}',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/order_model.dart';
 import '../viewmodels/order_tracking_vm.dart';
+import '../widgets/screen_state.dart';
 import 'dispute_refund_screen.dart';
 import 'pickup_qr_code_screen.dart';
 
@@ -19,6 +21,8 @@ class LiveOrderTrackingScreen extends StatefulWidget {
 }
 
 class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
+  final _currencyFmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0);
+
   @override
   void initState() {
     super.initState();
@@ -30,10 +34,21 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
     });
   }
 
-  void _openQrScreen() {
+  OrderDetailModel _resolveCurrentOrder(BuildContext context) {
+    final trackingState = context.watch<OrderTrackingViewModel>().trackingState;
+    if (trackingState is StateSuccess<OrderDetailModel>) {
+      final fetched = trackingState.data;
+      if (fetched.id == widget.initialOrder.id && fetched.items.isNotEmpty) {
+        return fetched;
+      }
+    }
+    return widget.initialOrder;
+  }
+
+  void _openQrScreen(OrderDetailModel order) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PickupQrCodeScreen(order: widget.initialOrder),
+        builder: (_) => PickupQrCodeScreen(order: order),
       ),
     );
   }
@@ -48,8 +63,17 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final order = widget.initialOrder;
+    final order = _resolveCurrentOrder(context);
     final orderCode = order.orderCode.isNotEmpty ? order.orderCode : '#KTX-8829B';
+    final isCod = order.paymentMethod.toUpperCase() == 'COD';
+    final itemsSummary = order.items.isNotEmpty
+        ? order.items.map((i) {
+            final opts = i.selectedOptions.isNotEmpty
+                ? ' (+${i.selectedOptions.map((o) => o.choice).join(", ")})'
+                : '';
+            return '${i.quantity}x ${i.itemName}$opts';
+          }).join(', ')
+        : 'Đơn hàng tại ${order.storeName}';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -554,14 +578,22 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                       'MÃ ĐƠN HÀNG $orderCode',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                     ),
-                    const Row(
+                    Row(
                       children: [
                         Text(
-                          'Đã thanh toán VietQR',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF059669)),
+                          isCod ? 'Thanh toán tiền mặt COD' : 'Đã thanh toán VietQR',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: isCod ? const Color(0xFFD97706) : const Color(0xFF059669),
+                          ),
                         ),
-                        SizedBox(width: 3),
-                        Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 14),
+                        const SizedBox(width: 3),
+                        Icon(
+                          isCod ? Icons.payments_outlined : Icons.check_circle_rounded,
+                          color: isCod ? const Color(0xFFD97706) : const Color(0xFF059669),
+                          size: 14,
+                        ),
                       ],
                     ),
                   ],
@@ -579,23 +611,29 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Cơm Tấm Cô Ba – Cổng Khu B',
-                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                            order.storeName.isNotEmpty ? order.storeName : 'Quán ăn KTX',
+                            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
-                            '1x Cơm sườn bì chả, 1x Trà đào',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            itemsSummary,
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
-                            'Cần thu khi nhận: 0đ',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                            isCod
+                                ? 'Cần thu khi nhận: ${_currencyFmt.format(order.finalAmount)}'
+                                : 'Cần thu khi nhận: 0đ (Tổng đơn: ${_currencyFmt.format(order.finalAmount)})',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isCod ? const Color(0xFFD97706) : const Color(0xFF059669),
+                            ),
                           ),
                         ],
                       ),
@@ -620,7 +658,7 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: _openQrScreen,
+              onPressed: () => _openQrScreen(order),
               icon: const Icon(Icons.qr_code_2_rounded, size: 20),
               label: const Text(
                 'Mở Mã Nhận Hàng (QR Code)',
