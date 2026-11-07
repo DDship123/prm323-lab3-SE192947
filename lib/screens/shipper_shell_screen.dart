@@ -71,7 +71,16 @@ class _ShipperShellScreenState extends State<ShipperShellScreen> {
   Widget build(BuildContext context) {
     final screens = [
       ShipperBatchPickupScreen(
+        key: const ValueKey('shipper_active_tab'),
         shipperId: widget.shipperId,
+        initialTabIndex: 0,
+        onSwitchRole: widget.onSwitchRole,
+        onSignOut: widget.onSignOut,
+      ),
+      ShipperBatchPickupScreen(
+        key: const ValueKey('shipper_completed_tab'),
+        shipperId: widget.shipperId,
+        initialTabIndex: 1,
         onSwitchRole: widget.onSwitchRole,
         onSignOut: widget.onSignOut,
       ),
@@ -117,18 +126,24 @@ class _ShipperShellScreenState extends State<ShipperShellScreen> {
                 ),
                 _buildTabItem(
                   index: 1,
+                  icon: Icons.task_alt_outlined,
+                  activeIcon: Icons.task_alt_rounded,
+                  label: 'Đơn đã giao',
+                ),
+                _buildTabItem(
+                  index: 2,
                   icon: Icons.map_outlined,
                   activeIcon: Icons.map_rounded,
                   label: 'Lộ trình',
                 ),
                 _buildTabItem(
-                  index: 2,
+                  index: 3,
                   icon: Icons.account_balance_wallet_outlined,
                   activeIcon: Icons.account_balance_wallet_rounded,
                   label: 'Ví thu nhập',
                 ),
                 _buildTabItem(
-                  index: 3,
+                  index: 4,
                   icon: Icons.event_available_outlined,
                   activeIcon: Icons.event_available_rounded,
                   label: 'Đăng ký ca',
