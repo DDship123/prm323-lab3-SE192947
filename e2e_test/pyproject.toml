@@ -1,0 +1,33 @@
+[project]
+name = "e2e-test"
+version = "0.1.0"
+description = "Kiểm thử E2E ngôn ngữ tự nhiên cho KTX Food Ordering bằng Google ARTEMIS"
+readme = "README.md"
+authors = [
+    { name = "Quách Ngọc Vinh", email = "vinhquachdzhihi@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "artemis",
+    "pytest>=9.2.0",
+]
+
+[project.scripts]
+e2e-report = "e2e_test.report:main"
+e2e-explore = "e2e_test.exploratory:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v -rA"
+markers = [
+    "main_flow: luồng chính (happy path)",
+    "error_flow: luồng lỗi / validate",
+    "system: tương tác hệ thống Android",
+]
+
+[build-system]
+requires = ["uv_build>=0.13.7,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+artemis = { git = "https://github.com/google/artemis.git" }
