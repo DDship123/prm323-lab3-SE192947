@@ -270,12 +270,14 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                               quantity: _quantity,
                               unitPrice: widget.menuItem.basePrice,
                             );
+                        final customNote = _noteCtrl.text.trim();
                         context.read<CartCheckoutViewModel>().addItemToCart(
                               storeId: widget.storeId,
                               storeName: widget.storeName,
                               menuItem: widget.menuItem,
                               quantity: _quantity,
                               selectedOptions: _buildSelectedOptions(),
+                              itemNote: customNote.isNotEmpty ? customNote : null,
                             );
                         Navigator.of(context).pop();
                         ScaffoldMessenger.of(context).showSnackBar(

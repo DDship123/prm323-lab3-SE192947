@@ -69,6 +69,7 @@ class CartItemModel {
   final double basePrice;
   int quantity;
   final List<SelectedItemOption> selectedOptions;
+  final String? itemNote;
   bool isSelected;
 
   CartItemModel({
@@ -78,8 +79,16 @@ class CartItemModel {
     required this.basePrice,
     this.quantity = 1,
     this.selectedOptions = const [],
+    this.itemNote,
     this.isSelected = true,
   });
+
+  /// Chữ ký duy nhất phân biệt món có cùng ID nhưng khác Option (VD: 1 phần có xúc xích, 1 phần không có xúc xích)
+  String get optionSignature {
+    final opts = selectedOptions.map((o) => '${o.group}:${o.choice}:${o.extraPrice}').toList()..sort();
+    final notePart = (itemNote ?? '').trim().toLowerCase();
+    return '$menuItemId|${opts.join(';')}|$notePart';
+  }
 
   double get extraPriceTotal =>
       selectedOptions.fold(0.0, (sum, opt) => sum + opt.extraPrice);
@@ -88,11 +97,20 @@ class CartItemModel {
 
   double get totalPrice => unitPriceWithOptions * quantity;
 
-  Map<String, dynamic> toOrderItemRequestJson() => {
-        'menuItemId': menuItemId,
-        'quantity': quantity,
-        'selectedOptions': selectedOptions.map((e) => e.toJson()).toList(),
-      };
+  Map<String, dynamic> toOrderItemRequestJson() {
+    final allOpts = List<SelectedItemOption>.from(selectedOptions);
+    if (itemNote != null && itemNote!.trim().isNotEmpty) {
+      final exists = allOpts.any((o) => o.group == 'Ghi chú');
+      if (!exists) {
+        allOpts.add(SelectedItemOption(group: 'Ghi chú', choice: itemNote!.trim(), extraPrice: 0.0));
+      }
+    }
+    return {
+      'menuItemId': menuItemId,
+      'quantity': quantity,
+      'selectedOptions': allOpts.map((e) => e.toJson()).toList(),
+    };
+  }
 }
 
 /// Thực thể chi tiết đơn hàng gom đơn KTX (OrderResponse)

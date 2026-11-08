@@ -23,6 +23,7 @@ class OrderService {
     required List<CartItemModel> items,
     String? voucherCode,
     double? groupDiscountAmount,
+    double? deliveryFee,
   }) async {
     final payload = {
       'storeId': storeId,
@@ -33,6 +34,8 @@ class OrderService {
       if (voucherCode != null && voucherCode.trim().isNotEmpty) 'voucherCode': voucherCode.trim(),
       if (groupDiscountAmount != null && groupDiscountAmount > 0)
         'groupDiscountAmount': groupDiscountAmount,
+      if (deliveryFee != null && deliveryFee >= 0)
+        'deliveryFee': deliveryFee,
       'items': items.map((e) => e.toOrderItemRequestJson()).toList(),
     };
 

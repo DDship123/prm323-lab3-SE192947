@@ -60,10 +60,13 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
     await handshake.saveToStorage();
 
     final vm = context.read<OrderTrackingViewModel>();
+    final verificationCode = currentOrder.pickupPin.isNotEmpty
+        ? currentOrder.pickupPin
+        : (currentOrder.pickupQrCode.isNotEmpty ? currentOrder.pickupQrCode : '8448');
     final ok = await vm.confirmPickupAtGate(
       order: currentOrder,
-      verificationMethod: 'QR_SCAN',
-      code: currentOrder.pickupPin.isNotEmpty ? currentOrder.pickupPin : '4829',
+      verificationMethod: 'PIN',
+      code: verificationCode,
     );
     if (!mounted || !ok) return;
 
