@@ -47,6 +47,13 @@ class _ShipperWalletScreenState extends State<ShipperWalletScreen> {
         title: 'Ví Thu nhập & Đối soát',
         actions: [
           IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Làm mới ví',
+            onPressed: () {
+              context.read<ShipperViewModel>().fetchWallet(shipperId: widget.shipperId);
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.history_rounded),
             tooltip: 'Lịch sử ví',
             onPressed: () {
@@ -67,7 +74,12 @@ class _ShipperWalletScreenState extends State<ShipperWalletScreen> {
             onRetry: () => shipperVm.fetchWallet(shipperId: widget.shipperId),
           ),
         StateEmpty(message: final msg) => KtxEmptyState(title: 'Ví trống', message: msg),
-        StateSuccess(data: final data) => _buildWalletContent(data),
+        StateSuccess(data: final data) => RefreshIndicator(
+            onRefresh: () async {
+              await shipperVm.fetchWallet(shipperId: widget.shipperId);
+            },
+            child: _buildWalletContent(data),
+          ),
       },
     );
   }
@@ -106,26 +118,61 @@ class _ShipperWalletScreenState extends State<ShipperWalletScreen> {
                 style: AppTypography.heading1.copyWith(color: Colors.white, fontSize: 30),
               ),
               const SizedBox(height: AppSpacing.md),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Thù lao chờ đối soát', style: AppTypography.caption.copyWith(color: Colors.white70)),
-                      Text(currencyFormatter.format(wallet.pendingEarnings),
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text('COD cần nộp hôm nay', style: AppTypography.caption.copyWith(color: Colors.white70)),
-                      Text(currencyFormatter.format(wallet.codCollectedToday),
-                          style: const TextStyle(color: Colors.yellowAccent, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Thực nhận hôm nay', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(
+                            currencyFormatter.format(wallet.completedEarnings),
+                            style: const TextStyle(color: Color(0xFFE0F2FE), fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(width: 1, height: 28, color: Colors.white24),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Chờ đối soát ca', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                            const SizedBox(height: 2),
+                            Text(
+                              currencyFormatter.format(wallet.pendingEarnings),
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Container(width: 1, height: 28, color: Colors.white24),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          const Text('Thu hộ COD', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(
+                            currencyFormatter.format(wallet.codCollectedToday),
+                            style: const TextStyle(color: Colors.yellowAccent, fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -171,6 +218,16 @@ class _ShipperWalletScreenState extends State<ShipperWalletScreen> {
 
   Widget _buildTransactionTile(WalletTransactionItem tx) {
     final isIncome = tx.amount > 0;
+    String timeStr = '';
+    if (tx.createdAt != null) {
+      final dt = tx.createdAt!;
+      final d = dt.day.toString().padLeft(2, '0');
+      final m = dt.month.toString().padLeft(2, '0');
+      final h = dt.hour.toString().padLeft(2, '0');
+      final min = dt.minute.toString().padLeft(2, '0');
+      timeStr = '$d/$m $h:$min';
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -196,7 +253,15 @@ class _ShipperWalletScreenState extends State<ShipperWalletScreen> {
               children: [
                 Text(tx.title, style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
-                Text(tx.transactionId, style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+                Row(
+                  children: [
+                    Text(tx.transactionId, style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+                    if (timeStr.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Text('•  $timeStr', style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+                    ],
+                  ],
+                ),
               ],
             ),
           ),
