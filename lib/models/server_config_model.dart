@@ -3,7 +3,7 @@ import '../services/api_config.dart';
 enum ServerEnvironmentPreset {
   emulator('Máy ảo Android (10.0.2.2:8088)', 'http://10.0.2.2:8088/api/v1'),
   localhost('USB Cáp / Localhost (127.0.0.1:8088)', 'http://127.0.0.1:8088/api/v1'),
-  vpsServer('Cloudflare Tunnel (Aiven MySQL Live)', 'https://breath-levy-importantly-mailman.trycloudflare.com/api/v1'),
+  vpsServer('Cloudflare Tunnel (Aiven MySQL Live)', 'https://robinson-roll-diesel-cars.trycloudflare.com/api/v1'),
   custom('Tùy chỉnh IP / Cloudflare Tunnel', '');
 
   final String label;

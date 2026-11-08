@@ -20,9 +20,9 @@ class ServerConfigService {
       if (raw != null && raw.isNotEmpty) {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         final config = ServerConfigModel.fromJson(map);
-        // Nếu cấu hình lưu cũ trỏ vào link tunnel cũ hết hạn hoặc local không hợp lệ:
-        if (config.baseUrl.contains('dennis-walter') ||
-            config.baseUrl.contains('seconds-fitness-academic-media') ||
+        // Nếu cấu hình lưu cũ trỏ vào link tunnel cũ hết hạn hoặc khác với URL mặc định mới nhất trên Web:
+        if (ApiConfig.isDeprecatedTunnelUrl(config.baseUrl) ||
+            (kIsWeb && config.baseUrl != ApiConfig.defaultBaseUrl) ||
             (config.preset == ServerEnvironmentPreset.vpsServer &&
                 config.baseUrl != ApiConfig.defaultBaseUrl) ||
             config.baseUrl.contains('127.0.0.1') ||
