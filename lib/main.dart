@@ -267,6 +267,10 @@ class _AuthGateState extends State<AuthGate> {
           (r) => r.name == savedRoleName,
           orElse: () => UserAppRole.student,
         );
+        debugPrint(
+          '🔄 [SESSION-RESTORE] Đã khôi phục phiên đăng nhập từ localStorage: '
+          'Vai trò=${restoredRole.name} | BackendUserID=${ApiConfig.currentBackendUserId} | API=${ApiConfig.baseUrl}',
+        );
         if (mounted) {
           setState(() {
             _activeRole = restoredRole;
@@ -287,6 +291,10 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _onRoleChanged(UserAppRole newRole) async {
+    debugPrint(
+      '🔐 [SESSION-LOGIN] Kích hoạt phiên làm việc vai trò: ${newRole.name} '
+      '| BackendUserID=${ApiConfig.currentBackendUserId} | API=${ApiConfig.baseUrl}',
+    );
     setState(() {
       _activeRole = newRole;
       _manualDemoSignedIn = true;
@@ -363,6 +371,9 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _signOut() async {
+    debugPrint(
+      '🚪 [SESSION-LOGOUT] Người dùng đã đăng xuất (Vai trò cũ: ${_activeRole.name}, BackendUserID=${ApiConfig.currentBackendUserId}). Đã xóa phiên trong localStorage.',
+    );
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_logged_in', false);

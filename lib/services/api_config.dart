@@ -1,25 +1,53 @@
+import 'package:flutter/foundation.dart';
+
 /// Cấu hình Endpoint kết nối tới Spring Boot Backend
 class ApiConfig {
   ApiConfig._();
 
+  /// URL Cloudflare Tunnel đang hoạt động kết nối trực tiếp tới Backend & Database
+  static const String activeCloudflareUrl =
+      'https://breath-levy-importantly-mailman.trycloudflare.com/api/v1';
+
   static const String _envApiUrl = String.fromEnvironment('API_URL');
   static const String _envBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://breath-levy-importantly-mailman.trycloudflare.com/api/v1',
+    defaultValue: activeCloudflareUrl,
   );
 
-  static String get defaultBaseUrl =>
-      _envApiUrl.isNotEmpty ? _envApiUrl : _envBaseUrl;
+  /// Kiểm tra xem một URL có phải là tunnel cũ đã ngừng hoạt động hay không
+  static bool isDeprecatedTunnelUrl(String url) {
+    final trimmed = url.trim();
+    return trimmed.isEmpty ||
+        trimmed.contains('dennis-walter') ||
+        trimmed.contains('seconds-fitness-academic-media');
+  }
+
+  static String get defaultBaseUrl {
+    if (!isDeprecatedTunnelUrl(_envApiUrl)) return _envApiUrl.trim();
+    if (!isDeprecatedTunnelUrl(_envBaseUrl)) return _envBaseUrl.trim();
+    return activeCloudflareUrl;
+  }
 
   static String _dynamicBaseUrl = defaultBaseUrl;
 
   /// Địa chỉ Base URL kết nối Backend
-  static String get baseUrl => _dynamicBaseUrl;
+  static String get baseUrl {
+    if (isDeprecatedTunnelUrl(_dynamicBaseUrl)) {
+      _dynamicBaseUrl = activeCloudflareUrl;
+    }
+    return _dynamicBaseUrl;
+  }
 
   /// Cập nhật địa chỉ Backend theo cấu hình động từ người dùng (VPS, Localhost, Tunnel)
   static void setDynamicBaseUrl(String newUrl) {
     if (newUrl.isNotEmpty) {
-      _dynamicBaseUrl = newUrl.endsWith('/') ? newUrl.substring(0, newUrl.length - 1) : newUrl;
+      if (isDeprecatedTunnelUrl(newUrl)) {
+        _dynamicBaseUrl = activeCloudflareUrl;
+      } else {
+        _dynamicBaseUrl =
+            newUrl.endsWith('/') ? newUrl.substring(0, newUrl.length - 1) : newUrl;
+      }
+      debugPrint('🌐 [KTX-API-CONFIG] Đang kết nối Backend tại: $_dynamicBaseUrl');
     }
   }
 
