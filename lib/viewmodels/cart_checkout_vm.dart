@@ -195,7 +195,10 @@ class CartCheckoutViewModel extends ChangeNotifier {
   }
 
   /// API-006: Đặt đơn hàng gom đơn KTX (S4)
-  Future<OrderDetailModel?> placeOrder() async {
+  Future<OrderDetailModel?> placeOrder({
+    String? voucherCode,
+    double? discountAmount,
+  }) async {
     if (_items.isEmpty || _storeId == null) {
       _errorMessage = 'Giỏ hàng đang trống. Vui lòng chọn ít nhất 1 món ăn.';
       notifyListeners();
@@ -216,6 +219,8 @@ class CartCheckoutViewModel extends ChangeNotifier {
         paymentMethod: _selectedPaymentMethod,
         note: _note,
         items: itemsToOrder,
+        voucherCode: voucherCode,
+        groupDiscountAmount: discountAmount,
       );
       _createdOrder = order;
 

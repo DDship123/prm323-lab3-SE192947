@@ -94,7 +94,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
     return '${formatter.format(amount)}đ';
   }
 
-  Future<void> _handlePlaceOrder(CartCheckoutViewModel cartVm) async {
+  Future<void> _handlePlaceOrder(
+    CartCheckoutViewModel cartVm, {
+    double voucherDiscount = 0.0,
+    double totalPayment = 0.0,
+  }) async {
     context.read<AnalyticsService>().logBeginCheckout(
           itemCount: cartVm.totalItemCount > 0 ? cartVm.totalItemCount : 2,
           subtotalAmount: cartVm.totalItemCount > 0 ? cartVm.subtotalAmount : 50000,
@@ -108,9 +112,17 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
 
     OrderDetailModel? created;
     if (cartVm.items.isNotEmpty && cartVm.storeId != null) {
-      created = await cartVm.placeOrder();
+      created = await cartVm.placeOrder(
+        voucherCode: _appliedVoucher?.code,
+        discountAmount: voucherDiscount,
+      );
     } else {
       // Đơn hàng mô phỏng theo Figma nếu giỏ đang trống
+      final simSubtotal = 50000.0;
+      final simShip = 5000.0;
+      final simFinal = totalPayment > 0
+          ? totalPayment
+          : (simSubtotal + simShip - voucherDiscount).clamp(0.0, double.infinity);
       created = OrderDetailModel(
         id: 8829,
         orderCode: '#KTX-8829B',
@@ -123,10 +135,10 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
         slotTime: _selectedShiftIndex == 0 ? '11:30 - 12:00' : '18:00 - 18:30',
         pickupLocation: _pickupPoints[_selectedLocationIndex]['title'] as String,
         note: _noteCtrl.text,
-        subtotalAmount: 50000,
-        deliveryFee: 5000,
-        groupDiscountAmount: 10000,
-        finalAmount: 45000,
+        subtotalAmount: simSubtotal,
+        deliveryFee: simShip,
+        groupDiscountAmount: voucherDiscount > 0 ? voucherDiscount : 10000,
+        finalAmount: simFinal,
         pickupQrCode: 'KTX_PICKUP_8829_SECRET_CODE',
         pickupPin: '8829',
         createdAt: DateTime.now(),
@@ -361,7 +373,9 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: cartVm.isSubmitting ? null : () => _handlePlaceOrder(cartVm),
+              onPressed: cartVm.isSubmitting
+                  ? null
+                  : () => _handlePlaceOrder(cartVm, voucherDiscount: voucherDiscount, totalPayment: totalPayment),
               icon: const Icon(Icons.shopping_bag_outlined, size: 20),
               label: Text(
                 'Đặt đơn nhận tại ${_selectedLocationIndex == 0 ? "Cổng KTX Khu B" : "Cổng KTX"} (${_formatCurrency(totalPayment)})',
