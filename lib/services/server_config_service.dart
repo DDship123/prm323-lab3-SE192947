@@ -22,6 +22,9 @@ class ServerConfigService {
         final config = ServerConfigModel.fromJson(map);
         // Nếu cấu hình lưu cũ trỏ vào link tunnel cũ hết hạn hoặc local không hợp lệ:
         if (config.baseUrl.contains('dennis-walter') ||
+            config.baseUrl.contains('seconds-fitness-academic-media') ||
+            (config.preset == ServerEnvironmentPreset.vpsServer &&
+                config.baseUrl != ApiConfig.defaultBaseUrl) ||
             config.baseUrl.contains('127.0.0.1') ||
             config.baseUrl.contains('localhost') ||
             config.baseUrl.contains('10.0.2.2') ||
