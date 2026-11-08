@@ -715,9 +715,15 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               _buildRoleChip(
                 roleKey: 'student',
-                label: '🎓 Sinh viên',
-                semanticLabel: 'Tài khoản mẫu Sinh viên',
+                label: '🎓 SV 1 (Đạt)',
+                semanticLabel: 'Tài khoản mẫu Sinh viên 1 (Ngô Trường Đạt)',
                 email: 'student@fpt.edu.vn',
+              ),
+              _buildRoleChip(
+                roleKey: 'student2',
+                label: '🎓 SV 2 (Linh)',
+                semanticLabel: 'Tài khoản mẫu Sinh viên 2 (Lê Thùy Linh)',
+                email: 'student2@fpt.edu.vn',
               ),
               _buildRoleChip(
                 roleKey: 'owner',
