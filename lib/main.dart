@@ -221,7 +221,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'KTX Food Ordering - PRM393 Lab 3',
+      title: 'KTX Food Ordering',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
@@ -766,7 +766,7 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 12),
           KtxButton(
             semanticsId: 'btn_login_google',
-            label: 'Đăng nhập bằng Google (S0)',
+            label: 'Đăng nhập bằng Google',
             icon: Icons.g_mobiledata_rounded,
             variant: KtxButtonVariant.outline,
             isLoading: _isLoading,

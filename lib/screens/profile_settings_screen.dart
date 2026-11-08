@@ -134,14 +134,14 @@ class ProfileSettingsScreen extends StatelessWidget {
               const Icon(Icons.cloud_upload_rounded, color: AppColors.primary),
               const SizedBox(width: 8),
               Text(
-                'Khiếu nại & Cloud Storage (S8 / S8b)',
+                'Khiếu nại & Bằng chứng',
                 style: AppTypography.heading3,
               ),
             ],
           ),
           const SizedBox(height: 6),
           Text(
-            'Tải ảnh bằng chứng món hỏng lên Firebase Cloud Storage (reports/{uid}/) và theo dõi tiến trình hoàn tiền.',
+            'Tải ảnh bằng chứng món hỏng lên Firebase Cloud Storage và theo dõi tiến trình hoàn tiền.',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: AppSpacing.sm + 4),
@@ -149,7 +149,7 @@ class ProfileSettingsScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: KtxButton(
-                  label: 'Gửi khiếu nại S8',
+                  label: 'Gửi khiếu nại',
                   icon: Icons.report_problem_outlined,
                   onPressed: () {
                     Navigator.of(context).push(
@@ -163,7 +163,7 @@ class ProfileSettingsScreen extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: KtxButton(
-                  label: 'Lịch sử S8b',
+                  label: 'Lịch sử khiếu nại',
                   variant: KtxButtonVariant.outline,
                   icon: Icons.history_rounded,
                   onPressed: () {
@@ -200,12 +200,12 @@ class ProfileSettingsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Firebase Lab 3 Demo Area (S13)',
+              'Trung Tâm Kiểm Thử Firebase',
               style: AppTypography.heading3,
             ),
             const SizedBox(height: 4),
             Text(
-              'Bảng điều khiển kiểm thử trực tiếp Remote Config, FCM, Crashlytics và Analytics phục vụ chấm điểm Lab 3.',
+              'Bảng điều khiển kiểm thử trực tiếp Remote Config, FCM, Crashlytics và Analytics phục vụ hệ thống.',
               style: AppTypography.bodySmall,
             ),
             const Divider(height: AppSpacing.lg),
@@ -245,7 +245,7 @@ class ProfileSettingsScreen extends StatelessWidget {
                 children: [
                   const SizedBox(height: 4),
                   Text(
-                    '• Banner Trang chủ S1: ${remoteConfig.promoBannerEnabled ? "BẬT" : "TẮT"}',
+                    '• Banner Trang chủ: ${remoteConfig.promoBannerEnabled ? "BẬT" : "TẮT"}',
                   ),
                   Text('• Phí ship gom đơn: ${remoteConfig.groupShipFee}đ'),
                   Text(
@@ -329,7 +329,7 @@ class ProfileSettingsScreen extends StatelessWidget {
                   children: [
                     OutlinedButton.icon(
                       icon: const Icon(Icons.local_shipping_outlined, size: 18),
-                      label: const Text('Test FCM Đơn hàng (S6)'),
+                      label: const Text('Test FCM Đơn hàng'),
                       onPressed: () {
                         final noti = demoVm.simulateIncomingFcmPush(
                           type: 'ORDER_STATUS',
@@ -338,11 +338,11 @@ class ProfileSettingsScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              '🔔 Đã lưu vào S12: ${noti.title}\nNhấn "Xem ngay" hoặc mở tab Thông báo S12 để chuyển màn hình.',
+                              '🔔 Đã nhận thông báo: ${noti.title}\nNhấn "Xem ngay" hoặc mở Bảng thông báo để chuyển màn hình.',
                             ),
                             duration: const Duration(seconds: 5),
                             action: SnackBarAction(
-                              label: 'Xem ngay (S6)',
+                              label: 'Xem ngay',
                               textColor: Colors.amberAccent,
                               onPressed: () {
                                 demoVm.markAsRead(noti.id);
@@ -362,7 +362,7 @@ class ProfileSettingsScreen extends StatelessWidget {
                         Icons.published_with_changes_rounded,
                         size: 18,
                       ),
-                      label: const Text('Test FCM Khiếu nại (S8b)'),
+                      label: const Text('Test FCM Khiếu nại'),
                       onPressed: () {
                         final noti = demoVm.simulateIncomingFcmPush(
                           type: 'DISPUTE_UPDATE',
@@ -371,11 +371,11 @@ class ProfileSettingsScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              '🔔 Đã lưu vào S12: ${noti.title}\nNhấn "Xem ngay" hoặc mở tab Thông báo S12 để chuyển màn hình.',
+                              '🔔 Đã nhận thông báo: ${noti.title}\nNhấn "Xem ngay" hoặc mở Bảng thông báo để chuyển màn hình.',
                             ),
                             duration: const Duration(seconds: 5),
                             action: SnackBarAction(
-                              label: 'Xem ngay (S8b)',
+                              label: 'Xem ngay',
                               textColor: Colors.amberAccent,
                               onPressed: () {
                                 demoVm.markAsRead(noti.id);

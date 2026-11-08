@@ -16,6 +16,7 @@ class DeliveryHandshakeService extends ChangeNotifier {
   final Map<int, bool> _studentConfirmations = {};
   final Map<int, bool> _shipperConfirmations = {};
   final Set<int> _completedOrderIds = {};
+  final Set<int> _arrivedOrderIds = {};
   final Map<int, ShipperBatchItemModel> _completedOrderSnapshots = {};
   double _extraShipperEarnings = 0.0;
 
@@ -25,7 +26,22 @@ class DeliveryHandshakeService extends ChangeNotifier {
 
   bool isStudentConfirmed(int orderId) => _studentConfirmations[orderId] ?? false;
   bool isShipperConfirmed(int orderId) => _shipperConfirmations[orderId] ?? false;
+  bool isShipperArrived(int orderId) => _arrivedOrderIds.contains(orderId);
   bool isFullyDelivered(int orderId) => _completedOrderIds.contains(orderId);
+
+  /// Shipper bấm nút báo đã đến điểm giao hàng KTX
+  void markShipperArrived(int orderId) {
+    _arrivedOrderIds.add(orderId);
+    saveToStorage();
+    notifyListeners();
+  }
+
+  /// Shipper bấm nút báo toàn bộ các đơn trong chuyến gom đã đến nơi
+  void markAllShipperArrived(Iterable<int> orderIds) {
+    _arrivedOrderIds.addAll(orderIds);
+    saveToStorage();
+    notifyListeners();
+  }
 
   /// Lưu bản chụp đơn hàng đã giao thành công để hiển thị ngay cả sau khi F5
   void saveCompletedOrderSnapshot(ShipperBatchItemModel item) {
@@ -91,6 +107,13 @@ class DeliveryHandshakeService extends ChangeNotifier {
           _shipperConfirmations[id] = true;
         }
       }
+      final savedArrived = prefs.getStringList('ktx_arrived_orders') ?? [];
+      for (final idStr in savedArrived) {
+        final id = int.tryParse(idStr);
+        if (id != null) {
+          _arrivedOrderIds.add(id);
+        }
+      }
       final savedSnapshots = prefs.getStringList('ktx_completed_order_snapshots') ?? [];
       for (final jsonStr in savedSnapshots) {
         try {
@@ -113,6 +136,8 @@ class DeliveryHandshakeService extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final strList = _completedOrderIds.map((id) => id.toString()).toList();
       await prefs.setStringList('ktx_completed_handover_orders', strList);
+      final arrivedList = _arrivedOrderIds.map((id) => id.toString()).toList();
+      await prefs.setStringList('ktx_arrived_orders', arrivedList);
       final snapList = _completedOrderSnapshots.values
           .map((item) => jsonEncode(item.toJson()))
           .toList();
@@ -126,6 +151,7 @@ class DeliveryHandshakeService extends ChangeNotifier {
     _shipperConfirmations.remove(orderId);
     _completedOrderIds.remove(orderId);
     _completedOrderSnapshots.remove(orderId);
+    _arrivedOrderIds.remove(orderId);
     notifyListeners();
   }
 }

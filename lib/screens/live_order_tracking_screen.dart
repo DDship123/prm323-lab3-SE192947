@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/order_model.dart';
+import '../services/delivery_handshake_service.dart';
 import '../viewmodels/order_tracking_vm.dart';
 import '../widgets/screen_state.dart';
 import 'dispute_refund_screen.dart';
@@ -63,7 +64,9 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final handshake = context.watch<DeliveryHandshakeService>();
     final order = _resolveCurrentOrder(context);
+    final isShipperArrived = handshake.isShipperArrived(order.id);
     final orderCode = order.orderCode.isNotEmpty ? order.orderCode : '#KTX-8829B';
     final isCod = order.paymentMethod.toUpperCase() == 'COD';
     final itemsSummary = order.items.isNotEmpty
@@ -186,26 +189,78 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Tài xế đang tới Cổng KTX',
+                if (isShipperArrived) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFF93C5FD)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.notifications_active_rounded, color: Color(0xFF2563EB), size: 24),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '📢 Shipper đã tới Cổng KTX!',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E40AF)),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Món ăn đã tới Bàn số 2 • Cổng KTX Khu B. Vui lòng mang mã QR / PIN ra nhận món.',
+                                style: TextStyle(fontSize: 11, color: Color(0xFF1E3A8A)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2563EB),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () => _openQrScreen(order),
+                          child: const Text('Mở QR', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                Text(
+                  isShipperArrived ? 'Tài xế ĐÃ ĐẾN Cổng KTX!' : 'Tài xế đang tới Cổng KTX',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
-                    color: Color(0xFF1E293B),
+                    color: isShipperArrived ? const Color(0xFF059669) : const Color(0xFF1E293B),
                   ),
                 ),
                 const SizedBox(height: 3),
                 RichText(
-                  text: const TextSpan(
-                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                    children: [
-                      TextSpan(text: 'Dự kiến còn '),
-                      TextSpan(
-                        text: '3 phút',
-                        style: TextStyle(color: Color(0xFFFF521B), fontWeight: FontWeight.bold),
-                      ),
-                      TextSpan(text: ' nữa sẽ tới. Vui lòng di chuyển xuống sảnh thang máy!'),
-                    ],
+                  text: TextSpan(
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    children: isShipperArrived
+                        ? const [
+                            TextSpan(
+                              text: 'Món ăn đã tới điểm hẹn Bàn số 2. ',
+                              style: TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: 'Vui lòng mở mã QR hoặc đọc mã PIN để nhận món!'),
+                          ]
+                        : const [
+                            TextSpan(text: 'Dự kiến còn '),
+                            TextSpan(
+                              text: '3 phút',
+                              style: TextStyle(color: Color(0xFFFF521B), fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(text: ' nữa sẽ tới. Vui lòng di chuyển xuống sảnh thang máy!'),
+                          ],
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -228,16 +283,16 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                   hasBottomLine: true,
                 ),
                 _buildTimelineStep(
-                  isDone: false,
-                  isActive: true,
-                  title: 'Đang tới KTX Khu B',
-                  desc: 'Qua ngã ba Tạ Quang Bửu',
-                  time: 'DỰ KIẾN 11:28',
+                  isDone: isShipperArrived,
+                  isActive: !isShipperArrived,
+                  title: isShipperArrived ? 'Đã tới KTX Khu B' : 'Đang tới KTX Khu B',
+                  desc: isShipperArrived ? 'Đã đỗ xe tại bàn gom đơn' : 'Qua ngã ba Tạ Quang Bửu',
+                  time: isShipperArrived ? 'ĐÃ ĐẾN' : 'DỰ KIẾN 11:28',
                   hasBottomLine: true,
                 ),
                 _buildTimelineStep(
                   isDone: false,
-                  isActive: false,
+                  isActive: isShipperArrived,
                   title: 'Sẵn sàng phát hàng',
                   desc: 'Tại bàn gom đơn sảnh chính',
                   time: '11:30',
@@ -309,7 +364,7 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                         ),
                         child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 20),
                       ),
-                      // Pill Cách cổng 450m
+                      // Pill khoảng cách / đã đến
                       Positioned(
                         bottom: 8,
                         right: 8,
@@ -325,16 +380,20 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                               ),
                             ],
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.bolt_rounded, size: 14, color: Color(0xFFFF521B)),
-                              SizedBox(width: 4),
+                              Icon(
+                                isShipperArrived ? Icons.check_circle_rounded : Icons.bolt_rounded,
+                                size: 14,
+                                color: isShipperArrived ? const Color(0xFF059669) : const Color(0xFFFF521B),
+                              ),
+                              const SizedBox(width: 4),
                               Text(
-                                'Cách cổng 450m',
+                                isShipperArrived ? 'Đã tới điểm hẹn' : 'Cách cổng 450m',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFFFF521B),
+                                  color: isShipperArrived ? const Color(0xFF059669) : const Color(0xFFFF521B),
                                 ),
                               ),
                             ],

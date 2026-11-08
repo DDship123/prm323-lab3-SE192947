@@ -13,6 +13,7 @@ import '../widgets/ktx_empty_state.dart';
 import '../widgets/ktx_error_state.dart';
 import '../widgets/ktx_loading_state.dart';
 import '../services/delivery_handshake_service.dart';
+import '../viewmodels/profile_demo_vm.dart';
 import '../widgets/screen_state.dart';
 import 'shipper_handover_confirm_screen.dart';
 import 'shipper_pickup_detail_screen.dart';
@@ -405,6 +406,50 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
 
         // Danh sách đơn hàng theo Tab
         if (_selectedTabIndex == 0) ...[
+          if (activeOrders.isNotEmpty) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFFFEDD5)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.campaign_rounded, color: Color(0xFFFF521B), size: 24),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Đã tới Cổng KTX?',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF9A3412)),
+                        ),
+                        Text(
+                          'Báo đồng loạt ${activeOrders.length} sinh viên mang mã QR ra nhận món.',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFFC2410C)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF521B),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () => _handleShipperNotifyAllArrival(context, activeOrders, handshake),
+                    child: const Text('Báo tất cả', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white)),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (activeOrders.isEmpty)
             Container(
               padding: const EdgeInsets.all(24),
@@ -867,6 +912,35 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
+                    Builder(
+                      builder: (ctx) {
+                        final isArrived = handshake.isShipperArrived(order.orderId);
+                        return ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isArrived ? const Color(0xFFEFF6FF) : const Color(0xFFFF521B),
+                            foregroundColor: isArrived ? const Color(0xFF2563EB) : Colors.white,
+                            side: isArrived ? const BorderSide(color: Color(0xFF3B82F6), width: 1.2) : BorderSide.none,
+                            elevation: isArrived ? 0 : 1,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          icon: Icon(
+                            isArrived ? Icons.mark_chat_read_rounded : Icons.notifications_active_rounded,
+                            size: 14,
+                            color: isArrived ? const Color(0xFF2563EB) : Colors.white,
+                          ),
+                          label: Text(
+                            isArrived ? 'Đã báo SV ra nhận' : 'Báo đã đến nơi',
+                            style: TextStyle(
+                              color: isArrived ? const Color(0xFF2563EB) : Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          onPressed: () => _handleShipperNotifyArrival(context, order, handshake),
+                        );
+                      },
+                    ),
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFFEF4444),
@@ -1120,6 +1194,89 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
         );
       }
     }
+  }
+
+  void _handleShipperNotifyArrival(
+    BuildContext context,
+    ShipperBatchItemModel order,
+    DeliveryHandshakeService handshake,
+  ) {
+    handshake.markShipperArrived(order.orderId);
+
+    // Kích hoạt thông báo lưu vào trung tâm thông báo của Sinh viên
+    try {
+      final demoVm = context.read<ProfileDemoViewModel>();
+      demoVm.recordIncomingFcmMessage(
+        title: '🚚 Shipper đã tới Cổng KTX!',
+        body: 'Đơn gom #${order.orderCode} từ ${order.storeName} đã tới Bàn số 2 • Cổng KTX Khu B. Vui lòng mang mã QR / PIN ra nhận món!',
+        type: 'ORDER_STATUS',
+        appState: 'FOREGROUND',
+        dataPayload: order.orderId.toString(),
+      );
+    } catch (_) {}
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '📢 Đã gửi thông báo đến điện thoại sinh viên đơn #${order.orderCode}! Sinh viên đã nhận được chuông thông báo.',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF10B981),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _handleShipperNotifyAllArrival(
+    BuildContext context,
+    List<ShipperBatchItemModel> orders,
+    DeliveryHandshakeService handshake,
+  ) {
+    handshake.markAllShipperArrived(orders.map((o) => o.orderId));
+
+    try {
+      final demoVm = context.read<ProfileDemoViewModel>();
+      for (final order in orders) {
+        demoVm.recordIncomingFcmMessage(
+          title: '🚚 Shipper đã tới Cổng KTX!',
+          body: 'Đơn gom #${order.orderCode} từ ${order.storeName} đã tới Bàn số 2 • Cổng KTX Khu B. Vui lòng mang mã QR / PIN ra nhận món!',
+          type: 'ORDER_STATUS',
+          appState: 'FOREGROUND',
+          dataPayload: order.orderId.toString(),
+        );
+      }
+    } catch (_) {}
+
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.campaign_rounded, color: Colors.white, size: 22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '📢 Đã gửi thông báo đồng loạt đến ${orders.length} sinh viên có đơn trong ca này!',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFFFF521B),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _showReportFailureDialog(

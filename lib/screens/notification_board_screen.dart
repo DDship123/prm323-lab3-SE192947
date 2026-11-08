@@ -238,8 +238,8 @@ class _NotificationBoardScreenState extends State<NotificationBoardScreen> {
                         ),
                         child: Text(
                           isDispute
-                              ? '👉 Xem Khiếu nại (S8b)'
-                              : '👉 Theo dõi đơn (S6)',
+                              ? '👉 Xem Khiếu nại'
+                              : '👉 Theo dõi đơn',
                           style: AppTypography.bodySmall.copyWith(
                             color: isDispute
                                 ? Colors.deepOrange

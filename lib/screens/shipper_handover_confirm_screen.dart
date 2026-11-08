@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/shipper_batch_model.dart';
 import '../services/delivery_handshake_service.dart';
+import '../viewmodels/profile_demo_vm.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -313,13 +314,47 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
                     const SizedBox(width: 8),
                     Text(o.customerPhone, style: AppTypography.bodyMedium),
                     const Spacer(),
+                    Builder(
+                      builder: (ctx) {
+                        final isArrived = handshake.isShipperArrived(o.orderId);
+                        return OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            foregroundColor: isArrived ? AppColors.success : const Color(0xFFFF521B),
+                            side: BorderSide(color: isArrived ? AppColors.success : const Color(0xFFFF521B)),
+                          ),
+                          onPressed: () {
+                            handshake.markShipperArrived(o.orderId);
+                            try {
+                              context.read<ProfileDemoViewModel>().recordIncomingFcmMessage(
+                                title: '🚚 Shipper đã tới Cổng KTX!',
+                                body: 'Đơn gom #${o.orderCode} từ ${o.storeName} đã tới Bàn số 2 • Cổng KTX Khu B. Vui lòng mang mã QR / PIN ra nhận món!',
+                                type: 'ORDER_STATUS',
+                                appState: 'FOREGROUND',
+                                dataPayload: o.orderId.toString(),
+                              );
+                            } catch (_) {}
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('📢 Đã gửi thông báo đến điện thoại sinh viên ${o.customerName}!'),
+                                backgroundColor: const Color(0xFF10B981),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          icon: Icon(isArrived ? Icons.mark_chat_read_rounded : Icons.notifications_active_rounded, size: 14),
+                          label: Text(isArrived ? 'Đã báo SV' : 'Báo đã đến', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 6),
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       ),
                       onPressed: () {},
-                      icon: const Icon(Icons.call, size: 16, color: AppColors.primary),
-                      label: const Text('Gọi sinh viên', style: TextStyle(color: AppColors.primary, fontSize: 12)),
+                      icon: const Icon(Icons.call, size: 14, color: AppColors.primary),
+                      label: const Text('Gọi SV', style: TextStyle(color: AppColors.primary, fontSize: 11)),
                     ),
                   ],
                 ),

@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 // Top-level function xử lý message khi app ở trạng thái Background / Terminated
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  debugPrint('📩 [FCM Background Handler] Nhận thông báo ngầm: ${message.messageId}');
+  debugPrint(
+    '📩 [FCM Background Handler] Nhận tin nhắn ngầm: ${message.messageId}',
+  );
 }
 
 class FcmService {
@@ -18,9 +20,9 @@ class FcmService {
 
   Future<String?> initialize({
     required void Function(RemoteMessage message, String appState)
-        onMessageReceived,
+    onMessageReceived,
     required void Function(RemoteMessage message, String appState)
-        onNotificationTapped,
+    onNotificationTapped,
   }) async {
     if (kIsWeb) return null;
 
@@ -51,20 +53,27 @@ class FcmService {
 
       // 2. Trạng thái 1: FOREGROUND (Ứng dụng đang mở trực tiếp trên màn hình)
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        debugPrint('📩 [FCM FOREGROUND] Nhận thông báo: ${message.notification?.title}');
+        debugPrint(
+          '📩 [FCM FOREGROUND] Nhận thông báo: ${message.notification?.title}',
+        );
         onMessageReceived(message, 'FOREGROUND');
       });
 
       // 3. Trạng thái 2: BACKGROUND (Ứng dụng chạy ngầm, người dùng nhấn vào thông báo trên thanh trạng thái)
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        debugPrint('🚀 [FCM BACKGROUND TAP] Mở app từ thông báo: ${message.notification?.title}');
+        debugPrint(
+          '🚀 [FCM BACKGROUND TAP] Mở app từ thông báo: ${message.notification?.title}',
+        );
         onNotificationTapped(message, 'BACKGROUND');
       });
 
       // 4. Trạng thái 3: TERMINATED (Ứng dụng đã bị đóng hẳn, người dùng nhấn vào thông báo để khởi động app)
-      final RemoteMessage? initialMessage = await _messaging.getInitialMessage();
+      final RemoteMessage? initialMessage = await _messaging
+          .getInitialMessage();
       if (initialMessage != null) {
-        debugPrint('🚀 [FCM TERMINATED TAP] Khởi động app từ thông báo: ${initialMessage.notification?.title}');
+        debugPrint(
+          '🚀 [FCM TERMINATED TAP] Khởi động app từ thông báo: ${initialMessage.notification?.title}',
+        );
         onNotificationTapped(initialMessage, 'TERMINATED');
       }
 

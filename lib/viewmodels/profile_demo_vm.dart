@@ -20,7 +20,7 @@ class ProfileDemoViewModel extends ChangeNotifier {
       userId: 1,
       title: '🚚 Shipper đã tới Trụ A1–A2 (Cổng B2 KTX)',
       body:
-          'Đơn gom #ORD-KTX-101 từ Cơm Tấm Phúc Lộc Thọ đã sẵn sàng giao. Nhấn để mở màn hình Theo dõi đơn & Mã QR nhận món (S6).',
+          'Đơn gom #ORD-KTX-101 từ Cơm Tấm Phúc Lộc Thọ đã sẵn sàng giao. Nhấn để mở màn hình Theo dõi đơn & Mã QR nhận món.',
       type: 'ORDER_STATUS',
       isRead: false,
       dataPayload: '101',
@@ -31,7 +31,7 @@ class ProfileDemoViewModel extends ChangeNotifier {
       userId: 1,
       title: '✅ Yêu cầu hoàn tiền khiếu nại đã được xử lý',
       body:
-          'Khiếu nại thiếu món cho đơn #ORD-KTX-98 đã được duyệt hoàn 35.000đ. Nhấn để xem Lịch sử Khiếu nại (S8b).',
+          'Khiếu nại thiếu món cho đơn #ORD-KTX-98 đã được duyệt hoàn 35.000đ. Nhấn để xem Lịch sử Khiếu nại.',
       type: 'DISPUTE_UPDATE',
       isRead: false,
       dataPayload: '98',
@@ -211,14 +211,14 @@ class ProfileDemoViewModel extends ChangeNotifier {
     String appState = 'FOREGROUND',
   }) {
     _fcmStatusMessage =
-        'FCM Push vừa nhận: "Shipper đã tới Cổng B2 KTX! Mở mã QR tại S7 để nhận món."';
+        'FCM Push vừa nhận: "Shipper đã tới Cổng B2 KTX! Mở mã QR để nhận món."';
     _unreadCount += 1;
     notifyListeners();
     if (type == 'DISPUTE_UPDATE') {
       return recordIncomingFcmMessage(
         title: 'Cập nhật khiếu nại đơn hàng KTX',
         body:
-            'Quán đã phản hồi yêu cầu hoàn tiền của bạn. Nhấn vào thông báo để mở Lịch sử Khiếu nại (S8b).',
+            'Quán đã phản hồi yêu cầu hoàn tiền của bạn. Nhấn vào thông báo để mở Lịch sử Khiếu nại.',
         type: 'DISPUTE_UPDATE',
         appState: appState,
         dataPayload: '102',
@@ -227,7 +227,7 @@ class ProfileDemoViewModel extends ChangeNotifier {
     return recordIncomingFcmMessage(
       title: 'Shipper đã tới Cổng B2 KTX!',
       body:
-          'Món ăn ca gom 11:30 đã tới điểm hẹn Trụ A1–A2. Nhấn vào thông báo để xem Tiến trình & Mã QR nhận món (S6).',
+          'Món ăn ca gom 11:30 đã tới điểm hẹn Trụ A1–A2. Nhấn vào thông báo để xem Tiến trình & Mã QR nhận món.',
       type: 'ORDER_STATUS',
       appState: appState,
       dataPayload: '101',

@@ -628,7 +628,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 size: 18,
                 color: AppColors.error,
               ),
-              tooltip: 'Khiếu nại S8',
+              tooltip: 'Khiếu nại & Hoàn tiền',
               onPressed: widget.onOpenDispute,
             ),
           ],
