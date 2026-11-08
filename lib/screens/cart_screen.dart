@@ -197,11 +197,15 @@ class CartScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   // Checkbox chọn món
-                                  Checkbox(
-                                    value: item.isSelected,
-                                    activeColor: const Color(0xFFFF521B),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                    onChanged: (_) => cartVm.toggleItemSelection(index),
+                                  Semantics(
+                                    identifier: 'checkbox_cart_item_$index',
+                                    label: 'Chọn món ${item.itemName}',
+                                    child: Checkbox(
+                                      value: item.isSelected,
+                                      activeColor: const Color(0xFFFF521B),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                      onChanged: (_) => cartVm.toggleItemSelection(index),
+                                    ),
                                   ),
                                   // Ảnh món
                                   ClipRRect(
@@ -250,7 +254,7 @@ class CartScreen extends StatelessWidget {
                                   // Nút xóa món
                                   IconButton(
                                     icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF94A3B8)),
-                                    tooltip: 'Bỏ món',
+                                    tooltip: 'Bỏ món ${item.itemName}',
                                     onPressed: () => cartVm.removeItem(index),
                                   ),
                                 ],
@@ -314,27 +318,46 @@ class CartScreen extends StatelessWidget {
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          InkWell(
+                                          Semantics(
+                                            identifier: 'btn_cart_decrease_$index',
+                                            button: true,
+                                            label: 'Giảm số lượng ${item.itemName}',
+                                            excludeSemantics: true,
                                             onTap: () => cartVm.updateQuantity(index, -1),
-                                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(6),
-                                              child: const Icon(Icons.remove_rounded, size: 16, color: Color(0xFF475569)),
+                                            child: InkWell(
+                                              onTap: () => cartVm.updateQuantity(index, -1),
+                                              borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(6),
+                                                child: const Icon(Icons.remove_rounded, size: 16, color: Color(0xFF475569)),
+                                              ),
                                             ),
                                           ),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                                            child: Text(
-                                              '${item.quantity}',
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                          Semantics(
+                                            identifier: 'text_cart_qty_$index',
+                                            label: 'Số lượng ${item.itemName}: ${item.quantity}',
+                                            excludeSemantics: true,
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                                              child: Text(
+                                                '${item.quantity}',
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                              ),
                                             ),
                                           ),
-                                          InkWell(
+                                          Semantics(
+                                            identifier: 'btn_cart_increase_$index',
+                                            button: true,
+                                            label: 'Tăng số lượng ${item.itemName}',
+                                            excludeSemantics: true,
                                             onTap: () => cartVm.updateQuantity(index, 1),
-                                            borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(6),
-                                              child: const Icon(Icons.add_rounded, size: 16, color: Color(0xFFFF521B)),
+                                            child: InkWell(
+                                              onTap: () => cartVm.updateQuantity(index, 1),
+                                              borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                                              child: Container(
+                                                padding: const EdgeInsets.all(6),
+                                                child: const Icon(Icons.add_rounded, size: 16, color: Color(0xFFFF521B)),
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -460,7 +483,9 @@ class CartScreen extends StatelessWidget {
                         ),
                         const SizedBox(width: 14),
                         // Nút Thanh Toán
-                        ElevatedButton.icon(
+                        Semantics(
+                          identifier: 'btn_cart_checkout',
+                          child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: selectedCount > 0 ? const Color(0xFFFF521B) : Colors.grey.shade400,
                             foregroundColor: Colors.white,
@@ -481,6 +506,7 @@ class CartScreen extends StatelessWidget {
                           label: Text(
                             'Thanh toán ($selectedCount)',
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
                           ),
                         ),
                       ],

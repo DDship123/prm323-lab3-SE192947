@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -34,7 +35,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: KtxAppBar(title: _currentStep == 1 ? 'Khôi phục mật khẩu - 1' : 'Khôi phục mật khẩu - 2'),
+      appBar: KtxAppBar(
+        title: _currentStep == 1
+            ? 'Khôi phục mật khẩu - 1'
+            : 'Khôi phục mật khẩu - 2',
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
@@ -98,7 +103,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           controller: _otpController,
           keyboardType: TextInputType.number,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 20, letterSpacing: 6, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontSize: 20,
+            letterSpacing: 6,
+            fontWeight: FontWeight.bold,
+          ),
           decoration: const InputDecoration(
             labelText: 'Mã xác thực OTP (6 chữ số)',
             border: OutlineInputBorder(),
@@ -110,10 +119,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           obscureText: _obscurePass,
           decoration: InputDecoration(
             labelText: 'Mật khẩu mới',
-            prefixIcon: const Icon(Icons.lock_outline, color: AppColors.primary),
+            prefixIcon: const Icon(
+              Icons.lock_outline,
+              color: AppColors.primary,
+            ),
             border: const OutlineInputBorder(),
             suffixIcon: IconButton(
-              icon: Icon(_obscurePass ? Icons.visibility_off : Icons.visibility),
+              tooltip: _obscurePass ? 'Hiện mật khẩu' : 'Ẩn mật khẩu',
+              icon: Icon(
+                _obscurePass ? Icons.visibility_off : Icons.visibility,
+              ),
               onPressed: () => setState(() => _obscurePass = !_obscurePass),
             ),
           ),
@@ -134,7 +149,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           onPressed: () {
             Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.')),
+              const SnackBar(
+                content: Text(
+                  'Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.',
+                ),
+              ),
             );
           },
         ),

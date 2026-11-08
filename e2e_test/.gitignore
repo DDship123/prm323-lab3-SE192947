@@ -1,0 +1,5 @@
+.env
+HUONG_DAN_CHAY_TEST.md
+reports/screens/
+__pycache__/
+.pytest_cache/

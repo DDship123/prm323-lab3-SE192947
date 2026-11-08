@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_typography.dart';
@@ -25,6 +26,9 @@ class KtxButton extends StatelessWidget {
   final double? width;
   final double height;
 
+  /// Định danh ổn định cho kiểm thử E2E (Android resource-id), không đổi theo ngôn ngữ.
+  final String? semanticsId;
+
   const KtxButton({
     super.key,
     required this.label,
@@ -34,6 +38,7 @@ class KtxButton extends StatelessWidget {
     this.icon,
     this.width,
     this.height = 44.0, // Chuẩn mục 5: cao 44
+    this.semanticsId,
   });
 
   @override
@@ -59,7 +64,10 @@ class KtxButton extends StatelessWidget {
       case KtxButtonVariant.danger:
         backgroundColor = AppColors.errorLight; // #fef2f2
         foregroundColor = AppColors.error; // #b91c1c
-        borderSide = const BorderSide(color: AppColors.errorBorder, width: 1.0); // #fecaca
+        borderSide = const BorderSide(
+          color: AppColors.errorBorder,
+          width: 1.0,
+        ); // #fecaca
         break;
     }
 
@@ -92,8 +100,10 @@ class KtxButton extends StatelessWidget {
           );
 
     return Semantics(
+      identifier: semanticsId,
       button: true,
-      label: label,
+      enabled: !isLoading && onPressed != null,
+      label: isLoading ? '$label (đang xử lý)' : label,
       child: SizedBox(
         width: width ?? double.infinity,
         height: height,

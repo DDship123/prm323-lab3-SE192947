@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../models/menu_item_model.dart';
 import '../models/order_model.dart';
 import '../models/store_model.dart';
@@ -108,7 +109,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               backgroundColor: Colors.white,
               elevation: 0,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1E293B)),
+                tooltip: 'Quay lại',
+                icon: const Icon(
+                  Icons.arrow_back_rounded,
+                  color: Color(0xFF1E293B),
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
               title: Text(
@@ -122,7 +127,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               centerTitle: true,
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.share_outlined, color: Color(0xFF1E293B)),
+                  tooltip: 'Chia sẻ quán ăn',
+                  icon: const Icon(
+                    Icons.share_outlined,
+                    color: Color(0xFF1E293B),
+                  ),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -154,23 +163,23 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
           SliverToBoxAdapter(
             child: _buildStoreBanner(activeStore, storeVm, canPop),
           ),
-          SliverToBoxAdapter(
-            child: _buildCategorySelector(storeVm),
-          ),
+          SliverToBoxAdapter(child: _buildCategorySelector(storeVm)),
           SliverPadding(
             padding: const EdgeInsets.all(AppSpacing.md),
             sliver: _buildMenuSliver(storeVm, activeStore, cartVm),
           ),
           if (storeVm.reviews.isNotEmpty)
-            SliverToBoxAdapter(
-              child: _buildReviewsSection(storeVm),
-            ),
+            SliverToBoxAdapter(child: _buildReviewsSection(storeVm)),
         ],
       ),
     );
   }
 
-  Widget _buildStoreBanner(StoreModel store, StoreDetailViewModel vm, bool canPop) {
+  Widget _buildStoreBanner(
+    StoreModel store,
+    StoreDetailViewModel vm,
+    bool canPop,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -199,62 +208,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   if (canPop)
-                    InkWell(
-                      onTap: () => Navigator.of(context).pop(),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.45),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    )
-                  else
-                    const SizedBox.shrink(),
-                  Row(
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          setState(() {
-                            _isFavorite = !_isFavorite;
-                          });
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.45),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _isFavorite
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            color: _isFavorite
-                                ? const Color(0xFFEF4444)
-                                : Colors.white,
-                            size: 18,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Đã sao chép liên kết quán ăn!'),
-                              duration: Duration(seconds: 1),
-                            ),
-                          );
-                        },
+                    Semantics(
+                      button: true,
+                      label: 'Quay lại',
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).pop(),
                         borderRadius: BorderRadius.circular(20),
                         child: Container(
                           width: 36,
@@ -264,9 +222,76 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
-                            Icons.share_rounded,
+                            Icons.arrow_back_rounded,
                             color: Colors.white,
-                            size: 18,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  Row(
+                    children: [
+                      Semantics(
+                        identifier: 'btn_store_favorite',
+                        button: true,
+                        toggled: _isFavorite,
+                        label: _isFavorite
+                            ? 'Bỏ yêu thích quán'
+                            : 'Yêu thích quán',
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              _isFavorite = !_isFavorite;
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _isFavorite
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              color: _isFavorite
+                                  ? const Color(0xFFEF4444)
+                                  : Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Semantics(
+                        button: true,
+                        label: 'Chia sẻ quán ăn',
+                        child: InkWell(
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Đã sao chép liên kết quán ăn!'),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.share_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                           ),
                         ),
                       ),
@@ -285,7 +310,10 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(20),
@@ -302,7 +330,10 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.65),
                       borderRadius: BorderRadius.circular(20),
@@ -310,7 +341,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.near_me_rounded, color: Colors.white, size: 12),
+                        Icon(
+                          Icons.near_me_rounded,
+                          color: Colors.white,
+                          size: 12,
+                        ),
                         SizedBox(width: 4),
                         Text(
                           'Cách 600m',
@@ -369,15 +404,16 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               const SizedBox(height: 2),
               Text(
                 '${store.campusZoneLabel} • ĐHQG',
-                style: const TextStyle(
-                  color: Color(0xFF64748B),
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.star_rounded, color: Color(0xFFF59E0B), size: 16),
+                  const Icon(
+                    Icons.star_rounded,
+                    color: Color(0xFFF59E0B),
+                    size: 16,
+                  ),
                   const SizedBox(width: 3),
                   Text(
                     store.ratingAvg.toStringAsFixed(1),
@@ -388,7 +424,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Icon(Icons.local_shipping_outlined, color: Color(0xFF059669), size: 16),
+                  const Icon(
+                    Icons.local_shipping_outlined,
+                    color: Color(0xFF059669),
+                    size: 16,
+                  ),
                   const SizedBox(width: 4),
                   const Text(
                     'Freeship',
@@ -399,7 +439,11 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Icon(Icons.schedule_rounded, color: Color(0xFF64748B), size: 16),
+                  const Icon(
+                    Icons.schedule_rounded,
+                    color: Color(0xFF64748B),
+                    size: 16,
+                  ),
                   const SizedBox(width: 4),
                   const Text(
                     '11:30',
@@ -454,10 +498,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                     ),
                     Text(
                       'Giao 11:30 Cổng B',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF64748B),
-                      ),
+                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                     ),
                   ],
                 ),
@@ -521,10 +562,7 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                     SizedBox(height: 1),
                     Text(
                       'Tặng trà đá cho nhóm từ 3 phần',
-                      style: TextStyle(
-                        color: Color(0xFF475569),
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Color(0xFF475569), fontSize: 12),
                     ),
                   ],
                 ),
@@ -614,32 +652,30 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     final state = vm.menuState;
     return switch (state) {
       StateInitial() || StateLoading() => const SliverToBoxAdapter(
-          child: KtxLoadingState(itemCount: 3),
-        ),
+        child: KtxLoadingState(itemCount: 3),
+      ),
       StateError(:final errorMessage) => SliverToBoxAdapter(
-          child: KtxErrorState(
-            message: errorMessage,
-            onRetry: () => vm.loadStoreDetail(store),
-          ),
+        child: KtxErrorState(
+          message: errorMessage,
+          onRetry: () => vm.loadStoreDetail(store),
         ),
+      ),
       StateEmpty(:final message) => SliverToBoxAdapter(
-          child: KtxEmptyState(
-            title: 'Chưa có món ăn',
-            message: message,
-          ),
-        ),
-      StateSuccess() => vm.filteredMenuItems.isEmpty
-          ? const SliverToBoxAdapter(
-              child: KtxEmptyState(
-                title: 'Danh mục trống',
-                message: 'Chưa có món ăn nào trong danh mục này.',
-              ),
-            )
-          : SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, idx) {
+        child: KtxEmptyState(title: 'Chưa có món ăn', message: message),
+      ),
+      StateSuccess() =>
+        vm.filteredMenuItems.isEmpty
+            ? const SliverToBoxAdapter(
+                child: KtxEmptyState(
+                  title: 'Danh mục trống',
+                  message: 'Chưa có món ăn nào trong danh mục này.',
+                ),
+              )
+            : SliverList(
+                delegate: SliverChildBuilderDelegate((context, idx) {
                   final item = vm.filteredMenuItems[idx];
-                  final isFirstTopping = item.category == 'TOPPING' &&
+                  final isFirstTopping =
+                      item.category == 'TOPPING' &&
                       (idx == 0 ||
                           vm.filteredMenuItems[idx - 1].category != 'TOPPING');
 
@@ -680,10 +716,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                       ),
                     ],
                   );
-                },
-                childCount: vm.filteredMenuItems.length,
+                }, childCount: vm.filteredMenuItems.length),
               ),
-            ),
     };
   }
 
@@ -692,8 +726,9 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     required StoreModel store,
     required CartCheckoutViewModel cartVm,
   }) {
-    final cartItems =
-        cartVm.items.where((i) => i.menuItemId == item.id).toList();
+    final cartItems = cartVm.items
+        .where((i) => i.menuItemId == item.id)
+        .toList();
     final totalQty = cartItems.fold(0, (sum, i) => sum + i.quantity);
     final hasCustomization = item.customizationOptions.isNotEmpty;
 
@@ -738,8 +773,10 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
                   top: 4,
                   left: 4,
                   child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: item.promoBadge == 'Best Seller'
                           ? const Color(0xFF1E293B)
@@ -806,32 +843,44 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
 
           // Nút hành động: [Tùy biến] hoặc [- 1 +] hoặc [+]
           if (hasCustomization && totalQty == 0)
-            InkWell(
+            Semantics(
+              identifier: 'btn_customize_item_${item.id}',
+              button: true,
+              label: 'Tùy biến ${item.name}',
+              excludeSemantics: true,
               onTap: () => _openFoodSheet(item, store),
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.tune_rounded,
-                        size: 14, color: Color(0xFF475569)),
-                    SizedBox(width: 4),
-                    Text(
-                      'Tùy biến',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF334155),
+              child: InkWell(
+                onTap: () => _openFoodSheet(item, store),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.tune_rounded,
+                        size: 14,
+                        color: Color(0xFF475569),
                       ),
-                    ),
-                  ],
+                      SizedBox(width: 4),
+                      Text(
+                        'Tùy biến',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )
@@ -845,90 +894,121 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  InkWell(
-                    onTap: () {
-                      final idx = cartVm.items
-                          .indexWhere((i) => i.menuItemId == item.id);
-                      if (idx != -1) cartVm.updateQuantity(idx, -1);
-                    },
-                    borderRadius: BorderRadius.circular(8),
-                    child: const Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      child: Icon(Icons.remove,
-                          size: 14, color: Color(0xFF475569)),
+                  Semantics(
+                    identifier: 'btn_decrease_item_${item.id}',
+                    button: true,
+                    label: 'Giảm số lượng ${item.name}',
+                    child: InkWell(
+                      onTap: () {
+                        final idx = cartVm.items.indexWhere(
+                          (i) => i.menuItemId == item.id,
+                        );
+                        if (idx != -1) cartVm.updateQuantity(idx, -1);
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
+                        child: Icon(
+                          Icons.remove,
+                          size: 14,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      '$totalQty',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: Color(0xFF1E293B),
+                    child: Semantics(
+                      identifier: 'text_qty_item_${item.id}',
+                      label: 'Số lượng ${item.name} trong giỏ',
+                      child: Text(
+                        '$totalQty',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Color(0xFF1E293B),
+                        ),
                       ),
                     ),
                   ),
-                  InkWell(
-                    onTap: () {
-                      if (hasCustomization) {
-                        _openFoodSheet(item, store);
-                      } else {
-                        final idx = cartVm.items
-                            .indexWhere((i) => i.menuItemId == item.id);
-                        if (idx != -1) {
-                          cartVm.updateQuantity(idx, 1);
+                  Semantics(
+                    identifier: 'btn_increase_item_${item.id}',
+                    button: true,
+                    label: 'Tăng số lượng ${item.name}',
+                    child: InkWell(
+                      onTap: () {
+                        if (hasCustomization) {
+                          _openFoodSheet(item, store);
                         } else {
-                          cartVm.addItemToCart(
-                            storeId: store.id,
-                            storeName: store.name,
-                            menuItem: item,
-                            quantity: 1,
-                            selectedOptions: [],
+                          final idx = cartVm.items.indexWhere(
+                            (i) => i.menuItemId == item.id,
                           );
+                          if (idx != -1) {
+                            cartVm.updateQuantity(idx, 1);
+                          } else {
+                            cartVm.addItemToCart(
+                              storeId: store.id,
+                              storeName: store.name,
+                              menuItem: item,
+                              quantity: 1,
+                              selectedOptions: [],
+                            );
+                          }
                         }
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(8),
-                    child: const Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                      child:
-                          Icon(Icons.add, size: 14, color: Color(0xFFFF521B)),
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
+                        child: Icon(
+                          Icons.add,
+                          size: 14,
+                          color: Color(0xFFFF521B),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
             )
           else
-            InkWell(
-              onTap: () {
-                if (hasCustomization) {
-                  _openFoodSheet(item, store);
-                } else {
-                  cartVm.addItemToCart(
-                    storeId: store.id,
-                    storeName: store.name,
-                    menuItem: item,
-                    quantity: 1,
-                    selectedOptions: [],
-                  );
-                }
-              },
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF4EC),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFFFFD8BF)),
-                ),
-                child: const Icon(
-                  Icons.add,
-                  size: 18,
-                  color: Color(0xFFFF521B),
+            Semantics(
+              identifier: 'btn_add_item_${item.id}',
+              button: true,
+              label: 'Thêm ${item.name} vào giỏ',
+              child: InkWell(
+                onTap: () {
+                  if (hasCustomization) {
+                    _openFoodSheet(item, store);
+                  } else {
+                    cartVm.addItemToCart(
+                      storeId: store.id,
+                      storeName: store.name,
+                      menuItem: item,
+                      quantity: 1,
+                      selectedOptions: [],
+                    );
+                  }
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF4EC),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFFFFD8BF)),
+                  ),
+                  child: const Icon(
+                    Icons.add,
+                    size: 18,
+                    color: Color(0xFFFF521B),
+                  ),
                 ),
               ),
             ),
@@ -965,7 +1045,9 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
             style: AppTypography.heading3,
           ),
           const SizedBox(height: AppSpacing.sm),
-          ...vm.reviews.take(5).map(
+          ...vm.reviews
+              .take(5)
+              .map(
                 (rev) => Container(
                   margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                   padding: const EdgeInsets.all(AppSpacing.sm + 4),
@@ -1013,4 +1095,3 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     );
   }
 }
-

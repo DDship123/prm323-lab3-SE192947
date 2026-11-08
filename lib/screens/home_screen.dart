@@ -647,7 +647,9 @@ class _HomeScreenState extends State<HomeScreen> {
               color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: TextField(
+            child: Semantics(
+              identifier: 'input_home_search',
+              child: TextField(
               controller: _searchCtrl,
               textInputAction: TextInputAction.search,
               onSubmitted: (term) {
@@ -689,6 +691,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   vertical: 12,
                 ),
               ),
+            ),
             ),
           ),
         ),

@@ -276,6 +276,7 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
+          tooltip: 'Quay lại',
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1E293B)),
           onPressed: () {
             if (widget.onBackToMenu != null) {
@@ -310,6 +311,7 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            tooltip: 'Thông báo',
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -348,20 +350,23 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
         child: SizedBox(
           width: double.infinity,
           height: 48,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF521B),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          child: Semantics(
+            identifier: 'btn_place_order',
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF521B),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-            ),
-            onPressed: cartVm.isSubmitting ? null : () => _handlePlaceOrder(cartVm),
-            icon: const Icon(Icons.shopping_bag_outlined, size: 20),
-            label: Text(
-              'Đặt đơn nhận tại ${_selectedLocationIndex == 0 ? "Cổng KTX Khu B" : "Cổng KTX"} (${_formatCurrency(totalPayment)})',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              onPressed: cartVm.isSubmitting ? null : () => _handlePlaceOrder(cartVm),
+              icon: const Icon(Icons.shopping_bag_outlined, size: 20),
+              label: Text(
+                'Đặt đơn nhận tại ${_selectedLocationIndex == 0 ? "Cổng KTX Khu B" : "Cổng KTX"} (${_formatCurrency(totalPayment)})',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
             ),
           ),
         ),
@@ -1049,7 +1054,11 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                 const SizedBox(height: 10),
 
                 // Option 1: VietQR
-                InkWell(
+                Semantics(
+                  identifier: 'radio_payment_vietqr',
+                  inMutuallyExclusiveGroup: true,
+                  checked: _paymentMethod == 'VIETQR',
+                  child: InkWell(
                   onTap: () => setState(() => _paymentMethod = 'VIETQR'),
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
@@ -1124,10 +1133,15 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                     ),
                   ),
                 ),
+                ),
                 const SizedBox(height: 8),
 
                 // Option 2: COD
-                InkWell(
+                Semantics(
+                  identifier: 'radio_payment_cod',
+                  inMutuallyExclusiveGroup: true,
+                  checked: _paymentMethod == 'COD',
+                  child: InkWell(
                   onTap: () => setState(() => _paymentMethod = 'COD'),
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
@@ -1167,6 +1181,7 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                       ],
                     ),
                   ),
+                ),
                 ),
               ],
             ),
