@@ -6,7 +6,7 @@ class ApiConfig {
 
   /// URL Cloudflare Tunnel đang hoạt động kết nối trực tiếp tới Backend & Database
   static const String activeCloudflareUrl =
-      'https://robinson-roll-diesel-cars.trycloudflare.com/api/v1';
+      'https://barry-past-london-drugs.trycloudflare.com/api/v1';
 
   static const String _envApiUrl = String.fromEnvironment('API_URL');
   static const String _envBaseUrl = String.fromEnvironment(
@@ -20,7 +20,8 @@ class ApiConfig {
     return trimmed.isEmpty ||
         trimmed.contains('dennis-walter') ||
         trimmed.contains('seconds-fitness-academic-media') ||
-        trimmed.contains('breath-levy-importantly-mailman');
+        trimmed.contains('breath-levy-importantly-mailman') ||
+        trimmed.contains('robinson-roll-diesel-cars');
   }
 
   static String get defaultBaseUrl {

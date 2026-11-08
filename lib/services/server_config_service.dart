@@ -20,15 +20,13 @@ class ServerConfigService {
       if (raw != null && raw.isNotEmpty) {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         final config = ServerConfigModel.fromJson(map);
-        // Nếu cấu hình lưu cũ trỏ vào link tunnel cũ hết hạn hoặc khác với URL mặc định mới nhất trên Web:
+        // Nếu cấu hình lưu cũ trỏ vào link tunnel cũ hết hạn hoặc chứa localhost trên Web:
         if (ApiConfig.isDeprecatedTunnelUrl(config.baseUrl) ||
-            (kIsWeb && config.baseUrl != ApiConfig.defaultBaseUrl) ||
-            (config.preset == ServerEnvironmentPreset.vpsServer &&
-                config.baseUrl != ApiConfig.defaultBaseUrl) ||
-            config.baseUrl.contains('127.0.0.1') ||
-            config.baseUrl.contains('localhost') ||
-            config.baseUrl.contains('10.0.2.2') ||
-            (kIsWeb && config.baseUrl.startsWith('http://'))) {
+            (kIsWeb &&
+                (config.baseUrl.contains('127.0.0.1') ||
+                    config.baseUrl.contains('localhost') ||
+                    config.baseUrl.contains('10.0.2.2') ||
+                    config.baseUrl.startsWith('http://')))) {
           final def = ServerConfigModel.defaultConfig();
           ApiConfig.setDynamicBaseUrl(def.baseUrl);
           await saveConfig(def);

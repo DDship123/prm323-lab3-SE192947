@@ -234,7 +234,9 @@ class MyApp extends StatelessWidget {
 
 /// Điều hướng tự động theo trạng thái đăng nhập và vai trò (STUDENT, STORE_OWNER, SHIPPER, ADMIN)
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key});
+  final int initialStudentTabIndex;
+
+  const AuthGate({super.key, this.initialStudentTabIndex = 0});
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -354,6 +356,7 @@ class _AuthGateState extends State<AuthGate> {
                 firebaseUser: firebaseUser,
                 currentRole: _activeRole,
                 onSignOut: _signOut,
+                initialIndex: widget.initialStudentTabIndex,
               );
           }
         }
@@ -1228,12 +1231,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// Khung điều hướng chính 4 Tab (S1 Trang chủ, S12 Thông báo, S10 Đơn hàng, S13 Hồ sơ)
+/// Khung điều hướng chính 5 Tab (S1 Khám phá, S2 Đặt món, S3 Giỏ hàng, S10 Lịch sử, S13 Hồ sơ)
 class MainShellScreen extends StatefulWidget {
   final User? firebaseUser;
   final UserAppRole currentRole;
   final VoidCallback? onSwitchRole;
   final VoidCallback onSignOut;
+  final int initialIndex;
 
   const MainShellScreen({
     super.key,
@@ -1241,6 +1245,7 @@ class MainShellScreen extends StatefulWidget {
     required this.currentRole,
     this.onSwitchRole,
     required this.onSignOut,
+    this.initialIndex = 0,
   });
 
   @override
@@ -1248,11 +1253,12 @@ class MainShellScreen extends StatefulWidget {
 }
 
 class _MainShellScreenState extends State<MainShellScreen> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupFcmListeners();
       final user = widget.firebaseUser;

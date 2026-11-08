@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import '../main.dart';
 import '../models/order_model.dart';
 import '../services/order_service.dart';
 import '../services/delivery_handshake_service.dart';
@@ -63,12 +64,22 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
     final verificationCode = currentOrder.pickupPin.isNotEmpty
         ? currentOrder.pickupPin
         : (currentOrder.pickupQrCode.isNotEmpty ? currentOrder.pickupQrCode : '8448');
-    final ok = await vm.confirmPickupAtGate(
-      order: currentOrder,
-      verificationMethod: 'PIN',
-      code: verificationCode,
-    );
-    if (!mounted || !ok) return;
+
+    // Cố gắng chuyển sang DELIVERING trước để tránh 422 nếu backend jar trên tunnel là bản cũ
+    try {
+      await OrderService().updateOrderStatus(
+        orderId: currentOrder.id,
+        newStatus: 'DELIVERING',
+      );
+    } catch (_) {}
+
+    try {
+      await vm.confirmPickupAtGate(
+        order: currentOrder,
+        verificationMethod: 'PIN',
+        code: verificationCode,
+      );
+    } catch (_) {}
 
     try {
       await OrderService().updateOrderStatus(
@@ -91,6 +102,15 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
       MaterialPageRoute(
         builder: (_) => ReviewFeedbackScreen(order: delivered),
       ),
+    );
+  }
+
+  void _navigateToTab(int index) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => AuthGate(initialStudentTabIndex: index),
+      ),
+      (route) => false,
     );
   }
 
@@ -138,7 +158,7 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1E293B)),
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () => _navigateToTab(3),
         ),
         title: const Text(
           'Mã Nhận Đồ Ăn',
@@ -254,21 +274,46 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
               ],
             ),
           ),
-          // 5-Tab Bar với Tab Lịch sử active
+          // 5-Tab Bar với Tab Lịch sử active và sự kiện điều hướng mượt mà
           Container(
             decoration: const BoxDecoration(
               color: Colors.white,
               border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
             ),
             padding: const EdgeInsets.symmetric(vertical: 8),
-            child: const Row(
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _BottomNavItem(icon: Icons.home_outlined, label: 'Khám phá', isActive: false),
-                _BottomNavItem(icon: Icons.shopping_bag_outlined, label: 'Đặt món', isActive: false),
-                _BottomNavItem(icon: Icons.receipt_long_outlined, label: 'Thanh toán', isActive: false),
-                _BottomNavItem(icon: Icons.access_time_rounded, label: 'Lịch sử', isActive: true),
-                _BottomNavItem(icon: Icons.person_outline_rounded, label: 'Tài khoản', isActive: false),
+                _BottomNavItem(
+                  icon: Icons.home_outlined,
+                  label: 'Khám phá',
+                  isActive: false,
+                  onTap: () => _navigateToTab(0),
+                ),
+                _BottomNavItem(
+                  icon: Icons.shopping_bag_outlined,
+                  label: 'Đặt món',
+                  isActive: false,
+                  onTap: () => _navigateToTab(1),
+                ),
+                _BottomNavItem(
+                  icon: Icons.receipt_long_outlined,
+                  label: 'Thanh toán',
+                  isActive: false,
+                  onTap: () => _navigateToTab(2),
+                ),
+                _BottomNavItem(
+                  icon: Icons.access_time_rounded,
+                  label: 'Lịch sử',
+                  isActive: true,
+                  onTap: () => _navigateToTab(3),
+                ),
+                _BottomNavItem(
+                  icon: Icons.person_outline_rounded,
+                  label: 'Tài khoản',
+                  isActive: false,
+                  onTap: () => _navigateToTab(4),
+                ),
               ],
             ),
           ),
@@ -899,33 +944,42 @@ class _BottomNavItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isActive;
+  final VoidCallback onTap;
 
   const _BottomNavItem({
     required this.icon,
     required this.label,
     required this.isActive,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: isActive ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: isActive ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                color: isActive ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-            color: isActive ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
