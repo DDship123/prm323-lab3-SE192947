@@ -24,6 +24,7 @@ class ShipperApiService {
     };
 
     try {
+      ApiConfig.log('DB-SHIPPER', 'GET $url (ShipperID=$shipperId)');
       await DeliveryHandshakeService().loadSavedData();
       final response = await _client.get(url, headers: headers).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
@@ -32,11 +33,14 @@ class ShipperApiService {
         final data = jsonMap['data'] as Map<String, dynamic>?;
         if (data != null) {
           final baseBatch = ShipperBatchModel.fromJson(data);
-          return await _enrichWithCompletedAndItems(baseBatch, headers);
+          final enriched = await _enrichWithCompletedAndItems(baseBatch, headers);
+          ApiConfig.log('DB-SHIPPER', '✅ Đã tải ${enriched.orders.length} đơn gom (Cần giao + Đã hoàn tất) từ Database');
+          return enriched;
         }
       }
       throw Exception('Lỗi máy chủ: ${response.statusCode}');
     } catch (e) {
+      ApiConfig.log('DB-SHIPPER-ERROR', '❌ Lỗi tải danh sách chuyến gom: $e');
       throw Exception('Không thể tải danh sách chuyến gom đơn từ máy chủ ($e)');
     }
   }

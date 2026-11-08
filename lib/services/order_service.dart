@@ -32,6 +32,7 @@ class OrderService {
     };
 
     try {
+      ApiConfig.log('DB-ORDER', 'POST ${ApiConfig.orders} | Tạo đơn quán ID=$storeId (${items.length} món)');
       final response = await _client
           .post(
             Uri.parse(ApiConfig.orders),
@@ -46,10 +47,12 @@ class OrderService {
         final data = jsonMap['data'] as Map<String, dynamic>;
         final created = OrderDetailModel.fromJson(data);
         _localOrders.insert(0, created);
+        ApiConfig.log('DB-ORDER', '✅ Đã lưu đơn hàng #${created.orderCode} vào Database | Tổng: ${created.finalAmount}đ');
         return created;
       }
       throw Exception(jsonMap['message'] ?? 'Không thể tạo đơn hàng từ máy chủ (Mã: ${response.statusCode})');
     } catch (e) {
+      ApiConfig.log('DB-ORDER-ERROR', '❌ Lỗi tạo đơn hàng: $e');
       rethrow;
     }
   }
@@ -57,6 +60,7 @@ class OrderService {
   /// API-007: Lấy chi tiết đơn hàng theo ID
   Future<OrderDetailModel> fetchOrderDetail(int orderId) async {
     try {
+      ApiConfig.log('DB-ORDER', 'GET ${ApiConfig.orders}/$orderId');
       final response = await _client
           .get(
             Uri.parse('${ApiConfig.orders}/$orderId'),
@@ -67,9 +71,13 @@ class OrderService {
         final jsonMap =
             jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
         final data = jsonMap['data'] as Map<String, dynamic>;
-        return OrderDetailModel.fromJson(data);
+        final detail = OrderDetailModel.fromJson(data);
+        ApiConfig.log('DB-ORDER', '✅ Chi tiết đơn #${detail.orderCode} | Trạng thái=${detail.status} | Số món=${detail.items.length}');
+        return detail;
       }
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('DB-ORDER-ERROR', '❌ Lỗi tải đơn #$orderId: $e');
+    }
 
     final local = _localOrders.where((o) => o.id == orderId).firstOrNull;
     if (local != null) return local;
@@ -79,6 +87,7 @@ class OrderService {
   /// API Giám sát toàn bộ đơn hàng gom ca cho Web Admin
   Future<List<OrderDetailModel>> fetchAllOrdersForAdmin() async {
     try {
+      ApiConfig.log('DB-ADMIN-ORDERS', 'GET ${ApiConfig.baseUrl}/admin/orders');
       final response = await _client
           .get(Uri.parse('${ApiConfig.baseUrl}/admin/orders'), headers: ApiConfig.headers())
           .timeout(const Duration(seconds: 6));
@@ -86,17 +95,22 @@ class OrderService {
         final jsonMap =
             jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
         final rawList = jsonMap['data'] as List<dynamic>? ?? [];
-        return rawList
+        final list = rawList
             .map((e) => OrderDetailModel.fromJson(e as Map<String, dynamic>))
             .toList();
+        ApiConfig.log('DB-ADMIN-ORDERS', '✅ Đã tải ${list.length} đơn hàng toàn hệ thống từ Database');
+        return list;
       }
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('DB-ADMIN-ORDERS-ERROR', '❌ Lỗi tải danh sách đơn Admin: $e');
+    }
     return fetchMyOrders();
   }
 
   /// API-008: Lấy danh sách lịch sử đơn hàng của sinh viên
   Future<List<OrderDetailModel>> fetchMyOrders() async {
     try {
+      ApiConfig.log('DB-ORDER', 'GET ${ApiConfig.orders} (UserID=${ApiConfig.currentBackendUserId})');
       final response = await _client
           .get(Uri.parse(ApiConfig.orders), headers: ApiConfig.headers())
           .timeout(const Duration(seconds: 6));
@@ -107,11 +121,13 @@ class OrderService {
         final list = rawList
             .map((e) => OrderDetailModel.fromJson(e as Map<String, dynamic>))
             .toList();
+        ApiConfig.log('DB-ORDER', '✅ Đã tải ${list.length} đơn hàng lịch sử từ Database');
         return list;
       } else {
         throw Exception('Máy chủ phản hồi mã lỗi ${response.statusCode}');
       }
     } catch (e) {
+      ApiConfig.log('DB-ORDER-ERROR', '❌ Lỗi tải lịch sử đơn: $e');
       if (_localOrders.isNotEmpty) {
         return List<OrderDetailModel>.from(_localOrders);
       }

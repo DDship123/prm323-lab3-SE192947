@@ -102,20 +102,19 @@ void main() async {
       FlutterError.presentError(errorDetails);
     };
     PlatformDispatcher.instance.onError = (error, stack) {
-      debugPrint('[Web Platform Error]: $error\n$stack');
+      ApiConfig.log('WEB-ERROR', '$error\n$stack');
       return true;
     };
   }
 
-  await GoogleSignIn.instance.initialize(
-    clientId: kIsWeb
-        ? '119011257696-fhiv11ekbecn6gjvdi2emv6gthpm60bp.apps.googleusercontent.com'
-        : null,
-  );
+  if (!kIsWeb) {
+    await GoogleSignIn.instance.initialize();
+  }
 
   final remoteConfigService = RemoteConfigService();
   await remoteConfigService.initialize();
 
+  ApiConfig.log('KTX-BOOT', '🚀 Khởi động ứng dụng hoàn tất | API=${ApiConfig.baseUrl}');
   runApp(AppBootstrap(remoteConfigService: remoteConfigService));
 }
 
@@ -267,9 +266,9 @@ class _AuthGateState extends State<AuthGate> {
           (r) => r.name == savedRoleName,
           orElse: () => UserAppRole.student,
         );
-        debugPrint(
-          '🔄 [SESSION-RESTORE] Đã khôi phục phiên đăng nhập từ localStorage: '
-          'Vai trò=${restoredRole.name} | BackendUserID=${ApiConfig.currentBackendUserId} | API=${ApiConfig.baseUrl}',
+        ApiConfig.log(
+          'SESSION-RESTORE',
+          '🔄 Đã khôi phục phiên đăng nhập từ localStorage: Vai trò=${restoredRole.name} | BackendUserID=${ApiConfig.currentBackendUserId} | API=${ApiConfig.baseUrl}',
         );
         if (mounted) {
           setState(() {
@@ -279,8 +278,15 @@ class _AuthGateState extends State<AuthGate> {
           });
           return;
         }
+      } else {
+        ApiConfig.log(
+          'SESSION-INIT',
+          'ℹ️ Chưa có phiên đăng nhập lưu sẵn. Mở màn hình Đăng nhập | API=${ApiConfig.baseUrl}',
+        );
       }
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('SESSION-ERROR', 'Lỗi đọc phiên: $e');
+    }
 
     if (mounted) {
       setState(() {
@@ -291,9 +297,9 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _onRoleChanged(UserAppRole newRole) async {
-    debugPrint(
-      '🔐 [SESSION-LOGIN] Kích hoạt phiên làm việc vai trò: ${newRole.name} '
-      '| BackendUserID=${ApiConfig.currentBackendUserId} | API=${ApiConfig.baseUrl}',
+    ApiConfig.log(
+      'SESSION-LOGIN',
+      '🔐 Kích hoạt phiên làm việc vai trò: ${newRole.name} | BackendUserID=${ApiConfig.currentBackendUserId} | API=${ApiConfig.baseUrl}',
     );
     setState(() {
       _activeRole = newRole;
@@ -303,7 +309,9 @@ class _AuthGateState extends State<AuthGate> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_logged_in', true);
       await prefs.setString('saved_user_role', newRole.name);
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('SESSION-ERROR', 'Lỗi lưu phiên: $e');
+    }
   }
 
   @override
@@ -371,15 +379,18 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _signOut() async {
-    debugPrint(
-      '🚪 [SESSION-LOGOUT] Người dùng đã đăng xuất (Vai trò cũ: ${_activeRole.name}, BackendUserID=${ApiConfig.currentBackendUserId}). Đã xóa phiên trong localStorage.',
+    ApiConfig.log(
+      'SESSION-LOGOUT',
+      '🚪 Người dùng đã đăng xuất (Vai trò cũ: ${_activeRole.name}, BackendUserID=${ApiConfig.currentBackendUserId}). Đã xóa phiên trong localStorage.',
     );
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_logged_in', false);
       await prefs.remove('saved_user_role');
       await prefs.remove('saved_backend_user_id');
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('SESSION-ERROR', 'Lỗi xóa phiên: $e');
+    }
 
     ApiConfig.currentBackendUserId = 1;
 
@@ -388,7 +399,9 @@ class _AuthGateState extends State<AuthGate> {
       _activeRole = UserAppRole.student;
     });
     try {
-      await GoogleSignIn.instance.signOut();
+      if (!kIsWeb) {
+        await GoogleSignIn.instance.signOut();
+      }
       await FirebaseAuth.instance.signOut();
     } catch (_) {}
   }

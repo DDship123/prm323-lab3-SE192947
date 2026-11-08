@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import 'api_config.dart';
@@ -21,7 +20,7 @@ class AuthApiService {
       'password': password,
     };
 
-    debugPrint('🚀 [DB-AUTH-REQUEST] POST $url | Tài khoản: ${emailOrPhone.trim()}');
+    ApiConfig.log('DB-AUTH', '🚀 POST $url | Tài khoản: ${emailOrPhone.trim()}');
 
     final http.Response response;
     try {
@@ -33,7 +32,7 @@ class AuthApiService {
           )
           .timeout(const Duration(seconds: 8));
     } catch (e) {
-      debugPrint('❌ [DB-AUTH-ERROR] Không thể kết nối Backend ($url): $e');
+      ApiConfig.log('DB-AUTH-ERROR', '❌ Không thể kết nối Backend ($url): $e');
       throw Exception('Không thể kết nối đến máy chủ Backend ($e)');
     }
 
@@ -41,7 +40,7 @@ class AuthApiService {
     try {
       jsonMap = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
     } catch (_) {
-      debugPrint('❌ [DB-AUTH-ERROR] Phản hồi không hợp lệ (HTTP ${response.statusCode})');
+      ApiConfig.log('DB-AUTH-ERROR', '❌ Phản hồi không hợp lệ (HTTP ${response.statusCode})');
       throw Exception('Phản hồi từ máy chủ không hợp lệ (Mã: ${response.statusCode})');
     }
 
@@ -50,15 +49,15 @@ class AuthApiService {
       if (data != null) {
         // Kiểm tra mật khẩu tài khoản (hệ thống lưu mật khẩu chuẩn là 123456)
         if (password.trim() != '123456') {
-          debugPrint('⚠️ [DB-AUTH-REJECT] Sai mật khẩu cho tài khoản: ${emailOrPhone.trim()}');
+          ApiConfig.log('DB-AUTH-REJECT', '⚠️ Sai mật khẩu cho tài khoản: ${emailOrPhone.trim()}');
           throw Exception('Mật khẩu không chính xác! Vui lòng kiểm tra lại');
         }
 
         final user = UserModel.fromJson(data);
         ApiConfig.currentBackendUserId = user.id;
-        debugPrint(
-          '✅ [DB-AUTH-SUCCESS] Đã xác thực từ Database! '
-          'ID=${user.id} | Email=${user.email} | Họ tên="${user.displayName}" | Vai trò=${user.role}',
+        ApiConfig.log(
+          'DB-AUTH-SUCCESS',
+          '✅ Đã xác thực từ Database! ID=${user.id} | Email=${user.email} | Họ tên="${user.displayName}" | Vai trò=${user.role}',
         );
         return user;
       }
@@ -66,7 +65,7 @@ class AuthApiService {
     } else {
       // Backend trả về lỗi (404 USER_NOT_FOUND, v.v.)
       final errorMsg = jsonMap['message'] as String? ?? 'Tài khoản hoặc mật khẩu không chính xác';
-      debugPrint('❌ [DB-AUTH-FAILED] HTTP ${response.statusCode}: $errorMsg');
+      ApiConfig.log('DB-AUTH-FAILED', '❌ HTTP ${response.statusCode}: $errorMsg');
       throw Exception(errorMsg);
     }
   }

@@ -38,6 +38,13 @@ class ApiConfig {
     return _dynamicBaseUrl;
   }
 
+  /// Ghi log trực tiếp ra Browser Console (F12) ở cả chế độ Debug và Release (Vercel)
+  static void log(String tag, String message) {
+    final ts = DateTime.now().toIso8601String().substring(11, 19);
+    // ignore: avoid_print
+    print('[$ts][$tag] $message');
+  }
+
   /// Cập nhật địa chỉ Backend theo cấu hình động từ người dùng (VPS, Localhost, Tunnel)
   static void setDynamicBaseUrl(String newUrl) {
     if (newUrl.isNotEmpty) {
@@ -47,7 +54,7 @@ class ApiConfig {
         _dynamicBaseUrl =
             newUrl.endsWith('/') ? newUrl.substring(0, newUrl.length - 1) : newUrl;
       }
-      debugPrint('🌐 [KTX-API-CONFIG] Đang kết nối Backend tại: $_dynamicBaseUrl');
+      log('KTX-API-CONFIG', '🌐 Đang kết nối Backend tại: $_dynamicBaseUrl');
     }
   }
 

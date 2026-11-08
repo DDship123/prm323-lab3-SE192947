@@ -22,15 +22,19 @@ class AdminApiService {
     };
 
     try {
+      ApiConfig.log('DB-ADMIN', 'GET $url');
       final response = await _client.get(url, headers: headers).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
         final utf8Body = utf8.decode(response.bodyBytes);
         final jsonMap = jsonDecode(utf8Body) as Map<String, dynamic>;
         final data = jsonMap['data'] as Map<String, dynamic>? ?? {};
-        return AdminDashboardStatsModel.fromJson(data);
+        final stats = AdminDashboardStatsModel.fromJson(data);
+        ApiConfig.log('DB-ADMIN', '✅ Đã tải thống kê Admin Dashboard từ Database');
+        return stats;
       }
       throw Exception('Lỗi máy chủ: ${response.statusCode}');
     } catch (e) {
+      ApiConfig.log('DB-ADMIN-ERROR', '❌ Lỗi tải thống kê Admin: $e');
       throw Exception('Không thể tải số liệu thống kê quản trị từ máy chủ ($e)');
     }
   }
@@ -48,15 +52,19 @@ class AdminApiService {
     };
 
     try {
+      ApiConfig.log('DB-ADMIN', 'GET $url');
       final response = await _client.get(url, headers: headers).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
         final utf8Body = utf8.decode(response.bodyBytes);
         final jsonMap = jsonDecode(utf8Body) as Map<String, dynamic>;
         final rawList = (jsonMap['data'] as List?) ?? [];
-        return rawList.map((e) => DisputeModel.fromJson(e as Map<String, dynamic>)).toList();
+        final list = rawList.map((e) => DisputeModel.fromJson(e as Map<String, dynamic>)).toList();
+        ApiConfig.log('DB-ADMIN', '✅ Đã tải ${list.length} khiếu nại từ Database');
+        return list;
       }
       throw Exception('Lỗi máy chủ: ${response.statusCode}');
     } catch (e) {
+      ApiConfig.log('DB-ADMIN-ERROR', '❌ Lỗi tải danh sách khiếu nại: $e');
       throw Exception('Không thể tải danh sách khiếu nại từ máy chủ ($e)');
     }
   }
