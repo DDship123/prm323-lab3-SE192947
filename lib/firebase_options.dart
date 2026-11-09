@@ -18,12 +18,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyBuAXgzZ2Q8wbe4jXsAGvfjjRk5ccd9_ns',
-    appId: '1:119011257696:web:6814b787593c683b944205',
+    appId: '1:119011257696:web:17d683e54f574704944205',
     messagingSenderId: '119011257696',
     projectId: 'prm323-lab3',
     authDomain: 'prm323-lab3.firebaseapp.com',
     storageBucket: 'prm323-lab3.firebasestorage.app',
-    measurementId: 'G-PRM323LAB3',
+    measurementId: 'G-GKHXSHDGF8',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -34,4 +34,3 @@ class DefaultFirebaseOptions {
     storageBucket: 'prm323-lab3.firebasestorage.app',
   );
 }
-
