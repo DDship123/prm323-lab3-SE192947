@@ -7,6 +7,8 @@ import '../viewmodels/order_tracking_vm.dart';
 import '../widgets/screen_state.dart';
 import 'dispute_refund_screen.dart';
 import 'pickup_qr_code_screen.dart';
+import 'review_feedback_screen.dart';
+import 'shipper_profile_screen.dart';
 
 /// Màn hình S6: Theo Dõi Đơn Hàng Live chuẩn 100% Figma
 class LiveOrderTrackingScreen extends StatefulWidget {
@@ -486,48 +488,88 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
                 ),
                 const SizedBox(height: 10),
 
-                // Thông tin tài xế
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 22,
-                      backgroundImage: NetworkImage(
-                        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+                // Thng tin ti x? (Khch b?m vo d? xem h? so v di?m dnh gi sao trung bnh)
+                InkWell(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const ShipperProfileScreen(
+                          shipperId: 3,
+                          shipperName: 'Nguyễn Văn Minh (Shipper)',
+                          shipperPhone: '0987 654 321',
+                          shipperAvatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Row(
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 22,
+                          backgroundImage: NetworkImage(
+                            'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Nguyễn Văn Minh',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1E293B),
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Nguyễn Văn Minh',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.verified_rounded, color: Color(0xFF0284C7), size: 16),
+                                ],
                               ),
-                              SizedBox(width: 4),
-                              Icon(Icons.verified_rounded, color: Color(0xFF0284C7), size: 16),
+                              SizedBox(height: 1),
+                              Text(
+                                '★ 4.9 • 340 chuyến KTX',
+                                style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                              ),
+                              SizedBox(height: 1),
+                              Text(
+                                'Honda Wave Đỏ • 59-X1 839.24',
+                                style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                              ),
                             ],
                           ),
-                          const SizedBox(height: 1),
-                          const Text(
-                            '★ 4.9 • 340 chuyến KTX',
-                            style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF7ED),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFFFEDD5)),
                           ),
-                          const SizedBox(height: 1),
-                          const Text(
-                            'Honda Wave Đỏ • 59-X1 839.24',
-                            style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Hồ sơ',
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFFF521B),
+                                ),
+                              ),
+                              Icon(Icons.chevron_right_rounded, size: 14, color: Color(0xFFFF521B)),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
                 const SizedBox(height: 10),
 
@@ -704,6 +746,36 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
           ),
           const SizedBox(height: 16),
 
+          // Nt Dnh gi Mn & Shipper khi don d giao thnh cng
+          if (order.status == 'DELIVERED') ...[
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ReviewFeedbackScreen(order: order),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                label: const Text(
+                  'Đánh giá Món & Shipper (+50 Xu)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
           // 5. Nút cam to Mở Mã Nhận Hàng (QR Code)
           SizedBox(
             width: double.infinity,

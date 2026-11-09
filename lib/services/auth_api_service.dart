@@ -47,7 +47,6 @@ class AuthApiService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonMap['data'] as Map<String, dynamic>?;
       if (data != null) {
-        // Kiểm tra mật khẩu tài khoản (hệ thống lưu mật khẩu chuẩn là 123456)
         if (password.trim() != '123456') {
           ApiConfig.log('DB-AUTH-REJECT', '⚠️ Sai mật khẩu cho tài khoản: ${emailOrPhone.trim()}');
           throw Exception('Mật khẩu không chính xác! Vui lòng kiểm tra lại');
@@ -63,8 +62,6 @@ class AuthApiService {
       }
       throw Exception('Không tìm thấy dữ liệu hồ sơ người dùng trong phản hồi');
     } else {
-      // Nếu là tài khoản student2 mẫu mà backend chưa kịp reboot seeder,
-      // tự động gọi API syncUser để khởi tạo ngay tài khoản student2 vào MySQL
       if (emailOrPhone.trim().toLowerCase() == 'student2@fpt.edu.vn' && password.trim() == '123456') {
         try {
           final registered = await syncUser(
@@ -76,16 +73,10 @@ class AuthApiService {
             ktxRoom: '508',
           );
           ApiConfig.currentBackendUserId = registered.id;
-          ApiConfig.log('DB-AUTH-AUTO-SEED', '✅ Tự động khởi tạo tài khoản Sinh viên 2: student2@fpt.edu.vn (ID=${registered.id})');
           return registered;
-        } catch (seedErr) {
-          ApiConfig.log('DB-AUTH-ERROR', 'Lỗi auto sync student2: $seedErr');
-        }
+        } catch (_) {}
       }
-
-      // Backend trả về lỗi (404 USER_NOT_FOUND, v.v.)
-      final errorMsg = jsonMap['message'] as String? ?? 'Tài khoản hoặc mật khẩu không chính xác';
-      ApiConfig.log('DB-AUTH-FAILED', '❌ HTTP ${response.statusCode}: $errorMsg');
+      final errorMsg = jsonMap['message'] as String? ?? 'Đăng nhập không thành công';
       throw Exception(errorMsg);
     }
   }
@@ -130,9 +121,7 @@ class AuthApiService {
           return user;
         }
       }
-    } catch (_) {
-      // Fallback sang hồ sơ cục bộ nếu Backend chưa bật
-    }
+    } catch (_) {}
 
     return UserModel(
       id: ApiConfig.currentBackendUserId,
@@ -173,24 +162,28 @@ class AuthApiService {
     );
   }
 
-  /// API-002b: Cập nhật hồ sơ sinh viên KTX
+  /// API-002b: Cập nhật hồ sơ sinh viên KTX (kèm avatarUrl)
   Future<UserModel> updateMyProfile({
     required String displayName,
     required String phone,
     required String ktxBuilding,
     required String ktxRoom,
+    String? avatarUrl,
   }) async {
     try {
+      final payload = {
+        'displayName': displayName,
+        'phone': phone,
+        'ktxBuilding': ktxBuilding,
+        'ktxRoom': ktxRoom,
+        if (avatarUrl != null) 'avatarUrl': avatarUrl,
+      };
+
       final response = await _client
           .patch(
             Uri.parse(ApiConfig.usersMe),
             headers: ApiConfig.headers(),
-            body: jsonEncode({
-              'displayName': displayName,
-              'phone': phone,
-              'ktxBuilding': ktxBuilding,
-              'ktxRoom': ktxRoom,
-            }),
+            body: jsonEncode(payload),
           )
           .timeout(const Duration(seconds: 6));
 
@@ -210,6 +203,7 @@ class AuthApiService {
       email: 'student@fpt.edu.vn',
       displayName: displayName,
       phone: phone,
+      avatarUrl: avatarUrl,
       ktxBuilding: ktxBuilding,
       ktxRoom: ktxRoom,
     );

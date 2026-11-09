@@ -273,6 +273,16 @@ class VoucherService extends ChangeNotifier {
     return _vouchers.where((v) => v.storeId == null || v.storeId == storeId).toList();
   }
 
+  /// Xóa voucher khỏi hệ thống (theo code String hoặc int id)
+  Future<void> deleteVoucher(dynamic codeOrId) async {
+    final search = codeOrId.toString().trim().toUpperCase();
+    _vouchers.removeWhere(
+      (v) => v.code.trim().toUpperCase() == search,
+    );
+    await _saveToStorage();
+    notifyListeners();
+  }
+
   /// Đặt lại danh sách mặc định
   Future<void> resetToDefaults() async {
     _vouchers = _getDefaultVouchers();

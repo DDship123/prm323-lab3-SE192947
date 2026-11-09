@@ -138,6 +138,7 @@ class OrderDetailModel {
   final DateTime createdAt;
   final String? shipperName;
   final String? shipperPhone;
+  final int? shipperId;
 
   const OrderDetailModel({
     required this.id,
@@ -162,6 +163,7 @@ class OrderDetailModel {
     required this.createdAt,
     this.shipperName,
     this.shipperPhone,
+    this.shipperId,
   });
 
   factory OrderDetailModel.fromJson(Map<String, dynamic> json) {
@@ -197,6 +199,7 @@ class OrderDetailModel {
           : DateTime.now(),
       shipperName: json['shipperName'] as String?,
       shipperPhone: json['shipperPhone'] as String?,
+      shipperId: (json['shipperId'] as num?)?.toInt() ?? (json['shipper_id'] as num?)?.toInt(),
     );
   }
 
