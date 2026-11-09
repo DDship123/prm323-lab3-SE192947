@@ -21,6 +21,9 @@ class OrderService {
     required String paymentMethod,
     String? note,
     required List<CartItemModel> items,
+    String? voucherCode,
+    double? groupDiscountAmount,
+    double? deliveryFee,
   }) async {
     final payload = {
       'storeId': storeId,
@@ -28,6 +31,11 @@ class OrderService {
       'pickupLocation': pickupLocation,
       'paymentMethod': paymentMethod,
       if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      if (voucherCode != null && voucherCode.trim().isNotEmpty) 'voucherCode': voucherCode.trim(),
+      if (groupDiscountAmount != null && groupDiscountAmount > 0)
+        'groupDiscountAmount': groupDiscountAmount,
+      if (deliveryFee != null && deliveryFee >= 0)
+        'deliveryFee': deliveryFee,
       'items': items.map((e) => e.toOrderItemRequestJson()).toList(),
     };
 
@@ -45,7 +53,18 @@ class OrderService {
           jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonMap['data'] as Map<String, dynamic>;
-        final created = OrderDetailModel.fromJson(data);
+        var created = OrderDetailModel.fromJson(data);
+
+        // Bảo đảm: Nếu backend server cũ chưa kịp nạp groupDiscountAmount,
+        // client sẽ áp dụng trực tiếp để màn hình thanh toán và VietQR luôn khớp 100% với giỏ hàng
+        if (groupDiscountAmount != null && groupDiscountAmount > 0 && created.groupDiscountAmount <= 0) {
+          final effectiveFinal = (created.subtotalAmount + created.deliveryFee - groupDiscountAmount).clamp(0.0, double.infinity);
+          created = created.copyWith(
+            groupDiscountAmount: groupDiscountAmount,
+            finalAmount: effectiveFinal,
+          );
+        }
+
         _localOrders.insert(0, created);
         ApiConfig.log('DB-ORDER', '✅ Đã lưu đơn hàng #${created.orderCode} vào Database | Tổng: ${created.finalAmount}đ');
         return created;

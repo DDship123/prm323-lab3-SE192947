@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../viewmodels/shipper_vm.dart';
 import 'shipper_batch_pickup_screen.dart';
 import 'shipper_route_screen.dart';
 import 'shipper_wallet_screen.dart';
@@ -39,7 +40,12 @@ class _ShipperShellScreenState extends State<ShipperShellScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => setState(() => _currentIndex = index),
+          onTap: () {
+            setState(() => _currentIndex = index);
+            if (index == 3) {
+              context.read<ShipperViewModel>().fetchWallet(shipperId: widget.shipperId);
+            }
+          },
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,

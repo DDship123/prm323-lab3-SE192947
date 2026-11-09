@@ -18,7 +18,8 @@ class VoucherValidationResult {
   });
 }
 
-/// Dịch vụ quản lý mã giảm giá / khuyến mãi toàn hệ thống KTX Food (Admin Configurable)
+/// Dịch vụ quản lý mã giảm giá / khuyến mãi toàn hệ thống KTX Food
+/// Hỗ trợ cả Quán ăn (Store Owner) và Ban Quản Lý (Admin) cấu hình CRUD, giới hạn số lượt, nạp thêm lượt
 class VoucherService extends ChangeNotifier {
   static final VoucherService _instance = VoucherService._internal();
   factory VoucherService() => _instance;
@@ -29,9 +30,17 @@ class VoucherService extends ChangeNotifier {
 
   List<VoucherModel> get vouchers => List.unmodifiable(_vouchers);
 
-  /// Danh sách voucher còn hiệu lực dành cho sinh viên
+  /// Danh sách voucher còn hiệu lực dành cho sinh viên (Active và chưa hết lượt)
   List<VoucherModel> get activeVouchers =>
-      _vouchers.where((v) => v.isActive).toList();
+      _vouchers.where((v) => v.isValidForStudent).toList();
+
+  /// Danh sách voucher giảm phí ship còn hiệu lực
+  List<VoucherModel> get activeShippingVouchers =>
+      _vouchers.where((v) => v.type == VoucherType.shipping && v.isValidForStudent).toList();
+
+  /// Danh sách voucher giảm tiền món còn hiệu lực
+  List<VoucherModel> get activeFoodVouchers =>
+      _vouchers.where((v) => v.type == VoucherType.order && v.isValidForStudent).toList();
 
   /// Khởi tạo danh sách voucher mặc định hệ thống KTX Food
   List<VoucherModel> _getDefaultVouchers() {
@@ -44,6 +53,7 @@ class VoucherService extends ChangeNotifier {
         discountAmount: 10000,
         minOrderValue: 0,
         maxUsagePerAccount: 5,
+        usageLimit: 200,
         usedCount: 142,
         isActive: true,
       ),
@@ -55,8 +65,23 @@ class VoucherService extends ChangeNotifier {
         discountAmount: 5000,
         minOrderValue: 0,
         maxUsagePerAccount: 3,
+        usageLimit: 100,
         usedCount: 89,
         isActive: true,
+      ),
+      const VoucherModel(
+        code: 'COBA10',
+        title: 'Giảm 10% Quán Cô Ba',
+        description: 'Quán giảm 10% tiền món (tối đa 15.000đ) cho đơn từ 35.000đ',
+        type: VoucherType.order,
+        discountPercent: 10.0,
+        discountAmount: 15000,
+        minOrderValue: 35000,
+        maxUsagePerAccount: 2,
+        usageLimit: 100,
+        usedCount: 12,
+        isActive: true,
+        storeId: 1,
       ),
       const VoucherModel(
         code: 'KTXDISCOUNT10K',
@@ -66,6 +91,7 @@ class VoucherService extends ChangeNotifier {
         discountAmount: 10000,
         minOrderValue: 50000,
         maxUsagePerAccount: 1,
+        usageLimit: 50,
         usedCount: 45,
         isActive: true,
       ),
@@ -127,7 +153,15 @@ class VoucherService extends ChangeNotifier {
     if (!voucher.isActive) {
       return VoucherValidationResult(
         isValid: false,
-        message: 'Mã "${voucher.code}" đã bị Ban Quản Lý KTX tạm ngưng kích hoạt!',
+        message: 'Mã "${voucher.code}" đã bị tạm ngưng kích hoạt!',
+        voucher: voucher,
+      );
+    }
+
+    if (voucher.isExhausted) {
+      return VoucherValidationResult(
+        isValid: false,
+        message: 'Mã "${voucher.code}" đã hết lượt sử dụng (${voucher.usedCount}/${voucher.usageLimit})!',
         voucher: voucher,
       );
     }
@@ -153,7 +187,37 @@ class VoucherService extends ChangeNotifier {
     );
   }
 
-  /// Bật / Tắt trạng thái hoạt động của Voucher (Dành cho Admin)
+  /// Ghi nhận 1 lượt sử dụng voucher khi sinh viên đặt đơn thành công
+  Future<void> recordVoucherUsage(String code) async {
+    final index = _vouchers.indexWhere(
+      (v) => v.code.trim().toUpperCase() == code.trim().toUpperCase(),
+    );
+    if (index != -1) {
+      final current = _vouchers[index];
+      _vouchers[index] = current.copyWith(usedCount: current.usedCount + 1);
+      await _saveToStorage();
+      notifyListeners();
+    }
+  }
+
+  /// Nạp thêm số lượng lượt phát hành cho voucher (Dành cho Quán ăn / Admin)
+  Future<void> replenishVoucherQuota(String code, int additionalUsage) async {
+    final index = _vouchers.indexWhere(
+      (v) => v.code.trim().toUpperCase() == code.trim().toUpperCase(),
+    );
+    if (index != -1) {
+      final current = _vouchers[index];
+      final newLimit = current.usageLimit + additionalUsage;
+      _vouchers[index] = current.copyWith(
+        usageLimit: newLimit,
+        isActive: true, // Tự động kích hoạt lại nếu trước đó bị ngưng
+      );
+      await _saveToStorage();
+      notifyListeners();
+    }
+  }
+
+  /// Bật / Tắt trạng thái hoạt động của Voucher (Dành cho Quán ăn / Admin)
   Future<void> toggleVoucherStatus(String code, bool isActive) async {
     final index = _vouchers.indexWhere(
       (v) => v.code.trim().toUpperCase() == code.trim().toUpperCase(),
@@ -165,7 +229,7 @@ class VoucherService extends ChangeNotifier {
     }
   }
 
-  /// Cập nhật thông tin voucher (Số tiền giảm, số lượt dùng, đơn tối thiểu, ...)
+  /// Cập nhật thông tin voucher
   Future<void> updateVoucher(VoucherModel updated) async {
     final index = _vouchers.indexWhere(
       (v) => v.code.trim().toUpperCase() == updated.code.trim().toUpperCase(),
@@ -177,7 +241,7 @@ class VoucherService extends ChangeNotifier {
     }
   }
 
-  /// Tạo voucher mới do Admin cấu hình
+  /// Tạo voucher mới (Quán ăn hoặc Admin cấu hình)
   Future<bool> createVoucher(VoucherModel newVoucher) async {
     final exists = _vouchers.any(
       (v) => v.code.trim().toUpperCase() == newVoucher.code.trim().toUpperCase(),
@@ -190,13 +254,14 @@ class VoucherService extends ChangeNotifier {
     return true;
   }
 
-  /// Xóa voucher khỏi hệ thống
-  Future<void> deleteVoucher(String code) async {
-    _vouchers.removeWhere(
-      (v) => v.code.trim().toUpperCase() == code.trim().toUpperCase(),
-    );
-    await _saveToStorage();
-    notifyListeners();
+  /// Vô hiệu hóa voucher (Soft disable - Không xóa mất dữ liệu trong database)
+  Future<void> disableVoucher(String code) async {
+    await toggleVoucherStatus(code, false);
+  }
+
+  /// Lấy danh sách voucher cho Quán ăn (Bao gồm voucher của quán + voucher toàn sàn)
+  List<VoucherModel> getVouchersForStore(int storeId) {
+    return _vouchers.where((v) => v.storeId == null || v.storeId == storeId).toList();
   }
 
   /// Đặt lại danh sách mặc định
@@ -206,4 +271,3 @@ class VoucherService extends ChangeNotifier {
     notifyListeners();
   }
 }
-

@@ -62,7 +62,7 @@ class CartScreen extends StatelessWidget {
     final selectedSubtotal = cartVm.selectedSubtotalAmount;
     final defaultVoucher = voucherService.findByCode('SINHVIENKTX');
     const double shipFee = 5000.0;
-    final double voucherDiscount = (defaultVoucher != null && defaultVoucher.isActive)
+    final double voucherDiscount = (defaultVoucher != null && defaultVoucher.isValidForStudent)
         ? defaultVoucher.calculateActualDiscount(itemsSubtotal: selectedSubtotal, deliveryFee: shipFee)
         : 0.0;
     final double effectiveShipFee = (shipFee - voucherDiscount).clamp(0, double.infinity);
@@ -286,6 +286,39 @@ class CartScreen extends StatelessWidget {
                                         ),
                                       );
                                     }).toList(),
+                                  ),
+                                ),
+                              ],
+
+                              // Ghi chú riêng cho món ăn
+                              if (item.itemNote != null && item.itemNote!.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 48),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFF7ED),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: const Color(0xFFFFEDD5)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.edit_note_rounded, size: 14, color: Color(0xFFFF521B)),
+                                        const SizedBox(width: 4),
+                                        Flexible(
+                                          child: Text(
+                                            'Ghi chú: ${item.itemNote}',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFFC2410C),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ],

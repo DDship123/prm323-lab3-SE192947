@@ -23,6 +23,7 @@ class DefaultFirebaseOptions {
     projectId: 'prm323-lab3',
     authDomain: 'prm323-lab3.firebaseapp.com',
     storageBucket: 'prm323-lab3.firebasestorage.app',
+    measurementId: 'G-PRM323LAB3',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
