@@ -1,4 +1,4 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -168,8 +168,8 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
             padding: const EdgeInsets.all(AppSpacing.md),
             sliver: _buildMenuSliver(storeVm, activeStore, cartVm),
           ),
-          if (storeVm.reviews.isNotEmpty)
-            SliverToBoxAdapter(child: _buildReviewsSection(storeVm)),
+          SliverToBoxAdapter(child: _buildReviewsSection(storeVm)),
+
         ],
       ),
     );
@@ -1029,7 +1029,48 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
     );
   }
 
+  void _showImageDialog(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => Container(
+                  color: Colors.white,
+                  padding: const EdgeInsets.all(20),
+                  child: const Text('Không thể tải ảnh'),
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const CircleAvatar(
+                backgroundColor: Colors.black54,
+                radius: 16,
+                child: Icon(Icons.close, color: Colors.white, size: 18),
+              ),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildReviewsSection(StoreDetailViewModel vm) {
+    final reviews = vm.reviews;
+    final totalRating = reviews.fold<double>(0.0, (acc, r) => acc + r.storeRating);
+    final double avgRating = reviews.isNotEmpty
+        ? (totalRating / reviews.length)
+        : (widget.store.ratingAvg > 0 ? widget.store.ratingAvg : 5.0);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -1040,56 +1081,158 @@ class _StoreDetailScreenState extends State<StoreDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Đánh giá từ sinh viên KTX (${vm.reviews.length})',
-            style: AppTypography.heading3,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ...vm.reviews
-              .take(5)
-              .map(
-                (rev) => Container(
-                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  padding: const EdgeInsets.all(AppSpacing.sm + 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: AppRadius.roundedMd,
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            rev.userDisplayName,
-                            style: AppTypography.bodyMedium.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Row(
-                            children: List.generate(
-                              5,
-                              (i) => Icon(
-                                i < rev.storeRating
-                                    ? Icons.star_rounded
-                                    : Icons.star_border_rounded,
-                                size: 16,
-                                color: Colors.amber,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (rev.comment != null && rev.comment!.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(rev.comment!, style: AppTypography.bodySmall),
-                      ],
-                    ],
-                  ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Đánh giá từ sinh viên KTX ()',
+                style: AppTypography.heading3,
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
+                    const SizedBox(width: 4),
+                    Text(
+                      avgRating.toStringAsFixed(1),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFB45309)),
+                    ),
+                    Text(
+                      ' / 5.0',
+                      style: TextStyle(fontSize: 11, color: Colors.amber.shade900),
+                    ),
+                  ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '★ Đánh giá trung bình:  sao (Tổng điểm cộng lại chia đều cho  lượt đánh giá)',
+            style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (reviews.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: AppRadius.roundedMd,
+                border: Border.all(color: AppColors.divider),
+              ),
+              child: const Center(
+                child: Text(
+                  'Chưa có đánh giá nào cho quán này. Hãy là người đầu tiên đặt món và đánh giá nhé!',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            )
+          else
+            ...reviews.take(10).map((rev) {
+              final timeStr = DateFormat('dd/MM/yyyy • HH:mm').format(rev.createdAt);
+              return Container(
+                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                padding: const EdgeInsets.all(AppSpacing.sm + 4),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: AppRadius.roundedMd,
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 18,
+                          backgroundColor: const Color(0xFFFFECE5),
+                          backgroundImage: rev.userAvatarUrl != null && rev.userAvatarUrl!.isNotEmpty
+                              ? NetworkImage(rev.userAvatarUrl!)
+                              : null,
+                          child: rev.userAvatarUrl == null || rev.userAvatarUrl!.isEmpty
+                              ? Text(
+                                  rev.userDisplayName.isNotEmpty ? rev.userDisplayName[0].toUpperCase() : 'S',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFFF521B), fontSize: 13),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                rev.userDisplayName,
+                                style: AppTypography.bodyMedium.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                timeStr,
+                                style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Row(
+                          children: List.generate(
+                            5,
+                            (i) => Icon(
+                              i < rev.storeRating
+                                  ? Icons.star_rounded
+                                  : Icons.star_border_rounded,
+                              size: 16,
+                              color: const Color(0xFFF59E0B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (rev.comment != null && rev.comment!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        rev.comment!,
+                        style: AppTypography.bodySmall.copyWith(color: const Color(0xFF334155), height: 1.35),
+                      ),
+                    ],
+                    if (rev.images.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: rev.images.map((imgUrl) {
+                          return InkWell(
+                            onTap: () => _showImageDialog(context, imgUrl),
+                            borderRadius: BorderRadius.circular(8),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                imgUrl,
+                                width: 72,
+                                height: 72,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  width: 72,
+                                  height: 72,
+                                  color: const Color(0xFFF1F5F9),
+                                  child: const Icon(Icons.broken_image, size: 20, color: Color(0xFF94A3B8)),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );

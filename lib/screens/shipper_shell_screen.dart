@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/shipper_vm.dart';
 import 'shipper_batch_pickup_screen.dart';
 import 'shipper_route_screen.dart';
 import 'shipper_wallet_screen.dart';
 import 'shipper_shift_registration_screen.dart';
+import 'shipper_profile_screen.dart';
 
 /// Khung giao diện đa tab cho Tài Xế Gom Đơn KTX (Shipper Shell)
 /// Tích hợp thanh điều hướng Bottom Navigation Bar chuẩn Design System

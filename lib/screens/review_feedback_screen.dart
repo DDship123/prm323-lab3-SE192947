@@ -1,11 +1,16 @@
+﻿import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../models/order_model.dart';
+import '../viewmodels/auth_vm.dart';
 import '../viewmodels/review_vm.dart';
+import '../services/evidence_upload_service.dart';
 import 'review_success_screen.dart';
 
 /// Màn hình S9: Đánh Giá & Phản Hồi bữa ăn KTX chuẩn 100% Figma
+/// Hỗ trợ vuốt chọn 1-5 sao, cmt và ảnh (tối đa 3 ảnh) không ràng buộc
 class ReviewFeedbackScreen extends StatefulWidget {
   final OrderDetailModel order;
 
@@ -24,6 +29,7 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
   final Set<String> _selectedStoreTags = {'Đồ ăn nóng sốt', 'Đóng gói cẩn thận'};
   final Set<String> _selectedShipperTags = {'Đến cổng đúng hẹn'};
   final TextEditingController _commentCtrl = TextEditingController();
+  final TextEditingController _shipperCommentCtrl = TextEditingController();
   bool _isAnonymous = true;
   final List<String> _evidencePhotos = [];
 
@@ -51,23 +57,106 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
   @override
   void dispose() {
     _commentCtrl.dispose();
+    _shipperCommentCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _pickPhoto() async {
+    if (_evidencePhotos.length >= 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chỉ có thể đính kèm tối đa 3 hình ảnh minh chứng!')),
+      );
+      return;
+    }
+
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+    final picked = await showModalBottomSheet<XFile?>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded, color: Color(0xFFFF521B)),
+              title: const Text('Chọn từ Thư viện ảnh'),
+              onTap: () async {
+                final img = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+                if (ctx.mounted) Navigator.pop(ctx, img);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded, color: Color(0xFFFF521B)),
+              title: const Text('Chụp ảnh mới bằng Camera'),
+              onTap: () async {
+                final img = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
+                if (ctx.mounted) Navigator.pop(ctx, img);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+
     if (picked != null) {
-      setState(() {
-        if (_evidencePhotos.length < 3) {
-          _evidencePhotos.add(picked.path);
+      String photoUrl = picked.path;
+      try {
+        final bytes = await picked.readAsBytes();
+        final uploadService = EvidenceUploadService();
+        final cloudUrl = await uploadService.uploadEvidence(
+          bytes: bytes,
+          fileName: 'review__.jpg',
+          userId: 'student_',
+        );
+        if (cloudUrl.isNotEmpty) {
+          photoUrl = cloudUrl;
         }
+      } catch (_) {}
+
+      if (mounted) {
+        setState(() {
+          if (_evidencePhotos.length < 3) {
+            _evidencePhotos.add(photoUrl);
+          }
+        });
+      }
+    }
+  }
+
+  void _removePhoto(int index) {
+    if (index >= 0 && index < _evidencePhotos.length) {
+      setState(() {
+        _evidencePhotos.removeAt(index);
       });
     }
   }
 
   Future<void> _handleSubmitReview(ReviewViewModel vm) async {
-    final ok = await vm.submitOrderReview(widget.order.id);
+    vm.setStoreRating(_storeRating);
+    vm.setShipperRating(_shipperRating);
+    vm.setComment(_commentCtrl.text);
+    vm.setShipperComment(_shipperCommentCtrl.text);
+    vm.clearImages();
+    for (final img in _evidencePhotos) {
+      vm.addImage(img);
+    }
+
+    final authVm = context.read<AuthViewModel>();
+    final user = authVm.currentUser;
+
+    final ok = await vm.submitOrderReview(
+      widget.order.id,
+      storeName: widget.order.storeName.isNotEmpty ? widget.order.storeName : 'Cơm Tấm Cô Ba - KTX Khu B',
+      shipperName: widget.order.shipperName ?? 'Nguyễn Hùng (Shipper Đội Gom KTX)',
+      userDisplayName: _isAnonymous
+          ? 'Sinh viên ẩn danh (KTX)'
+          : (user?.displayName ?? 'Ngô Trường Đạt (Sinh viên)'),
+      userAvatarUrl: _isAnonymous ? null : user?.avatarUrl,
+      storeId: widget.order.storeId,
+      shipperId: widget.order.shipperId ?? 3,
+    );
+
     if (!mounted) return;
 
     if (ok) {
@@ -85,6 +174,52 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
       );
       Navigator.of(context).maybePop();
     }
+  }
+
+  /// Widget cho phép vừa Chạm vừa Vuốt (Swipe / Drag) để chọn từ 1 đến 5 sao
+  Widget _buildSwipeableStarRating({
+    required int rating,
+    required ValueChanged<int> onChanged,
+    double starSize = 38,
+    Color activeColor = const Color(0xFFF59E0B),
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalWidth = (starSize * 5) + (10 * 4);
+
+        void handlePosition(Offset localPosition) {
+          final dx = localPosition.dx.clamp(0.0, totalWidth);
+          final star = ((dx / totalWidth) * 5).ceil().clamp(1, 5);
+          if (star != rating) {
+            onChanged(star);
+          }
+        }
+
+        return Center(
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: (details) => handlePosition(details.localPosition),
+            onHorizontalDragUpdate: (details) => handlePosition(details.localPosition),
+            child: SizedBox(
+              width: totalWidth,
+              height: starSize + 12,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(5, (idx) {
+                  final starNum = idx + 1;
+                  final isFilled = starNum <= rating;
+                  return Icon(
+                    isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: isFilled ? activeColor : const Color(0xFFCBD5E1),
+                    size: starSize,
+                  );
+                }),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -113,31 +248,6 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
         ),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.notifications_none_rounded, color: Color(0xFF1E293B)),
-                Positioned(
-                  top: 2,
-                  right: 2,
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF521B),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF1E293B)),
-            onPressed: () {},
-          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: CircleAvatar(
@@ -287,38 +397,26 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
                         ),
                       ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF1F2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'Bắt buộc',
-                        style: TextStyle(color: Color(0xFFE11D48), fontSize: 9.5, fontWeight: FontWeight.bold),
-                      ),
+                    const Row(
+                      children: [
+                        Icon(Icons.swipe_rounded, size: 13, color: Color(0xFF64748B)),
+                        SizedBox(width: 3),
+                        Text(
+                          'Vuốt để chọn',
+                          style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+                        ),
+                      ],
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
 
-                // 5 Sao vàng
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (idx) {
-                      final star = idx + 1;
-                      return IconButton(
-                        onPressed: () => setState(() => _storeRating = star),
-                        icon: Icon(
-                          star <= _storeRating ? Icons.star_rounded : Icons.star_border_rounded,
-                          color: const Color(0xFFF59E0B),
-                          size: 34,
-                        ),
-                      );
-                    }),
-                  ),
+                // 5 Sao vàng vuốt để chọn
+                _buildSwipeableStarRating(
+                  rating: _storeRating,
+                  onChanged: (val) => setState(() => _storeRating = val),
                 ),
+                const SizedBox(height: 8),
                 Center(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -327,7 +425,7 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      _getRatingText(_storeRating),
+                      '$_storeRating sao • ${_getRatingText(_storeRating)}',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
                     ),
                   ),
@@ -379,12 +477,12 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                // CHI TIẾT NHẬN XÉT (0/300)
+                // CHI TIẾT NHẬN XÉT (Không bắt buộc)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'CHI TIẾT NHẬN XÉT',
+                      'CHI TIẾT NHẬN XÉT (TÙY CHỌN)',
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
                     ),
                     Text(
@@ -401,7 +499,7 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
                   buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    hintText: 'Chia sẻ cảm nhận về hương vị, độ tươi ngon và nhiệt độ món ăn nhé sinh viên ơi...',
+                    hintText: 'Cảm nhận về hương vị, độ tươi ngon và nhiệt độ món ăn nhé sinh viên ơi...',
                     hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -412,47 +510,98 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // ẢNH MINH CHỨNG MÓN ĂN
-                const Text(
-                  'ẢNH MINH CHỨNG MÓN ĂN',
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
+                // ẢNH MINH CHỨNG MÓN ĂN (Tối đa 3 ảnh)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'ẢNH MINH CHỨNG MÓN ĂN',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF64748B), letterSpacing: 0.5),
+                    ),
+                    Text(
+                      '${_evidencePhotos.length}/3 ảnh (Tùy chọn)',
+                      style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    InkWell(
-                      onTap: _pickPhoto,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        width: 75,
-                        height: 75,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFFBF9),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      if (_evidencePhotos.length < 3)
+                        InkWell(
+                          onTap: _pickPhoto,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFFFCCBC), style: BorderStyle.solid),
+                          child: Container(
+                            width: 75,
+                            height: 75,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFFBF9),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFFFCCBC), style: BorderStyle.solid),
+                            ),
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.camera_alt_outlined, size: 20, color: Color(0xFFFF521B)),
+                                SizedBox(height: 4),
+                                Text('+ Thêm ảnh', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFFF521B))),
+                              ],
+                            ),
+                          ),
                         ),
-                        child: const Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      if (_evidencePhotos.length < 3) const SizedBox(width: 8),
+                      ..._evidencePhotos.asMap().entries.map((entry) {
+                        final idx = entry.key;
+                        final path = entry.value;
+                        return Stack(
+                          clipBehavior: Clip.none,
                           children: [
-                            Icon(Icons.camera_alt_outlined, size: 20, color: Color(0xFFFF521B)),
-                            SizedBox(height: 4),
-                            Text('+ Thêm ảnh', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFFF521B))),
+                            Container(
+                              width: 75,
+                              height: 75,
+                              margin: const EdgeInsets.only(right: 8),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(9),
+                                child: path.startsWith('http')
+                                    ? Image.network(path, fit: BoxFit.cover)
+                                    : (kIsWeb
+                                        ? Image.network(path, fit: BoxFit.cover)
+                                        : Image.file(File(path), fit: BoxFit.cover)),
+                              ),
+                            ),
+                            Positioned(
+                              top: -4,
+                              right: 4,
+                              child: InkWell(
+                                onTap: () => _removePhoto(idx),
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFEF4444),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(Icons.close, size: 12, color: Colors.white),
+                                ),
+                              ),
+                            ),
                           ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _buildPhotoPlaceholder('[Ảnh 1]'),
-                    const SizedBox(width: 8),
-                    _buildPhotoPlaceholder('[Ảnh 2]'),
-                  ],
+                        );
+                      }),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 14),
 
-          // 3. Section 02: Đánh giá Người Giao Hàng
+          // 3. Section 02: Đánh giá Người Giao Hàng (Shipper)
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -486,9 +635,15 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
                         ),
                       ],
                     ),
-                    const Text(
-                      'SH – 042',
-                      style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold),
+                    const Row(
+                      children: [
+                        Icon(Icons.swipe_rounded, size: 13, color: Color(0xFF64748B)),
+                        SizedBox(width: 3),
+                        Text(
+                          'Vuốt để chọn',
+                          style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontStyle: FontStyle.italic),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -497,53 +652,46 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
                 // Tài xế row
                 Row(
                   children: [
-                    CircleAvatar(
+                    const CircleAvatar(
                       radius: 18,
-                      backgroundColor: const Color(0xFFDBEAFE),
-                      child: const Text('AVT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
+                      backgroundColor: Color(0xFFDBEAFE),
+                      backgroundImage: NetworkImage('https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100'),
+                      child: Icon(Icons.person, color: Color(0xFF1D4ED8), size: 20),
                     ),
                     const SizedBox(width: 10),
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'Nguyễn Văn Minh',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 14),
-                          ],
-                        ),
-                        SizedBox(height: 1),
-                        Text(
-                          'Đội xe Gom KTX B • Chuyến 11:30 - 12:00',
-                          style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                        ),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                widget.order.shipperName ?? 'Nguyễn Hùng',
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.verified_rounded, color: Color(0xFF10B981), size: 14),
+                            ],
+                          ),
+                          const SizedBox(height: 1),
+                          const Text(
+                            'Đội xe Gom KTX B • Chuyến 11:30 - 12:00',
+                            style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
 
-                // 5 Sao vàng người giao hàng
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (idx) {
-                      final star = idx + 1;
-                      return IconButton(
-                        onPressed: () => setState(() => _shipperRating = star),
-                        icon: Icon(
-                          star <= _shipperRating ? Icons.star_rounded : Icons.star_border_rounded,
-                          color: const Color(0xFFF59E0B),
-                          size: 30,
-                        ),
-                      );
-                    }),
-                  ),
+                // 5 Sao vàng người giao hàng vuốt để chọn
+                _buildSwipeableStarRating(
+                  rating: _shipperRating,
+                  onChanged: (val) => setState(() => _shipperRating = val),
+                  activeColor: const Color(0xFFF59E0B),
                 ),
+                const SizedBox(height: 8),
                 Center(
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -551,9 +699,9 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
                       color: const Color(0xFFECFDF5),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
-                      'Đúng giờ & Thân thiện',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
+                    child: Text(
+                      '$_shipperRating sao • ${_getRatingText(_shipperRating)}',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
                     ),
                   ),
                 ),
@@ -601,6 +749,22 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
                       ),
                     );
                   }).toList(),
+                ),
+                const SizedBox(height: 12),
+
+                // Nhận xét shipper tùy chọn
+                TextField(
+                  controller: _shipperCommentCtrl,
+                  maxLines: 2,
+                  decoration: InputDecoration(
+                    hintText: 'Nhận xét thêm về thái độ, thời gian giao hàng của Shipper (tùy chọn)...',
+                    hintStyle: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    contentPadding: const EdgeInsets.all(10),
+                  ),
                 ),
               ],
             ),
@@ -693,10 +857,16 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
                 ),
               ),
               onPressed: vm.isSubmitting ? null : () => _handleSubmitReview(vm),
-              icon: const Icon(Icons.send_rounded, size: 16),
-              label: const Text(
-                'Gửi Đánh Giá & Nhận 50 Điểm KTX',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              icon: vm.isSubmitting
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.send_rounded, size: 16),
+              label: Text(
+                vm.isSubmitting ? 'Đang gửi đánh giá...' : 'Gửi Đánh Giá & Nhận 50 Điểm KTX',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
             ),
           ),
@@ -708,26 +878,6 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
             ),
           ),
           const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPhotoPlaceholder(String label) {
-    return Container(
-      width: 75,
-      height: 75,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.image_outlined, size: 20, color: Color(0xFF94A3B8)),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8))),
         ],
       ),
     );
