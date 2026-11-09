@@ -259,6 +259,15 @@ class VoucherService extends ChangeNotifier {
     await toggleVoucherStatus(code, false);
   }
 
+  /// Xóa vĩnh viễn voucher khỏi hệ thống (Dành cho Admin)
+  Future<void> deleteVoucher(String code) async {
+    _vouchers.removeWhere(
+      (v) => v.code.trim().toUpperCase() == code.trim().toUpperCase(),
+    );
+    await _saveToStorage();
+    notifyListeners();
+  }
+
   /// Lấy danh sách voucher cho Quán ăn (Bao gồm voucher của quán + voucher toàn sàn)
   List<VoucherModel> getVouchersForStore(int storeId) {
     return _vouchers.where((v) => v.storeId == null || v.storeId == storeId).toList();

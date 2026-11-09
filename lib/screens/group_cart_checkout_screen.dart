@@ -5,6 +5,7 @@ import '../firebase/analytics_service.dart';
 import '../firebase/remote_config_service.dart';
 import '../models/order_model.dart';
 import '../models/voucher_model.dart';
+import '../services/commission_policy_service.dart';
 import '../services/voucher_service.dart';
 import '../viewmodels/cart_checkout_vm.dart';
 import '../widgets/ktx_dialog.dart';
@@ -1067,9 +1068,6 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
               ],
             ),
           ),
-              ],
-            ),
-          ),
           const SizedBox(height: 14),
 
           // 5. Phương thức thanh toán
@@ -1387,8 +1385,6 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                       ),
                     ],
                   ),
-                ),
-                  ],
                 ),
                 const SizedBox(height: 12),
 
@@ -1974,5 +1970,4 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
       },
     );
   }
-}
 }
