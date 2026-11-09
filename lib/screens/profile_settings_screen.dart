@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:image_picker/image_picker.dart';
+import '../models/user_model.dart';
 import '../services/evidence_upload_service.dart';
 import '../firebase/analytics_service.dart';
 import '../firebase/crashlytics_service.dart';
@@ -16,6 +17,7 @@ import '../viewmodels/profile_demo_vm.dart';
 import '../widgets/crash_confirm_dialog.dart';
 import '../widgets/ktx_app_bar.dart';
 import '../widgets/ktx_button.dart';
+import '../widgets/ktx_text_field.dart';
 import 'dispute_history_screen.dart';
 import 'dispute_refund_screen.dart';
 import 'notification_board_screen.dart';
@@ -116,7 +118,23 @@ class ProfileSettingsScreen extends StatelessWidget {
                         profile?.email ?? email,
                         style: AppTypography.bodySmall,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(Icons.phone_rounded, size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            profile?.phone ?? 'Chưa cập nhật SĐT',
+                            style: AppTypography.caption.copyWith(
+                              color: (profile?.phone != null && profile!.phone!.isNotEmpty)
+                                  ? AppColors.textPrimary
+                                  : AppColors.textHint,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
                       Text(
                         'Phòng: ${profile?.ktxBuilding ?? 'Khu B - Tòa BA1'} - P.${profile?.ktxRoom ?? '312'}',
                         style: AppTypography.bodySmall.copyWith(
@@ -127,9 +145,16 @@ class ProfileSettingsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                IconButton(
+                  tooltip: 'Chỉnh sửa thông tin cá nhân',
+                  icon: const Icon(Icons.edit_note_rounded, color: AppColors.primary, size: 28),
+                  onPressed: () => _showEditProfileModal(context, profile, authVm),
+                ),
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
+          _buildPersonalInfoCard(context, profile, authVm),
           const SizedBox(height: AppSpacing.md),
           _buildDisputeCard(context),
           const SizedBox(height: AppSpacing.md),
@@ -144,6 +169,437 @@ class ProfileSettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPersonalInfoCard(
+    BuildContext context,
+    UserModel? profile,
+    AuthViewModel authVm,
+  ) {
+    final currentPhone = profile?.phone;
+    final currentBuilding = profile?.ktxBuilding ?? 'Khu B - Tòa BA1';
+    final currentRoom = profile?.ktxRoom ?? '312';
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.roundedMd,
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.badge_outlined, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Thông Tin Cá Nhân & KTX',
+                    style: AppTypography.heading3,
+                  ),
+                ],
+              ),
+              TextButton.icon(
+                onPressed: () => _showEditProfileModal(context, profile, authVm),
+                icon: const Icon(Icons.edit_note_rounded, size: 20),
+                label: const Text('Chỉnh sửa'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Thông tin dùng để Shipper giao món tận phòng và liên hệ khi giao nhận đơn hàng.',
+            style: AppTypography.bodySmall,
+          ),
+          const Divider(height: AppSpacing.lg),
+          _buildInfoRow(
+            icon: Icons.person_outline_rounded,
+            title: 'Họ và tên',
+            value: profile?.displayName ?? displayName,
+          ),
+          const SizedBox(height: 10),
+          _buildInfoRow(
+            icon: Icons.phone_android_rounded,
+            title: 'Số điện thoại',
+            value: (currentPhone != null && currentPhone.isNotEmpty)
+                ? currentPhone
+                : 'Chưa cập nhật (Bấm để thêm)',
+            isHighlight: currentPhone == null || currentPhone.isEmpty,
+          ),
+          const SizedBox(height: 10),
+          _buildInfoRow(
+            icon: Icons.email_outlined,
+            title: 'Email đăng nhập',
+            value: profile?.email ?? email,
+          ),
+          const SizedBox(height: 10),
+          _buildInfoRow(
+            icon: Icons.apartment_rounded,
+            title: 'Tòa nhà KTX',
+            value: currentBuilding,
+          ),
+          const SizedBox(height: 10),
+          _buildInfoRow(
+            icon: Icons.meeting_room_outlined,
+            title: 'Số phòng KTX',
+            value: 'Phòng $currentRoom',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          SizedBox(
+            width: double.infinity,
+            child: KtxButton(
+              label: 'Chỉnh sửa thông tin cá nhân',
+              icon: Icons.edit_rounded,
+              variant: KtxButtonVariant.outline,
+              onPressed: () => _showEditProfileModal(context, profile, authVm),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String title,
+    required String value,
+    bool isHighlight = false,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Icon(icon, size: 20, color: AppColors.textSecondary),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 110,
+          child: Text(
+            title,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: AppTypography.bodySmall.copyWith(
+              color: isHighlight ? AppColors.warning : AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showEditProfileModal(
+    BuildContext context,
+    UserModel? profile,
+    AuthViewModel authVm,
+  ) async {
+    final nameController = TextEditingController(
+      text: profile?.displayName ?? displayName,
+    );
+    final phoneController = TextEditingController(
+      text: profile?.phone ?? '',
+    );
+    final roomController = TextEditingController(
+      text: profile?.ktxRoom ?? '312',
+    );
+
+    final ktxBuildingOptions = [
+      'Khu B - Tòa BA1',
+      'Khu B - Tòa BA2',
+      'Khu B - Tòa BA3',
+      'Khu B - Tòa BA4',
+      'Khu B - Tòa B3',
+      'Khu B - Tòa B4',
+      'Khu A - Tòa A1',
+      'Khu A - Tòa A2',
+      'Khu A - Tòa A3',
+    ];
+
+    String selectedBuilding = profile?.ktxBuilding ?? 'Khu B - Tòa BA1';
+    if (!ktxBuildingOptions.contains(selectedBuilding)) {
+      ktxBuildingOptions.insert(0, selectedBuilding);
+    }
+
+    bool isSubmitting = false;
+    String? formError;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final mediaQuery = MediaQuery.of(ctx);
+            final bottomInset = mediaQuery.viewInsets.bottom;
+
+            return Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  padding: EdgeInsets.only(
+                    left: AppSpacing.md,
+                    right: AppSpacing.md,
+                    top: AppSpacing.md,
+                    bottom: AppSpacing.md + bottomInset,
+                  ),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: AppColors.divider,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight.withValues(alpha: 0.3),
+                                borderRadius: AppRadius.roundedSm,
+                              ),
+                              child: const Icon(
+                                Icons.manage_accounts_rounded,
+                                color: AppColors.primary,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Cấu hình thông tin cá nhân',
+                                    style: AppTypography.heading3,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Đồng bộ với hệ thống KTX & giao nhận',
+                                    style: AppTypography.caption,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () => Navigator.of(ctx).pop(),
+                              icon: const Icon(Icons.close_rounded),
+                              color: AppColors.textSecondary,
+                            ),
+                          ],
+                        ),
+                        const Divider(height: AppSpacing.lg),
+                        if (formError != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                            decoration: BoxDecoration(
+                              color: AppColors.errorLight.withValues(alpha: 0.2),
+                              borderRadius: AppRadius.roundedSm,
+                              border: Border.all(color: AppColors.error),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.error_outline_rounded,
+                                    color: AppColors.error, size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    formError!,
+                                    style: AppTypography.caption.copyWith(
+                                      color: AppColors.error,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        KtxTextField(
+                          controller: nameController,
+                          label: 'Họ và tên sinh viên',
+                          hintText: 'Nhập họ và tên đầy đủ',
+                          prefixIcon: Icons.person_rounded,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        KtxTextField(
+                          controller: phoneController,
+                          label: 'Số điện thoại',
+                          hintText: 'Ví dụ: 0981234567',
+                          keyboardType: TextInputType.phone,
+                          prefixIcon: Icons.phone_rounded,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          'Tòa nhà KTX',
+                          style: AppTypography.inputLabel,
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceVariant,
+                            borderRadius: AppRadius.roundedSm,
+                            border: Border.all(color: AppColors.borderStrong),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: selectedBuilding,
+                              isExpanded: true,
+                              icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                              items: ktxBuildingOptions.map((b) {
+                                return DropdownMenuItem<String>(
+                                  value: b,
+                                  child: Text(b, style: AppTypography.bodySmall),
+                                );
+                              }).toList(),
+                              onChanged: isSubmitting
+                                  ? null
+                                  : (val) {
+                                      if (val != null) {
+                                        setModalState(() {
+                                          selectedBuilding = val;
+                                        });
+                                      }
+                                    },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        KtxTextField(
+                          controller: roomController,
+                          label: 'Số phòng KTX',
+                          hintText: 'Ví dụ: 312, 405,...',
+                          keyboardType: TextInputType.text,
+                          prefixIcon: Icons.door_front_door_outlined,
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: KtxButton(
+                                label: 'Hủy',
+                                variant: KtxButtonVariant.outline,
+                                onPressed: isSubmitting
+                                    ? null
+                                    : () => Navigator.of(ctx).pop(),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              flex: 2,
+                              child: KtxButton(
+                                label: isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi',
+                                icon: isSubmitting ? null : Icons.check_circle_outline_rounded,
+                                onPressed: isSubmitting
+                                    ? null
+                                    : () async {
+                                        final trimmedName = nameController.text.trim();
+                                        final trimmedPhone = phoneController.text.trim();
+                                        final trimmedRoom = roomController.text.trim();
+
+                                        if (trimmedName.isEmpty) {
+                                          setModalState(() {
+                                            formError = 'Vui lòng nhập họ và tên';
+                                          });
+                                          return;
+                                        }
+
+                                        if (trimmedPhone.isEmpty) {
+                                          setModalState(() {
+                                            formError = 'Vui lòng nhập số điện thoại';
+                                          });
+                                          return;
+                                        }
+
+                                        if (!RegExp(r'^(0[3|5|7|8|9])[0-9]{8}$').hasMatch(trimmedPhone)) {
+                                          setModalState(() {
+                                            formError = 'Số điện thoại không đúng định dạng VN (10 chữ số, ví dụ 0981234567)';
+                                          });
+                                          return;
+                                        }
+
+                                        if (trimmedRoom.isEmpty) {
+                                          setModalState(() {
+                                            formError = 'Vui lòng nhập số phòng KTX';
+                                          });
+                                          return;
+                                        }
+
+                                        setModalState(() {
+                                          isSubmitting = true;
+                                          formError = null;
+                                        });
+
+                                        final success = await authVm.updateProfile(
+                                          displayName: trimmedName,
+                                          phone: trimmedPhone,
+                                          ktxBuilding: selectedBuilding,
+                                          ktxRoom: trimmedRoom,
+                                        );
+
+                                        if (!ctx.mounted) return;
+
+                                        if (success) {
+                                          Navigator.of(ctx).pop();
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  '🎉 Đã lưu thông tin cá nhân & KTX thành công!',
+                                                ),
+                                                backgroundColor: AppColors.success,
+                                              ),
+                                            );
+                                          }
+                                        } else {
+                                          setModalState(() {
+                                            isSubmitting = false;
+                                            formError = authVm.errorMessage ?? 'Không thể cập nhật hồ sơ';
+                                          });
+                                        }
+                                      },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
