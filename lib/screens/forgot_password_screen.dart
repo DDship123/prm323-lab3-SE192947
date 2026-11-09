@@ -20,7 +20,7 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   int _currentStep = 1; // 1: Input phone, 2: Enter SMS OTP & New password
-  final _contactController = TextEditingController(text: '0981234567');
+  final _contactController = TextEditingController(text: '0968097907');
   final _otpController = TextEditingController();
   final _newPassController = TextEditingController();
   final _confirmPassController = TextEditingController();
@@ -318,7 +318,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           keyboardType: TextInputType.phone,
           decoration: const InputDecoration(
             labelText: 'Số điện thoại đăng ký KTX',
-            hintText: 'Ví dụ: 0981234567',
+            hintText: 'Ví dụ: 0968097907',
             prefixIcon: Icon(Icons.phone_android, color: AppColors.primary),
             border: OutlineInputBorder(),
           ),

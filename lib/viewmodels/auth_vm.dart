@@ -137,7 +137,7 @@ class AuthViewModel extends ChangeNotifier {
       final current = _currentUser;
       _currentUser = await _authApiService.updateMyProfile(
         displayName: current?.displayName ?? 'Sinh viên KTX',
-        phone: current?.phone ?? '0981234567',
+        phone: current?.phone ?? '0968097907',
         ktxBuilding: current?.ktxBuilding ?? 'Khu B - Tòa BA1',
         ktxRoom: current?.ktxRoom ?? '312',
         avatarUrl: newAvatarUrl,

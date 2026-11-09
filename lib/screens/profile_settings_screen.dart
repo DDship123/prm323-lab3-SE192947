@@ -453,7 +453,7 @@ class ProfileSettingsScreen extends StatelessWidget {
                         KtxTextField(
                           controller: phoneController,
                           label: 'Số điện thoại',
-                          hintText: 'Ví dụ: 0981234567',
+                          hintText: 'Ví dụ: 0968097907',
                           keyboardType: TextInputType.phone,
                           prefixIcon: Icons.phone_rounded,
                         ),
@@ -542,7 +542,7 @@ class ProfileSettingsScreen extends StatelessWidget {
 
                                         if (!RegExp(r'^(0[3|5|7|8|9])[0-9]{8}$').hasMatch(trimmedPhone)) {
                                           setModalState(() {
-                                            formError = 'Số điện thoại không đúng định dạng VN (10 chữ số, ví dụ 0981234567)';
+                                            formError = 'Số điện thoại không đúng định dạng VN (10 chữ số, ví dụ 0968097907)';
                                           });
                                           return;
                                         }

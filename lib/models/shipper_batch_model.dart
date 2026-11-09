@@ -85,7 +85,7 @@ class ShipperBatchItemModel {
       storeAddress: json['storeAddress'] as String? ?? 'Cổng KTX ĐHQG TP.HCM',
       pickupLocation: json['pickupLocation'] as String? ?? 'KTX Khu B – Cổng B2',
       customerName: json['customerName'] as String? ?? 'Ngô Trường Đạt (Sinh viên)',
-      customerPhone: json['customerPhone'] as String? ?? '0981234567',
+      customerPhone: json['customerPhone'] as String? ?? '0968097907',
       paymentMethod: json['paymentMethod'] as String? ?? 'VIETQR',
       finalAmount: (json['finalAmount'] as num?)?.toDouble() ?? 0.0,
       status: json['status'] as String? ?? 'READY',

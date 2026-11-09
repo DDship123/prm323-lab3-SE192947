@@ -12,7 +12,7 @@ class PhoneAuthService {
 
   PhoneAuthService({FirebaseAuth? auth}) : _auth = auth ?? FirebaseAuth.instance;
 
-  /// Chuyển đổi số điện thoại VN (ví dụ 0981234567) sang định dạng quốc tế E.164 (+84981234567)
+  /// Chuyển đổi số điện thoại VN (ví dụ 0968097907) sang định dạng quốc tế E.164 (+84968097907)
   static String formatToE164(String phone) {
     String clean = phone.replaceAll(RegExp(r'[^0-9+]'), '').trim();
     if (clean.startsWith('+')) {
@@ -197,3 +197,4 @@ class PhoneAuthService {
     }
   }
 }
+
