@@ -1213,7 +1213,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Đặt món & Gom đơn theo Ca KTX Khu A / Khu B\n(PRM393 - Lab 3)',
+                        'Đặt món & Gom đơn theo Ca KTX Khu A / Khu B',
                         style: AppTypography.bodySmall,
                         textAlign: TextAlign.center,
                       ),
