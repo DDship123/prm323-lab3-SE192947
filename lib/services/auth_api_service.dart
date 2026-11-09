@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import 'api_config.dart';
 
@@ -47,7 +48,24 @@ class AuthApiService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = jsonMap['data'] as Map<String, dynamic>?;
       if (data != null) {
-        if (password.trim() != '123456') {
+        final cleanKey = emailOrPhone.trim().replaceAll(RegExp(r'[^0-9a-zA-Z]'), '').toLowerCase();
+        final userPhoneKey = (data['phone'] != null)
+            ? data['phone'].toString().replaceAll(RegExp(r'[^0-9]'), '').trim()
+            : null;
+        final userEmailKey = (data['email'] != null)
+            ? data['email'].toString().replaceAll(RegExp(r'[^0-9a-zA-Z]'), '').toLowerCase()
+            : null;
+
+        String expectedPassword = '123456';
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          expectedPassword = prefs.getString('custom_pwd_$cleanKey') ??
+              (userPhoneKey != null ? prefs.getString('custom_pwd_$userPhoneKey') : null) ??
+              (userEmailKey != null ? prefs.getString('custom_pwd_$userEmailKey') : null) ??
+              '123456';
+        } catch (_) {}
+
+        if (password.trim() != expectedPassword) {
           ApiConfig.log('DB-AUTH-REJECT', '⚠️ Sai mật khẩu cho tài khoản: ${emailOrPhone.trim()}');
           throw Exception('Mật khẩu không chính xác! Vui lòng kiểm tra lại');
         }
@@ -301,6 +319,10 @@ class AuthApiService {
 
       if (response.statusCode == 200 && jsonMap['success'] == true) {
         ApiConfig.log('AUTH-OTP', '✅ Đặt lại mật khẩu thành công trong cơ sở dữ liệu!');
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('custom_pwd_$cleanPhone', newPassword.trim());
+        } catch (_) {}
         return {
           'success': true,
           'message': jsonMap['message'] ?? 'Đặt lại mật khẩu thành công!',
@@ -311,6 +333,10 @@ class AuthApiService {
       if (response.statusCode == 404 || response.statusCode == 500 || (jsonMap['message']?.toString().contains('No static resource') ?? false)) {
         ApiConfig.log('AUTH-OTP-FALLBACK', '⚠️ Backend từ xa chưa có endpoint reset. Tự động chấp nhận mã $otp');
         if (otp.trim() == '123456' || otp.trim().length == 6) {
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString('custom_pwd_$cleanPhone', newPassword.trim());
+          } catch (_) {}
           return {
             'success': true,
             'message': 'Đặt lại mật khẩu thành công!',
@@ -325,6 +351,10 @@ class AuthApiService {
     } catch (e) {
       ApiConfig.log('AUTH-OTP-ERROR', '❌ Lỗi reset password: $e');
       if (otp.trim() == '123456' || otp.trim().length == 6) {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('custom_pwd_$cleanPhone', newPassword.trim());
+        } catch (_) {}
         return {
           'success': true,
           'message': 'Đặt lại mật khẩu thành công (Mã Demo)',
