@@ -11,6 +11,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from artemis.config.paths import PAUSE_FILE
 from artemis_client import ArtemisClient, JsonTransport, TaskResult, TaskTimeoutError
 
 from e2e_test.device import APP_PACKAGE
@@ -31,6 +32,19 @@ GOAL_RULES = (
     "Nếu một kết quả mong đợi không xuất hiện sau tối đa 2 lần thử thì dừng lại và báo FAIL, "
     "tuyệt đối không tự sửa dữ liệu để test qua."
 )
+
+
+class LLMPausedError(RuntimeError):
+    pass
+
+
+def _pause_reason(*, since: float) -> str | None:
+    try:
+        if PAUSE_FILE.stat().st_mtime < since:
+            return None
+        return PAUSE_FILE.read_text(encoding="utf-8").strip()[:300] or "LLM paused"
+    except OSError:
+        return None
 
 
 @dataclass
@@ -98,6 +112,21 @@ def parse_verdict(output: Any) -> dict[str, Any]:
     return {}
 
 
+def verdict_from_final_report(report: dict[str, Any] | None) -> dict[str, Any]:
+    if not report:
+        return {}
+    explanation = str(report.get("explanation") or "")
+    parsed = parse_verdict(explanation)
+    if parsed:
+        return parsed
+    passed = str(report.get("status", "")).lower() == "completed"
+    return {
+        "verdict": "PASS" if passed else "FAIL",
+        "evidence": explanation[:300],
+        "failed_step": "" if passed else explanation[:300],
+    }
+
+
 def _checker_failures(raw_checks: Any, output: Any) -> int:
     tests: dict[str, Any] = {}
     if isinstance(raw_checks, dict):
@@ -132,6 +161,8 @@ class ArtemisCaseRunner:
 
         output = result.output if result else None
         verdict = parse_verdict(output)
+        if not verdict and result is not None and task_id:
+            verdict = verdict_from_final_report(self._final_report(task_id))
         checker_failed = _checker_failures(raw_checks, output)
         verdict_value = str(verdict.get("verdict", "")).upper() or None
         passed = bool(
@@ -166,6 +197,7 @@ class ArtemisCaseRunner:
         if self.profile == "pro":
             options = {"verification_level": "final", "explorer_mode": "pro"}
         task_id: str | None = None
+        submitted_at = time.time()
         try:
             handle = await self.client.submit(
                 f"{goal.strip()}\n\n{GOAL_RULES}",
@@ -177,9 +209,11 @@ class ArtemisCaseRunner:
                 **options,
             )
             task_id = handle.task_id
-            result = await self.client.wait_for_task(
-                task_id, timeout=self.timeout_s, poll_interval=3.0
-            )
+            result = await self._wait(task_id, submitted_at=submitted_at)
+        except LLMPausedError as exc:
+            if task_id:
+                await self.client.stop(task_id)
+            return task_id, None, None, f"llm_paused: {exc}"
         except TaskTimeoutError as exc:
             # A stuck task keeps the device locked for the next test, so cancel it explicitly.
             if task_id:
@@ -188,6 +222,34 @@ class ArtemisCaseRunner:
         except Exception as exc:  # noqa: BLE001 - every infrastructure error must be recorded, not hidden
             return task_id, None, None, f"{type(exc).__name__}: {exc}"
         return task_id, result, await self._checks(task_id), None
+
+    async def _wait(self, task_id: str, *, submitted_at: float) -> TaskResult:
+        # After exhausting its LLM retries (e.g. OpenRouter 429) Artemis writes PAUSE_FILE and
+        # idles until someone presses Resume, so the task would otherwise never finish.
+        deadline = time.monotonic() + self.timeout_s
+        while True:
+            result = await self.client.get_task(task_id)
+            if result.done:
+                return result
+            reason = _pause_reason(since=submitted_at)
+            if reason is not None:
+                raise LLMPausedError(reason)
+            if time.monotonic() >= deadline:
+                raise TaskTimeoutError(task_id, self.timeout_s)
+            await asyncio.sleep(3.0)
+
+    def _final_report(self, task_id: str) -> dict[str, Any] | None:
+        # The Flash profile skips the Outputter; its verdict only lives in the last
+        # report_task_status step.
+        try:
+            steps = self._transport.request("GET", f"/api/sessions/{task_id}/steps")
+        except Exception:  # noqa: BLE001 - a missing report is handled as "no verdict"
+            return None
+        for step in reversed(steps if isinstance(steps, list) else []):
+            action = (step or {}).get("action_taken") or {}
+            if action.get("action") == "report_task_status":
+                return action.get("args") or {}
+        return None
 
     async def _checks(self, task_id: str) -> Any:
         try:

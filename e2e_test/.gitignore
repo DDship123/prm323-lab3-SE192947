@@ -1,5 +1,6 @@
 .env
 HUONG_DAN_CHAY_TEST.md
+HUONG_DAN_LEN_SLIDE_TESTING.md
 reports/screens/
 __pycache__/
 .pytest_cache/

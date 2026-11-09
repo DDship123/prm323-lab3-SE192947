@@ -1,0 +1,126 @@
+{
+  // Cấu hình Artemis dùng Google Gemini (bản flash-lite).
+  // conftest.py tự trỏ ARTEMIS_ARTEMIS_JSONC tới file này khi E2E_LLM_PROVIDER=gemini
+  // (file này THAY THẾ toàn bộ artemis.jsonc mặc định, không gộp).
+  // Key: GEMINI_API_KEY trong e2e_test/.env.
+  //
+  // gemini-3.8-flash / gemini-3.7-flash (mặc định của Artemis) thường xuyên trả 503/504
+  // "high demand", làm lượt gọi đầu tiên vượt giới hạn 180 giây; flash-lite phản hồi ổn định hơn.
+
+  "planner":                 { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+  "summarizer":              { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+  "operator":                { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+  "operator_summarizer":     { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+  "log_reader_sub_agent":    { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+  "log_analyzer":            { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+  "diagnoser":               { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+  "checker":                 { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+  "planner_avatar":          { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+  "history_analyzer_expert": { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+  "diagnoser_expert":        { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+  "explorer":                { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+
+  "validator_pixel_safety_net": { "provider": "google", "model": "gemini-3.5-flash-lite", "temperature": 0.0, "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite", "temperature": 0.0 } },
+  "planner_validation":         { "provider": "google", "model": "gemini-3.5-flash-lite", "temperature": 0.0, "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite", "temperature": 0.0 } },
+
+  "utils": {
+    "outputter":       { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+    "hopper":          { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+    "video_analyzer":  { "provider": "google", "model": "gemini-3.5-flash-lite", "fallback": { "provider": "google", "model": "gemini-3.1-flash-lite" } },
+    "object_detector": { "provider": "google", "model": "gemini-robotics-er-2-preview", "fallback": { "provider": "google", "model": "gemini-robotics-er-2-preview" } }
+  },
+
+  "agent": {
+    "flash": {
+      "max_turns": 0,
+      "explorer_mode": "flash",
+      "step_summarizer": {
+        "enabled": true,
+        "model": "gemini-3.5-flash-lite",
+        "prune_history_xml": true
+      }
+    },
+    "pro": {
+      "explorer": {
+        "mode": "flash"
+      },
+      "planner_validation": {
+        "enabled": false
+      },
+      "committee": {
+        "enabled": false,
+        "debate_rounds": 2
+      },
+      "checker": {
+        "enabled": true,
+        "midway_checks": false,
+        "final_check": true,
+        "max_iterations": 20,
+        "final_check_max_attempts": 3,
+        "checkpoint_max_repairs": 2,
+        "max_concurrent_checkpoints": 3,
+        "checkpoint_timeout": 180.0,
+        "settlement_timeout": 120.0,
+        "assert_failure_policy": "continue",
+        "device_probes": true
+      },
+      "video_analyzer": {
+        "enabled": false,
+        "enable_ledger": true
+      }
+    },
+    "memory": {
+      "runtime": {
+        "max_concurrency": 2,
+        "retry_limit": 3,
+        "flush_timeout_s": 30
+      },
+      "transcript": {
+        "enabled": true,
+        "context_budget_tokens": 80000,
+        "start_ratio": 0.35,
+        "soft_ratio": 0.7,
+        "hard_ratio": 0.9,
+        "min_active_steps": 5,
+        "image_scrub_depth": 3,
+        "image_scrub_depth_relaxed": 6,
+        "pending_grace_steps": 3,
+        "xml_scrub_depth": 1,
+        "similarity_hint": true,
+        "similarity_max_distance": 5
+      },
+      "chunking": {
+        "max_steps": 12,
+        "min_steps": 3,
+        "target_source_tokens": 2000,
+        "model": "gemini-3.5-flash-lite",
+        "max_chunks": 8
+      },
+      "recall": {
+        "enabled": true,
+        "max_results": 5,
+        "max_text_tokens": 2000,
+        "screen_scan_steps": 150
+      },
+      "replay": {
+        "max_steps": 5,
+        "max_tokens": 12000
+      }
+    },
+    "video_analyzer": {
+      "enabled": false,
+      "enable_ledger": true
+    },
+    "outputter": {
+      "enabled": true,
+      "force_synthesis": false
+    },
+    "explorer": {
+      "default_version": "flash"
+    },
+    "explorer_versions": {},
+    "denylisted_tools": {
+      "explorer": []
+    }
+  }
+}

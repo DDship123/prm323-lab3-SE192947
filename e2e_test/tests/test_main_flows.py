@@ -30,17 +30,21 @@ def test_tc02_add_simple_item_updates_sticky_cart(app, run_case):
     app.start_logged_in()
     run_case(
         case_id="TC02",
-        title="Thêm món không tùy biến vào giỏ, thanh giỏ hàng nổi cập nhật",
+        title="Thêm 1 phần món đầu tiên vào giỏ, thanh giỏ hàng nổi cập nhật",
         category=CATEGORY,
         goal="""
-Mục tiêu: thêm một món không cần tùy biến vào giỏ hàng.
+Mục tiêu: thêm 1 phần của món đầu tiên trong thực đơn vào giỏ hàng (giỏ đang trống).
+Thực đơn được tải từ backend; món có thể có nút "Tùy biến" hoặc nút dấu + màu cam, cả hai đều hợp lệ.
 Các bước:
-1. Bấm tab "Đặt món" ở thanh điều hướng dưới cùng và chờ thực đơn tải xong.
-2. Tìm món đầu tiên trong thực đơn có nút "Thêm <tên món> vào giỏ" (nút dấu + màu cam, KHÔNG phải nút "Tùy biến"). Cuộn xuống nếu cần. Ghi nhớ tên và giá của món đó.
-3. Bấm nút "Thêm <tên món> vào giỏ" đúng 1 lần.
+1. Bấm tab "Đặt món" ở thanh điều hướng dưới cùng và chờ thực đơn tải xong. Ghi nhớ tên món đầu tiên trong danh sách món.
+2. Ở món đầu tiên đó:
+   - Nếu món có nút dấu + màu cam ("Thêm <tên món> vào giỏ"): bấm nút đó đúng 1 lần. Giá cần ghi nhớ là giá hiển thị trên thẻ món.
+   - Nếu món có nút "Tùy biến": bấm nút "Tùy biến". Ở màn hình tùy biến, GIỮ NGUYÊN các lựa chọn mặc định và số lượng 1
+     (không bấm tùy chọn nào, không bấm "Tăng số lượng"). Ghi nhớ số tiền trên nút "Thêm vào giỏ • <số tiền>" ở đáy màn hình,
+     rồi bấm nút đó đúng 1 lần để quay lại thực đơn.
 Kết quả mong đợi:
-- Tại vị trí món đó xuất hiện bộ đếm số lượng với giá trị "1" và các nút "Giảm số lượng" / "Tăng số lượng".
-- Thanh giỏ hàng nổi ở đáy màn hình xuất hiện với nội dung "1 món" và tổng tiền bằng đúng giá của món vừa thêm.
+- Thẻ của món vừa thêm hiển thị bộ đếm số lượng với giá trị "1" (có nút giảm "-" và tăng "+").
+- Thanh giỏ hàng nổi ở đáy màn hình hiển thị "1 món" và tổng tiền bằng đúng số tiền đã ghi nhớ ở bước 2.
 """,
     )
 
@@ -73,18 +77,22 @@ def test_tc04_cart_quantity_increase_updates_line_total(app, run_case):
     app.start_logged_in()
     run_case(
         case_id="TC04",
-        title="Tăng số lượng trong giỏ hàng, thành tiền cập nhật đúng",
+        title="Tăng số lượng món trong giỏ hàng, thành tiền cập nhật đúng",
         category=CATEGORY,
         goal="""
 Mục tiêu: kiểm tra tăng số lượng một món trong giỏ hàng.
+Thực đơn được tải từ backend; món có thể có nút "Tùy biến" hoặc nút dấu + màu cam, cả hai đều hợp lệ.
 Các bước:
-1. Bấm tab "Đặt món", bấm nút "Thêm <tên món> vào giỏ" (dấu + màu cam) của món đầu tiên không cần tùy biến. Ghi nhớ đơn giá của món.
+1. Bấm tab "Đặt món" và chờ thực đơn tải xong. Thêm 1 phần của món đầu tiên trong danh sách món vào giỏ:
+   - Nếu món có nút dấu + màu cam ("Thêm <tên món> vào giỏ"): bấm nút đó đúng 1 lần.
+   - Nếu món có nút "Tùy biến": bấm nút đó, GIỮ NGUYÊN các lựa chọn mặc định và số lượng 1,
+     rồi bấm nút "Thêm vào giỏ • <số tiền>" ở đáy màn hình đúng 1 lần.
 2. Bấm tab "Giỏ hàng".
-3. Ở dòng món đó, đọc giá trị "Thành tiền: ..." hiện tại.
-4. Bấm nút "Tăng số lượng <tên món>" đúng 1 lần.
+3. Ở dòng món vừa thêm, xác nhận số lượng là "1" và ghi nhớ giá trị "Thành tiền: ..." hiện tại (đây là đơn giá của 1 phần).
+4. Bấm nút "Tăng số lượng <tên món>" (dấu +) của dòng món đó đúng 1 lần.
 Kết quả mong đợi:
 - Số lượng của món hiển thị "2".
-- "Thành tiền" của dòng món bằng đúng 2 lần đơn giá.
+- "Thành tiền" của dòng món bằng đúng 2 lần giá trị đã ghi nhớ ở bước 3.
 - Nút thanh toán ở đáy hiển thị "Thanh toán (2)" (đếm theo tổng số phần đang được chọn).
 """,
     )
@@ -98,8 +106,12 @@ def test_tc05_place_order_with_cod(app, run_case):
         category=CATEGORY,
         goal="""
 Mục tiêu: đặt một đơn hàng hoàn chỉnh bằng phương thức tiền mặt.
+Thực đơn được tải từ backend; món có thể có nút "Tùy biến" hoặc nút dấu + màu cam, cả hai đều hợp lệ.
 Các bước:
-1. Bấm tab "Đặt món", bấm nút "Thêm <tên món> vào giỏ" (dấu + màu cam) của món đầu tiên không cần tùy biến.
+1. Bấm tab "Đặt món" và chờ thực đơn tải xong. Thêm 1 phần của món đầu tiên trong danh sách món vào giỏ:
+   - Nếu món có nút dấu + màu cam ("Thêm <tên món> vào giỏ"): bấm nút đó đúng 1 lần.
+   - Nếu món có nút "Tùy biến": bấm nút đó, GIỮ NGUYÊN các lựa chọn mặc định và số lượng 1,
+     rồi bấm nút "Thêm vào giỏ • <số tiền>" ở đáy màn hình đúng 1 lần.
 2. Bấm tab "Giỏ hàng", rồi bấm nút "Thanh toán (1)".
 3. Ở màn hình "Thanh Toán Gom Đơn", cuộn xuống phần phương thức thanh toán và chọn "Tiền mặt khi nhận tại cổng (COD)".
 4. Bấm nút "Đặt đơn nhận tại ..." ở đáy màn hình và chờ tối đa 20 giây.

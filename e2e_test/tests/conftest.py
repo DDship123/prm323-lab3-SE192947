@@ -11,6 +11,13 @@ from dotenv import load_dotenv
 E2E_ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(E2E_ROOT / ".env", override=False)
 
+LLM_PROVIDER = os.environ.get("E2E_LLM_PROVIDER", "gemini").strip().lower()
+# Read by Artemis in-process and inherited by the daemon it spawns.
+os.environ.setdefault(
+    "ARTEMIS_ARTEMIS_JSONC",
+    str(E2E_ROOT / ("artemis.openrouter.jsonc" if LLM_PROVIDER == "openrouter" else "artemis.gemini.jsonc")),
+)
+
 from artemis_client import ArtemisClient  # noqa: E402
 
 from e2e_test.device import ROLE_STUDENT, Device, first_connected_serial  # noqa: E402
@@ -40,7 +47,7 @@ def _preflight_gemini(api_key: str) -> None:
     """Artemis pauses forever on billing errors (402), so fail fast before submitting any task."""
     from google import genai
 
-    model = os.environ.get("E2E_PREFLIGHT_MODEL", "gemini-3.8-flash")
+    model = os.environ.get("E2E_PREFLIGHT_MODEL", "gemini-3.5-flash-lite")
     client = genai.Client(api_key=api_key)
     try:
         client.models.generate_content(model=model, contents="ping")
@@ -48,15 +55,39 @@ def _preflight_gemini(api_key: str) -> None:
         pytest.exit(f"Gemini API ({model}) không dùng được: {exc}", returncode=2)
 
 
+def _preflight_openrouter(api_key: str) -> None:
+    """Check the key and its remaining credit without spending tokens."""
+    import httpx
+
+    try:
+        resp = httpx.get(
+            "https://openrouter.ai/api/v1/key",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=20.0,
+        )
+        resp.raise_for_status()
+    except Exception as exc:  # noqa: BLE001 - surface the provider message verbatim
+        pytest.exit(f"OpenRouter key không dùng được: {exc}", returncode=2)
+    remaining = resp.json().get("data", {}).get("limit_remaining")
+    if remaining is not None and remaining <= 0:
+        pytest.exit("OpenRouter key đã hết hạn mức (limit_remaining <= 0).", returncode=2)
+
+
 @pytest.fixture(scope="session")
 def device() -> Device:
-    api_key = next((os.environ[name] for name in LLM_KEY_NAMES if os.environ.get(name)), None)
-    if not api_key:
-        pytest.exit(
-            "Thiếu GEMINI_API_KEY. Tạo e2e_test/.env từ .env.example hoặc chạy `uv run artemis init`.",
-            returncode=2,
-        )
-    _preflight_gemini(api_key)
+    if LLM_PROVIDER == "openrouter":
+        api_key = os.environ.get("OPEN_ROUTER_API_KEY")
+        if not api_key:
+            pytest.exit("Thiếu OPEN_ROUTER_API_KEY trong e2e_test/.env.", returncode=2)
+        _preflight_openrouter(api_key)
+    else:
+        api_key = next((os.environ[name] for name in LLM_KEY_NAMES if os.environ.get(name)), None)
+        if not api_key:
+            pytest.exit(
+                "Thiếu GEMINI_API_KEY. Tạo e2e_test/.env từ .env.example hoặc chạy `uv run artemis init`.",
+                returncode=2,
+            )
+        _preflight_gemini(api_key)
     serial = os.environ.get("ANDROID_SERIAL") or first_connected_serial()
     dev = Device(serial)
     if not dev.is_app_installed():
