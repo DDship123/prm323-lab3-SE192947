@@ -22,10 +22,12 @@ enum DisputeStatus {
 class DisputeModel {
   final int id;
   final int orderId;
+  final int userId;
   final String? storeName;
   final String reason;
   final String description;
   final String evidenceImageUrl;
+  final List<String> evidenceImages;
   final double requestedRefundAmount;
   final double? approvedRefundAmount;
   final DisputeStatus status;
@@ -35,10 +37,12 @@ class DisputeModel {
   const DisputeModel({
     required this.id,
     required this.orderId,
+    this.userId = 1,
     this.storeName,
     required this.reason,
     required this.description,
     required this.evidenceImageUrl,
+    this.evidenceImages = const [],
     required this.requestedRefundAmount,
     this.approvedRefundAmount,
     required this.status,
@@ -48,9 +52,17 @@ class DisputeModel {
 
   factory DisputeModel.fromJson(Map<String, dynamic> json) {
     String evUrl = json['evidenceImageUrl'] as String? ?? '';
-    if (evUrl.isEmpty && json['evidenceImages'] is List && (json['evidenceImages'] as List).isNotEmpty) {
-      evUrl = (json['evidenceImages'] as List).first.toString();
+    final rawImgs = json['evidenceImages'] as List<dynamic>?;
+    List<String> evList = [];
+    if (rawImgs != null && rawImgs.isNotEmpty) {
+      evList = rawImgs.map((e) => e.toString()).toList();
+      if (evUrl.isEmpty) {
+        evUrl = evList.first;
+      }
+    } else if (evUrl.isNotEmpty) {
+      evList = [evUrl];
     }
+
     final reqAmt = (json['requestedRefundAmount'] as num?)?.toDouble() ??
         (json['refundRequestedAmount'] as num?)?.toDouble() ??
         0.0;
@@ -61,10 +73,12 @@ class DisputeModel {
     return DisputeModel(
       id: json['id'] as int? ?? 0,
       orderId: json['orderId'] as int? ?? 0,
+      userId: (json['userId'] as num?)?.toInt() ?? 1,
       storeName: json['storeName'] as String?,
       reason: json['reason']?.toString() ?? 'Sự cố món ăn',
       description: json['description'] as String? ?? '',
       evidenceImageUrl: evUrl,
+      evidenceImages: evList,
       requestedRefundAmount: reqAmt,
       approvedRefundAmount: appAmt,
       status: DisputeStatus.fromCode(json['status'] as String?),
@@ -76,10 +90,13 @@ class DisputeModel {
   }
 
   Map<String, dynamic> toJson() {
-    final images = evidenceImageUrl.trim().isNotEmpty ? [evidenceImageUrl.trim()] : <String>[];
+    final images = evidenceImages.isNotEmpty
+        ? evidenceImages
+        : (evidenceImageUrl.trim().isNotEmpty ? [evidenceImageUrl.trim()] : <String>[]);
 
     return {
       'orderId': orderId,
+      'userId': userId,
       'reason': reason,
       'description': description,
       'evidenceImages': images,
@@ -120,4 +137,3 @@ class CreateDisputeDto {
     };
   }
 }
-
