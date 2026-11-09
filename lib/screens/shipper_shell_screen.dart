@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/shipper_vm.dart';
 import 'shipper_batch_pickup_screen.dart';

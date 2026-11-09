@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/dispute_model.dart';
 import '../services/dispute_service.dart';
@@ -57,7 +57,11 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
     if (confirm == true) {
       try {
         final adminService = AdminApiService();
-        await adminService.toggleUserBan(userId, !isBanned, 1);
+        await adminService.toggleUserBan(
+          userId: userId,
+          banned: !isBanned,
+          adminId: '4',
+        );
       } catch (_) {}
 
       setState(() {
