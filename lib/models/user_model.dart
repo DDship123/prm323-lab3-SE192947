@@ -9,6 +9,9 @@ class UserModel {
   final String? avatarUrl;
   final String? ktxBuilding;
   final String? ktxRoom;
+  final double? ratingAvg;
+  final int? ratingCount;
+  final bool isBanned;
 
   const UserModel({
     required this.id,
@@ -20,6 +23,9 @@ class UserModel {
     this.avatarUrl,
     this.ktxBuilding,
     this.ktxRoom,
+    this.ratingAvg,
+    this.ratingCount,
+    this.isBanned = false,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -33,6 +39,9 @@ class UserModel {
       avatarUrl: json['avatarUrl'] as String?,
       ktxBuilding: json['ktxBuilding'] as String?,
       ktxRoom: json['ktxRoom'] as String?,
+      ratingAvg: (json['ratingAvg'] as num?)?.toDouble() ?? 5.0,
+      ratingCount: (json['ratingCount'] as num?)?.toInt() ?? 0,
+      isBanned: json['isBanned'] as bool? ?? false,
     );
   }
 

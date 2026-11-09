@@ -73,6 +73,8 @@ class ApiConfig {
   static String get disputes => '$baseUrl/disputes';
   static String get reviews => '$baseUrl/reviews';
   static String get notifications => '$baseUrl/notifications';
+  static String get shippers => '$baseUrl/shippers';
+  static String get adminUsers => '$baseUrl/admin/users';
 
   static Map<String, String> headers({String? userId, String? idToken}) {
     return {

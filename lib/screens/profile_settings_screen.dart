@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'package:image_picker/image_picker.dart';
+import '../services/evidence_upload_service.dart';
 import '../firebase/analytics_service.dart';
 import '../firebase/crashlytics_service.dart';
 import '../firebase/remote_config_service.dart';
@@ -58,21 +60,49 @@ class ProfileSettingsScreen extends StatelessWidget {
             ),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 34,
-                  backgroundColor: AppColors.primaryLight.withValues(
-                    alpha: 0.4,
+                InkWell(
+                  onTap: () => _pickAndUploadAvatar(context),
+                  borderRadius: BorderRadius.circular(34),
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 34,
+                        backgroundColor: AppColors.primaryLight.withValues(
+                          alpha: 0.4,
+                        ),
+                        backgroundImage: (profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty)
+                            ? NetworkImage(profile.avatarUrl!)
+                            : (photoUrl != null && photoUrl!.isNotEmpty
+                                ? NetworkImage(photoUrl!)
+                                : null),
+                        child: (profile?.avatarUrl == null || profile!.avatarUrl!.isEmpty) && (photoUrl == null || photoUrl!.isEmpty)
+                            ? const Icon(
+                                Icons.person_rounded,
+                                size: 36,
+                                color: AppColors.primary,
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  backgroundImage: photoUrl != null
-                      ? NetworkImage(photoUrl!)
-                      : null,
-                  child: photoUrl == null
-                      ? const Icon(
-                          Icons.person_rounded,
-                          size: 36,
-                          color: AppColors.primary,
-                        )
-                      : null,
+                ),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -559,6 +589,72 @@ class ProfileSettingsScreen extends StatelessWidget {
           duration: Duration(seconds: 4),
         ),
       );
+    }
+  }
+
+  Future<void> _pickAndUploadAvatar(BuildContext context) async {
+    final picker = ImagePicker();
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
+              title: const Text('Chọn ảnh từ Thư viện máy'),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
+              title: const Text('Chụp ảnh mới bằng Camera'),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+    final file = await picker.pickImage(source: source, imageQuality: 85);
+    if (file == null) return;
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đang tải ảnh đại diện lên máy chủ...')),
+      );
+    }
+
+    try {
+      final bytes = await file.readAsBytes();
+      final uploadService = EvidenceUploadService();
+      final url = await uploadService.uploadEvidence(
+        bytes: bytes,
+        fileName: file.name,
+        userId: uid,
+      );
+
+      if (context.mounted) {
+        final authVm = context.read<AuthViewModel>();
+        await authVm.updateAvatar(url);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Đã cập nhật ảnh đại diện từ máy lên thành công!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không thể tải ảnh đại diện lên: '),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 }

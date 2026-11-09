@@ -56,4 +56,21 @@ class AdminViewModel extends ChangeNotifier {
     }
     return success;
   }
+
+  /// Quyền Admin: Khóa tài khoản / Ban tài khoản
+  Future<bool> banUser({
+    required int userId,
+    bool isBanned = true,
+    required String adminId,
+    String? idToken,
+  }) async {
+    final success = await _apiService.toggleUserBan(
+      userId: userId,
+      banned: isBanned,
+      adminId: adminId,
+      idToken: idToken,
+    );
+    notifyListeners();
+    return success;
+  }
 }

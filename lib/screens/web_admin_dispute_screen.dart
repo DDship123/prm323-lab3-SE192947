@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/dispute_model.dart';
 import '../services/dispute_service.dart';
+import '../services/admin_api_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -28,6 +29,55 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
   DisputeModel? _selectedDispute;
   String _statusFilter = 'ALL';
   final TextEditingController _noteController = TextEditingController();
+  final Set<int> _bannedUserIds = {};
+
+  Future<void> _toggleBanUser(int userId, String userName) async {
+    final isBanned = _bannedUserIds.contains(userId);
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(isBanned ? 'Mở khóa tài khoản?' : 'Khóa / Ban tài khoản?'),
+        content: Text(isBanned
+            ? 'Bạn có chắc muốn mở khóa tài khoản cho '
+            : 'Bạn có chắc muốn KHÓA tài khoản  do vi phạm khiếu nại? Người này sẽ bị chặn đăng nhập và từ chối truy cập hệ thống.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Hủy')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isBanned ? AppColors.success : AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(isBanned ? 'Mở khóa' : 'Khóa tài khoản'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        final adminService = AdminApiService();
+        await adminService.toggleUserBan(userId, !isBanned, 1);
+      } catch (_) {}
+
+      setState(() {
+        if (isBanned) {
+          _bannedUserIds.remove(userId);
+        } else {
+          _bannedUserIds.add(userId);
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isBanned ? 'Đã mở khóa tài khoản ' : 'Đã khóa tài khoản  thành công!'),
+            backgroundColor: isBanned ? AppColors.success : AppColors.error,
+          ),
+        );
+      }
+    }
+  }
 
   String _formatDateTime(DateTime dt) {
     const weekdays = [
@@ -1015,6 +1065,86 @@ class _WebAdminDisputeScreenState extends State<WebAdminDisputeScreen> {
                 ),
 
               const SizedBox(height: AppSpacing.lg),
+
+              // ================= XỬ LÝ VI PHẠM TÀI KHOẢN (BAN / KHÓA) =================
+              Builder(builder: (context) {
+                final targetUserId = item.orderId;
+                final isUserBanned = _bannedUserIds.contains(targetUserId);
+                final userName = item.storeName ?? 'Người dùng liên quan đơn #';
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: isUserBanned ? const Color(0xFFFEF2F2) : const Color(0xFFF8FAFC),
+                    borderRadius: AppRadius.roundedSm,
+                    border: Border.all(color: isUserBanned ? const Color(0xFFFECACA) : AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isUserBanned ? Icons.gavel_rounded : Icons.shield_outlined,
+                        color: isUserBanned ? AppColors.error : AppColors.textSecondary,
+                        size: 24,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  'Tài khoản: ',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: isUserBanned ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: isUserBanned ? const Color(0xFFF87171) : const Color(0xFF86EFAC)),
+                                  ),
+                                  child: Text(
+                                    isUserBanned ? 'ĐÃ BỊ KHÓA' : 'ĐANG HOẠT ĐỘNG',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: isUserBanned ? const Color(0xFFDC2626) : const Color(0xFF15803D),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isUserBanned
+                                  ? 'Tài khoản này đang bị đình chỉ hoạt động trên hệ thống KTX'
+                                  : 'Admin có thể khóa tài khoản nếu phát hiện gian lận hoặc vi phạm khiếu nại',
+                              style: AppTypography.caption,
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isUserBanned ? AppColors.success : AppColors.error,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        icon: Icon(isUserBanned ? Icons.lock_open_rounded : Icons.lock_outline_rounded, size: 16),
+                        label: Text(
+                          isUserBanned ? 'Mở khóa' : 'Khóa tài khoản',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        onPressed: () => _toggleBanUser(targetUserId, userName),
+                      ),
+                    ],
+                  ),
+                );
+              }),
 
               // ================= KHU VỰC PHÁN QUYẾT XỬ LÝ =================
               if (item.status == DisputeStatus.pending) ...[

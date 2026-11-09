@@ -103,6 +103,7 @@ class AuthViewModel extends ChangeNotifier {
     required String phone,
     required String ktxBuilding,
     required String ktxRoom,
+    String? avatarUrl,
   }) async {
     _isSyncing = true;
     _errorMessage = null;
@@ -114,6 +115,32 @@ class AuthViewModel extends ChangeNotifier {
         phone: phone,
         ktxBuilding: ktxBuilding,
         ktxRoom: ktxRoom,
+        avatarUrl: avatarUrl ?? _currentUser?.avatarUrl,
+      );
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
+    }
+  }
+
+  /// Cập nhật ảnh đại diện (Upload từ máy lên)
+  Future<bool> updateAvatar(String newAvatarUrl) async {
+    _isSyncing = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final current = _currentUser;
+      _currentUser = await _authApiService.updateMyProfile(
+        displayName: current?.displayName ?? 'Sinh viên KTX',
+        phone: current?.phone ?? '0981234567',
+        ktxBuilding: current?.ktxBuilding ?? 'Khu B - Tòa BA1',
+        ktxRoom: current?.ktxRoom ?? '312',
+        avatarUrl: newAvatarUrl,
       );
       return true;
     } catch (e) {

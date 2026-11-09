@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../firebase/analytics_service.dart';
@@ -8,6 +8,7 @@ import '../models/voucher_model.dart';
 import '../services/voucher_service.dart';
 import '../viewmodels/cart_checkout_vm.dart';
 import '../widgets/ktx_dialog.dart';
+import '../services/commission_policy_service.dart';
 import '../services/order_service.dart';
 import 'online_payment_screen.dart';
 import 'pickup_qr_code_screen.dart';
@@ -1067,9 +1068,6 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
               ],
             ),
           ),
-              ],
-            ),
-          ),
           const SizedBox(height: 14),
 
           // 5. Phương thức thanh toán
@@ -1387,8 +1385,6 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
                       ),
                     ],
                   ),
-                ),
-                  ],
                 ),
                 const SizedBox(height: 12),
 
@@ -1974,5 +1970,4 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
       },
     );
   }
-}
 }

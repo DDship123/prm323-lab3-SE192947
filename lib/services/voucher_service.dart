@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/voucher_model.dart';
@@ -262,6 +262,16 @@ class VoucherService extends ChangeNotifier {
   /// Lấy danh sách voucher cho Quán ăn (Bao gồm voucher của quán + voucher toàn sàn)
   List<VoucherModel> getVouchersForStore(int storeId) {
     return _vouchers.where((v) => v.storeId == null || v.storeId == storeId).toList();
+  }
+
+  /// Xóa voucher khỏi hệ thống (theo code String hoặc int id)
+  Future<void> deleteVoucher(dynamic codeOrId) async {
+    final search = codeOrId.toString().trim().toUpperCase();
+    _vouchers.removeWhere(
+      (v) => v.code.trim().toUpperCase() == search,
+    );
+    await _saveToStorage();
+    notifyListeners();
   }
 
   /// Đặt lại danh sách mặc định
