@@ -26,6 +26,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _obscurePass = true;
   bool _isLoading = false;
   String? _errorMessage;
+  String? _latestOtp;
 
   @override
   void dispose() {
@@ -56,13 +57,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _isLoading = false);
 
     if (res['success'] == true) {
-      setState(() => _currentStep = 2);
-
       final generatedOtp = (res['data'] is Map ? res['data']['otp'] : null)?.toString() ?? '123456';
+
+      setState(() {
+        _currentStep = 2;
+        _latestOtp = generatedOtp;
+        _otpController.text = generatedOtp;
+      });
 
       // Hiển thị hộp thoại mô phỏng tin nhắn SMS đến điện thoại
       showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Row(
@@ -273,28 +279,79 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
         ),
         const SizedBox(height: AppSpacing.md),
-        // Hộp hướng dẫn xem Terminal
+        // Hộp tin nhắn SMS mô phỏng trực tiếp trên giao diện
         Container(
-          padding: const EdgeInsets.all(AppSpacing.sm + 2),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF7ED),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFFFD8BF)),
+            color: const Color(0xFFF0FDF4),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF86EFAC)),
           ),
-          child: const Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.terminal_rounded, color: Color(0xFFFF521B), size: 20),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Mã OTP 6 chữ số đang được in trên cửa sổ Terminal chạy Backend. Vui lòng nhìn Terminal để lấy mã và điền vào ô dưới.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF9A3412),
-                    fontWeight: FontWeight.w600,
+              Row(
+                children: [
+                  const Icon(Icons.sms_rounded, color: Color(0xFF16A34A), size: 20),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Tin nhắn SMS mô phỏng',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF15803D),
+                    ),
                   ),
-                ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'KTX-FOOD-OTP',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF166534),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Mã OTP: ${_latestOtp ?? "123456"}',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                      color: Color(0xFF14532D),
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF16A34A),
+                      side: const BorderSide(color: Color(0xFF16A34A)),
+                      backgroundColor: Colors.white,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: () {
+                      _otpController.text = _latestOtp ?? '123456';
+                    },
+                    icon: const Icon(Icons.flash_on_rounded, size: 16),
+                    label: const Text('Điền mã vào ô'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Mã OTP có hiệu lực trong 5 phút. Đồng thời mã cũng được in ra Terminal Backend.',
+                style: TextStyle(fontSize: 11, color: Color(0xFF166534)),
               ),
             ],
           ),
@@ -331,10 +388,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             letterSpacing: 6,
             fontWeight: FontWeight.bold,
           ),
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Mã xác thực OTP (6 chữ số)',
-            hintText: 'Nhìn Terminal để lấy mã',
-            border: OutlineInputBorder(),
+            hintText: _latestOtp ?? '123456',
+            suffixIcon: IconButton(
+              tooltip: 'Điền mã OTP',
+              icon: const Icon(Icons.paste_rounded, color: AppColors.primary),
+              onPressed: () {
+                _otpController.text = _latestOtp ?? '123456';
+              },
+            ),
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: AppSpacing.md),
