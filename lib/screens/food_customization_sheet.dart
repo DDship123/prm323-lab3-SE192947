@@ -141,6 +141,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
+          tooltip: 'Quay lại thực đơn',
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1E293B)),
           onPressed: () => Navigator.of(context).pop(),
         ),
@@ -155,6 +156,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
         centerTitle: true,
         actions: [
           IconButton(
+            tooltip: 'Thông báo',
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -176,6 +178,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
             onPressed: () {},
           ),
           IconButton(
+            tooltip: 'Giỏ hàng',
             icon: const Icon(Icons.shopping_bag_outlined, color: Color(0xFF1E293B)),
             onPressed: () {},
           ),
@@ -218,19 +221,26 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                   child: Row(
                     children: [
                       IconButton(
+                        tooltip: 'Giảm số lượng',
                         onPressed: _quantity > 1 ? () => setState(() => _quantity--) : null,
                         icon: const Icon(Icons.remove, size: 16),
                         color: const Color(0xFF475569),
                       ),
-                      Text(
-                        '$_quantity',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: Color(0xFF1E293B),
+                      Semantics(
+                        identifier: 'text_customize_qty',
+                        label: 'Số lượng: $_quantity',
+                        excludeSemantics: true,
+                        child: Text(
+                          '$_quantity',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: Color(0xFF1E293B),
+                          ),
                         ),
                       ),
                       IconButton(
+                        tooltip: 'Tăng số lượng',
                         onPressed: () => setState(() => _quantity++),
                         icon: const Icon(Icons.add, size: 16),
                         color: const Color(0xFFFF521B),
@@ -242,7 +252,9 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                 Expanded(
                   child: SizedBox(
                     height: 48,
-                    child: ElevatedButton(
+                    child: Semantics(
+                      identifier: 'btn_customize_add_to_cart',
+                      child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF521B),
                         foregroundColor: Colors.white,
@@ -258,12 +270,14 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                               quantity: _quantity,
                               unitPrice: widget.menuItem.basePrice,
                             );
+                        final customNote = _noteCtrl.text.trim();
                         context.read<CartCheckoutViewModel>().addItemToCart(
                               storeId: widget.storeId,
                               storeName: widget.storeName,
                               menuItem: widget.menuItem,
                               quantity: _quantity,
                               selectedOptions: _buildSelectedOptions(),
+                              itemNote: customNote.isNotEmpty ? customNote : null,
                             );
                         Navigator.of(context).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -283,6 +297,7 @@ class _FoodCustomizationSheetState extends State<FoodCustomizationSheet> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                    ),
                     ),
                   ),
                 ),

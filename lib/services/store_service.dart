@@ -34,6 +34,7 @@ class StoreService {
     );
 
     try {
+      ApiConfig.log('DB-STORE', 'GET $uri');
       final response = await _client
           .get(uri, headers: ApiConfig.headers())
           .timeout(const Duration(seconds: 6));
@@ -43,18 +44,24 @@ class StoreService {
         final data = jsonMap['data'];
         if (data is Map<String, dynamic> && data['content'] is List) {
           final content = data['content'] as List<dynamic>;
-          return content
+          final list = content
               .map((e) => StoreModel.fromJson(e as Map<String, dynamic>))
               .toList();
+          ApiConfig.log('DB-STORE', '✅ Đã tải ${list.length} quán ăn từ Database');
+          return list;
         } else if (data is List) {
-          return data
+          final list = data
               .map((e) => StoreModel.fromJson(e as Map<String, dynamic>))
               .toList();
+          ApiConfig.log('DB-STORE', '✅ Đã tải ${list.length} quán ăn từ Database');
+          return list;
         }
       } else {
+        ApiConfig.log('DB-STORE-ERROR', '❌ HTTP ${response.statusCode} từ $uri');
         throw Exception('Máy chủ phản hồi mã lỗi ${response.statusCode}');
       }
     } catch (e) {
+      ApiConfig.log('DB-STORE-ERROR', '❌ Lỗi tải danh sách quán: $e');
       throw Exception('Mất kết nối máy chủ. Vui lòng kiểm tra lại kết nối mạng!');
     }
 
@@ -63,9 +70,11 @@ class StoreService {
 
   /// API-004: Lấy thông tin chi tiết quán ăn
   Future<StoreModel> fetchStoreById(int storeId) async {
+    final uri = Uri.parse('${ApiConfig.stores}/$storeId');
+    ApiConfig.log('DB-STORE', 'GET $uri');
     final response = await _client
         .get(
-          Uri.parse('${ApiConfig.stores}/$storeId'),
+          uri,
           headers: ApiConfig.headers(),
         )
         .timeout(const Duration(seconds: 5));
@@ -74,18 +83,23 @@ class StoreService {
           jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
       final data = jsonMap['data'] as Map<String, dynamic>?;
       if (data != null) {
-        return StoreModel.fromJson(data);
+        final store = StoreModel.fromJson(data);
+        ApiConfig.log('DB-STORE', '✅ Chi tiết quán ID=$storeId: "${store.name}"');
+        return store;
       }
     }
+    ApiConfig.log('DB-STORE-ERROR', '❌ Không tìm thấy quán ID=$storeId');
     throw Exception('Không tìm thấy thông tin quán ăn với ID: $storeId');
   }
 
   /// API-005: Lấy danh sách thực đơn của quán
   Future<List<MenuItemModel>> fetchMenuItems(int storeId) async {
+    final uri = Uri.parse('${ApiConfig.stores}/$storeId/menu-items');
     try {
+      ApiConfig.log('DB-MENU', 'GET $uri');
       final response = await _client
           .get(
-            Uri.parse('${ApiConfig.stores}/$storeId/menu-items'),
+            uri,
             headers: ApiConfig.headers(),
           )
           .timeout(const Duration(seconds: 6));
@@ -93,11 +107,15 @@ class StoreService {
         final jsonMap =
             jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
         final rawList = jsonMap['data'] as List<dynamic>? ?? [];
-        return rawList
+        final items = rawList
             .map((e) => MenuItemModel.fromJson(e as Map<String, dynamic>))
             .toList();
+        ApiConfig.log('DB-MENU', '✅ Đã tải ${items.length} món ăn của quán ID=$storeId từ Database');
+        return items;
       }
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('DB-MENU-ERROR', '❌ Lỗi tải thực đơn quán ID=$storeId: $e');
+    }
 
     return [];
   }

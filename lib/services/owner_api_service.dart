@@ -23,15 +23,19 @@ class OwnerApiService {
     };
 
     try {
+      ApiConfig.log('DB-OWNER', 'GET $url (OwnerID=$ownerId)');
       final response = await _client.get(url, headers: headers).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
         final utf8Body = utf8.decode(response.bodyBytes);
         final jsonMap = jsonDecode(utf8Body) as Map<String, dynamic>;
         final rawList = (jsonMap['data'] as List?) ?? [];
-        return rawList.map((e) => OwnerOrderSummaryModel.fromJson(e as Map<String, dynamic>)).toList();
+        final list = rawList.map((e) => OwnerOrderSummaryModel.fromJson(e as Map<String, dynamic>)).toList();
+        ApiConfig.log('DB-OWNER', '✅ Đã tải ${list.length} đơn bếp từ Database');
+        return list;
       }
       throw Exception('Lỗi máy chủ: ${response.statusCode}');
     } catch (e) {
+      ApiConfig.log('DB-OWNER-ERROR', '❌ Lỗi tải đơn bếp: $e');
       throw Exception('Không thể tải danh sách đơn bếp từ máy chủ ($e)');
     }
   }
@@ -51,13 +55,16 @@ class OwnerApiService {
     };
 
     try {
+      ApiConfig.log('DB-OWNER', 'PATCH $url | isAvailable=$isAvailable');
       final response = await _client.patch(
         url,
         headers: headers,
         body: jsonEncode({'isAvailable': isAvailable}),
       ).timeout(const Duration(seconds: 4));
+      ApiConfig.log('DB-OWNER', '✅ Đổi trạng thái món ID=$menuItemId -> HTTP ${response.statusCode}');
       return response.statusCode == 200;
-    } catch (_) {
+    } catch (e) {
+      ApiConfig.log('DB-OWNER-ERROR', '❌ Lỗi đổi trạng thái món ID=$menuItemId: $e');
       return false;
     }
   }
@@ -76,15 +83,19 @@ class OwnerApiService {
     };
 
     try {
+      ApiConfig.log('DB-OWNER', 'GET $url');
       final response = await _client.get(url, headers: headers).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
         final utf8Body = utf8.decode(response.bodyBytes);
         final jsonMap = jsonDecode(utf8Body) as Map<String, dynamic>;
         final data = jsonMap['data'] as Map<String, dynamic>;
-        return StoreRevenueModel.fromJson(data);
+        final rev = StoreRevenueModel.fromJson(data);
+        ApiConfig.log('DB-OWNER', '✅ Đã tải báo cáo doanh thu quán từ Database');
+        return rev;
       }
       throw Exception('Lỗi máy chủ: ${response.statusCode}');
     } catch (e) {
+      ApiConfig.log('DB-OWNER-ERROR', '❌ Lỗi tải báo cáo doanh thu: $e');
       throw Exception('Không thể tải báo cáo doanh thu từ máy chủ ($e)');
     }
   }

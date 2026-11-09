@@ -964,13 +964,14 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
                   ],
                 ),
                 const SizedBox(height: 6),
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Khung giờ: Ca Trưa 11:30 – 12:00',
-                        style: TextStyle(
+                    Text(
+                        'Khung giờ: ${widget.order.slotTime.isNotEmpty ? widget.order.slotTime : '—'}',
+                        style: const TextStyle(
                             fontSize: 11, color: Color(0xFF64748B))),
-                    Text('Giao đồng loạt',
+                    const Text('Giao đồng loạt',
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -978,15 +979,17 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                const Row(
+                Row(
                   children: [
-                    Icon(Icons.location_on_outlined,
+                    const Icon(Icons.location_on_outlined,
                         size: 14, color: Color(0xFF64748B)),
-                    SizedBox(width: 4),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        'Bàn số 2 – Cổng KTX Khu B (Đối diện nhà B5)',
-                        style: TextStyle(
+                        widget.order.pickupLocation.isNotEmpty
+                            ? widget.order.pickupLocation
+                            : '—',
+                        style: const TextStyle(
                             fontSize: 11, color: Color(0xFF64748B)),
                       ),
                     ),
@@ -997,49 +1000,24 @@ class _OnlinePaymentScreenState extends State<OnlinePaymentScreen> {
                   child: Divider(height: 1, color: Color(0xFFF1F5F9)),
                 ),
                 // Chi tiết món
+                // Danh sách món lấy từ đơn hàng thật (không hardcode)
+                ...widget.order.items.map((it) {
+                  final opts = it.selectedOptions
+                      .map((e) => e.choice)
+                      .where((c) => c.trim().isNotEmpty)
+                      .join(', ');
+                  return _buildSummaryItemRow(
+                    '${it.quantity}x ${it.itemName}${opts.isNotEmpty ? ' ($opts)' : ''}',
+                    _formatCurrency(it.itemTotalAmount),
+                  );
+                }),
                 _buildSummaryItemRow(
-                    '1x Cơm Tấm Sườn Bì Chả Đặc Biệt', '35.000đ'),
-                _buildSummaryItemRow(
-                    '1x Trà Đào Cam Sả Tươi (500ml)', '10.000đ'),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
-                      children: [
-                        Text('Phí gom KTX (Theo Ca)',
-                            style: TextStyle(
-                                fontSize: 11, color: Color(0xFF64748B))),
-                        SizedBox(width: 4),
-                        Text('[Freeship]',
-                            style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF059669))),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          '15.000đ',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade400,
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Text(
-                          '0đ',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF059669),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                    'Tiền món', _formatCurrency(widget.order.subtotalAmount)),
+                _buildSummaryItemRow('Phí gom KTX (Theo Ca)',
+                    _formatCurrency(widget.order.deliveryFee)),
+                if (widget.order.groupDiscountAmount > 0)
+                  _buildSummaryItemRow('Giảm giá',
+                      '-${_formatCurrency(widget.order.groupDiscountAmount)}'),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 6),
                   child: Divider(height: 1, color: Color(0xFFF1F5F9)),

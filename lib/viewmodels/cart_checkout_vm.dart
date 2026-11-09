@@ -18,6 +18,7 @@ class CartCheckoutViewModel extends ChangeNotifier {
   String _selectedSlotTime = 'CA_TRUA_11H30';
   String _selectedPickupLocation = 'KTX Khu B – Trụ A1–A2 (Cổng B2)';
   String _selectedPaymentMethod = 'VIETQR';
+  String _deliveryMode = 'GROUP'; // 'GROUP' (5.000đ) hoặc 'EXPRESS' (15.000đ)
   String _note = '';
 
   bool _isSubmitting = false;
@@ -55,6 +56,7 @@ class CartCheckoutViewModel extends ChangeNotifier {
   String get selectedSlotTime => _selectedSlotTime;
   String get selectedPickupLocation => _selectedPickupLocation;
   String get selectedPaymentMethod => _selectedPaymentMethod;
+  String get deliveryMode => _deliveryMode;
   String get note => _note;
   bool get isSubmitting => _isSubmitting;
   String? get errorMessage => _errorMessage;
@@ -117,19 +119,21 @@ class CartCheckoutViewModel extends ChangeNotifier {
 
   double get deliveryFee {
     if (_items.isEmpty) return 0.0;
+    if (_deliveryMode == 'EXPRESS') return 15000.0;
     final policyFee = CommissionPolicyService().deliveryFee;
     return policyFee >= 0 ? policyFee : _customDeliveryFee;
   }
 
   double get finalAmount => subtotalAmount + deliveryFee;
 
-  /// Thêm món ăn đã chọn Size/Topping vào giỏ hàng
+  /// Thêm món ăn đã chọn Size/Topping/Ghi chú vào giỏ hàng
   void addItemToCart({
     required int storeId,
     required String storeName,
     required MenuItemModel menuItem,
     required int quantity,
     required List<SelectedItemOption> selectedOptions,
+    String? itemNote,
   }) {
     // Nếu giỏ hàng đang chứa món của quán khác thì làm mới giỏ cho quán hiện tại
     if (_storeId != null && _storeId != storeId) {
@@ -138,17 +142,31 @@ class CartCheckoutViewModel extends ChangeNotifier {
     _storeId = storeId;
     _storeName = storeName;
 
-    _items.add(
-      CartItemModel(
-        menuItemId: menuItem.id,
-        itemName: menuItem.name,
-        imageUrl: menuItem.imageUrl,
-        basePrice: menuItem.basePrice,
-        quantity: quantity,
-        selectedOptions: selectedOptions,
-      ),
+    final newItem = CartItemModel(
+      menuItemId: menuItem.id,
+      itemName: menuItem.name,
+      imageUrl: menuItem.imageUrl,
+      basePrice: menuItem.basePrice,
+      quantity: quantity,
+      selectedOptions: selectedOptions,
+      itemNote: (itemNote != null && itemNote.trim().isNotEmpty) ? itemNote.trim() : null,
     );
+
+    // Kiểm tra xem đã có món cùng loại và CÙNG TÙY CHỌN + GHI CHÚ chưa
+    // Nếu khác tùy chọn (VD: 1 phần có xúc xích, 1 phần không có xúc xích) -> Tách thành 2 dòng riêng biệt
+    final existingIndex = _items.indexWhere((it) => it.optionSignature == newItem.optionSignature);
+    if (existingIndex != -1) {
+      _items[existingIndex].quantity += quantity;
+    } else {
+      _items.add(newItem);
+    }
     _errorMessage = null;
+    notifyListeners();
+  }
+
+  void setDeliveryMode(String mode) {
+    _deliveryMode = mode;
+    _customDeliveryFee = (mode == 'EXPRESS') ? 15000.0 : 5000.0;
     notifyListeners();
   }
 
@@ -195,7 +213,10 @@ class CartCheckoutViewModel extends ChangeNotifier {
   }
 
   /// API-006: Đặt đơn hàng gom đơn KTX (S4)
-  Future<OrderDetailModel?> placeOrder() async {
+  Future<OrderDetailModel?> placeOrder({
+    String? voucherCode,
+    double? discountAmount,
+  }) async {
     if (_items.isEmpty || _storeId == null) {
       _errorMessage = 'Giỏ hàng đang trống. Vui lòng chọn ít nhất 1 món ăn.';
       notifyListeners();
@@ -216,6 +237,9 @@ class CartCheckoutViewModel extends ChangeNotifier {
         paymentMethod: _selectedPaymentMethod,
         note: _note,
         items: itemsToOrder,
+        voucherCode: voucherCode,
+        groupDiscountAmount: discountAmount,
+        deliveryFee: deliveryFee,
       );
       _createdOrder = order;
 

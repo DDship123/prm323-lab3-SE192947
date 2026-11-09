@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 
@@ -36,8 +37,12 @@ class KtxStickyCartBar extends StatelessWidget {
     if (itemCount <= 0) return const SizedBox.shrink();
 
     return Semantics(
-      label: 'bar_sticky_cart',
+      identifier: 'bar_sticky_cart',
+      label:
+          'Giỏ hàng: $itemCount món, tổng ${_formatCurrency(totalAmount)}. $buttonLabel',
       button: true,
+      excludeSemantics: true,
+      onTap: onCheckoutTap,
       child: SafeArea(
         top: false,
         child: Padding(
@@ -49,9 +54,14 @@ class KtxStickyCartBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               child: Container(
                 height: 64,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF111827), // Chuẩn Figma: Dark surface #111827 (95%)
+                  color: const Color(
+                    0xFF111827,
+                  ), // Chuẩn Figma: Dark surface #111827 (95%)
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: const Color(0xFF1F2937),
@@ -90,11 +100,19 @@ class KtxStickyCartBar extends StatelessWidget {
                           top: -3,
                           right: -3,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 1.5,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEF4444), // Badge đỏ tươi #ef4444
+                              color: const Color(
+                                0xFFEF4444,
+                              ), // Badge đỏ tươi #ef4444
                               borderRadius: BorderRadius.circular(9999),
-                              border: Border.all(color: const Color(0xFF111827), width: 1.5),
+                              border: Border.all(
+                                color: const Color(0xFF111827),
+                                width: 1.5,
+                              ),
                             ),
                             child: Text(
                               '$itemCount',

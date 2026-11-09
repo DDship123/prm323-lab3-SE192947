@@ -21,6 +21,9 @@ class OrderService {
     required String paymentMethod,
     String? note,
     required List<CartItemModel> items,
+    String? voucherCode,
+    double? groupDiscountAmount,
+    double? deliveryFee,
   }) async {
     final payload = {
       'storeId': storeId,
@@ -28,10 +31,16 @@ class OrderService {
       'pickupLocation': pickupLocation,
       'paymentMethod': paymentMethod,
       if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
+      if (voucherCode != null && voucherCode.trim().isNotEmpty) 'voucherCode': voucherCode.trim(),
+      if (groupDiscountAmount != null && groupDiscountAmount > 0)
+        'groupDiscountAmount': groupDiscountAmount,
+      if (deliveryFee != null && deliveryFee >= 0)
+        'deliveryFee': deliveryFee,
       'items': items.map((e) => e.toOrderItemRequestJson()).toList(),
     };
 
     try {
+      ApiConfig.log('DB-ORDER', 'POST ${ApiConfig.orders} | Tạo đơn quán ID=$storeId (${items.length} món)');
       final response = await _client
           .post(
             Uri.parse(ApiConfig.orders),
@@ -44,12 +53,25 @@ class OrderService {
           jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonMap['data'] as Map<String, dynamic>;
-        final created = OrderDetailModel.fromJson(data);
+        var created = OrderDetailModel.fromJson(data);
+
+        // Bảo đảm: Nếu backend server cũ chưa kịp nạp groupDiscountAmount,
+        // client sẽ áp dụng trực tiếp để màn hình thanh toán và VietQR luôn khớp 100% với giỏ hàng
+        if (groupDiscountAmount != null && groupDiscountAmount > 0 && created.groupDiscountAmount <= 0) {
+          final effectiveFinal = (created.subtotalAmount + created.deliveryFee - groupDiscountAmount).clamp(0.0, double.infinity);
+          created = created.copyWith(
+            groupDiscountAmount: groupDiscountAmount,
+            finalAmount: effectiveFinal,
+          );
+        }
+
         _localOrders.insert(0, created);
+        ApiConfig.log('DB-ORDER', '✅ Đã lưu đơn hàng #${created.orderCode} vào Database | Tổng: ${created.finalAmount}đ');
         return created;
       }
       throw Exception(jsonMap['message'] ?? 'Không thể tạo đơn hàng từ máy chủ (Mã: ${response.statusCode})');
     } catch (e) {
+      ApiConfig.log('DB-ORDER-ERROR', '❌ Lỗi tạo đơn hàng: $e');
       rethrow;
     }
   }
@@ -57,6 +79,7 @@ class OrderService {
   /// API-007: Lấy chi tiết đơn hàng theo ID
   Future<OrderDetailModel> fetchOrderDetail(int orderId) async {
     try {
+      ApiConfig.log('DB-ORDER', 'GET ${ApiConfig.orders}/$orderId');
       final response = await _client
           .get(
             Uri.parse('${ApiConfig.orders}/$orderId'),
@@ -67,9 +90,13 @@ class OrderService {
         final jsonMap =
             jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
         final data = jsonMap['data'] as Map<String, dynamic>;
-        return OrderDetailModel.fromJson(data);
+        final detail = OrderDetailModel.fromJson(data);
+        ApiConfig.log('DB-ORDER', '✅ Chi tiết đơn #${detail.orderCode} | Trạng thái=${detail.status} | Số món=${detail.items.length}');
+        return detail;
       }
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('DB-ORDER-ERROR', '❌ Lỗi tải đơn #$orderId: $e');
+    }
 
     final local = _localOrders.where((o) => o.id == orderId).firstOrNull;
     if (local != null) return local;
@@ -79,6 +106,7 @@ class OrderService {
   /// API Giám sát toàn bộ đơn hàng gom ca cho Web Admin
   Future<List<OrderDetailModel>> fetchAllOrdersForAdmin() async {
     try {
+      ApiConfig.log('DB-ADMIN-ORDERS', 'GET ${ApiConfig.baseUrl}/admin/orders');
       final response = await _client
           .get(Uri.parse('${ApiConfig.baseUrl}/admin/orders'), headers: ApiConfig.headers())
           .timeout(const Duration(seconds: 6));
@@ -86,17 +114,22 @@ class OrderService {
         final jsonMap =
             jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
         final rawList = jsonMap['data'] as List<dynamic>? ?? [];
-        return rawList
+        final list = rawList
             .map((e) => OrderDetailModel.fromJson(e as Map<String, dynamic>))
             .toList();
+        ApiConfig.log('DB-ADMIN-ORDERS', '✅ Đã tải ${list.length} đơn hàng toàn hệ thống từ Database');
+        return list;
       }
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('DB-ADMIN-ORDERS-ERROR', '❌ Lỗi tải danh sách đơn Admin: $e');
+    }
     return fetchMyOrders();
   }
 
   /// API-008: Lấy danh sách lịch sử đơn hàng của sinh viên
   Future<List<OrderDetailModel>> fetchMyOrders() async {
     try {
+      ApiConfig.log('DB-ORDER', 'GET ${ApiConfig.orders} (UserID=${ApiConfig.currentBackendUserId})');
       final response = await _client
           .get(Uri.parse(ApiConfig.orders), headers: ApiConfig.headers())
           .timeout(const Duration(seconds: 6));
@@ -107,11 +140,13 @@ class OrderService {
         final list = rawList
             .map((e) => OrderDetailModel.fromJson(e as Map<String, dynamic>))
             .toList();
+        ApiConfig.log('DB-ORDER', '✅ Đã tải ${list.length} đơn hàng lịch sử từ Database');
         return list;
       } else {
         throw Exception('Máy chủ phản hồi mã lỗi ${response.statusCode}');
       }
     } catch (e) {
+      ApiConfig.log('DB-ORDER-ERROR', '❌ Lỗi tải lịch sử đơn: $e');
       if (_localOrders.isNotEmpty) {
         return List<OrderDetailModel>.from(_localOrders);
       }

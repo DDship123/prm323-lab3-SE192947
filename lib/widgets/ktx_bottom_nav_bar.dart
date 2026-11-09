@@ -52,26 +52,34 @@ class KtxBottomNavBar extends StatelessWidget {
     }
 
     return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => onTap(index),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              iconWidget,
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: AppTypography.chipLabel.copyWith(
-                  color: color,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+      child: Semantics(
+        identifier: 'nav_tab_$index',
+        button: true,
+        selected: isSelected,
+        label: badgeCount > 0 ? 'Tab $label, $badgeCount mục' : 'Tab $label',
+        excludeSemantics: true,
+        onTap: () => onTap(index),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => onTap(index),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                iconWidget,
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: AppTypography.chipLabel.copyWith(
+                    color: color,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

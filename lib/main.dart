@@ -102,20 +102,19 @@ void main() async {
       FlutterError.presentError(errorDetails);
     };
     PlatformDispatcher.instance.onError = (error, stack) {
-      debugPrint('[Web Platform Error]: $error\n$stack');
+      ApiConfig.log('WEB-ERROR', '$error\n$stack');
       return true;
     };
   }
 
-  await GoogleSignIn.instance.initialize(
-    clientId: kIsWeb
-        ? '119011257696-fhiv11ekbecn6gjvdi2emv6gthpm60bp.apps.googleusercontent.com'
-        : null,
-  );
+  if (!kIsWeb) {
+    await GoogleSignIn.instance.initialize();
+  }
 
   final remoteConfigService = RemoteConfigService();
   await remoteConfigService.initialize();
 
+  ApiConfig.log('KTX-BOOT', '🚀 Khởi động ứng dụng hoàn tất | API=${ApiConfig.baseUrl}');
   runApp(AppBootstrap(remoteConfigService: remoteConfigService));
 }
 
@@ -235,7 +234,9 @@ class MyApp extends StatelessWidget {
 
 /// Điều hướng tự động theo trạng thái đăng nhập và vai trò (STUDENT, STORE_OWNER, SHIPPER, ADMIN)
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key});
+  final int initialStudentTabIndex;
+
+  const AuthGate({super.key, this.initialStudentTabIndex = 0});
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -267,6 +268,10 @@ class _AuthGateState extends State<AuthGate> {
           (r) => r.name == savedRoleName,
           orElse: () => UserAppRole.student,
         );
+        ApiConfig.log(
+          'SESSION-RESTORE',
+          '🔄 Đã khôi phục phiên đăng nhập từ localStorage: Vai trò=${restoredRole.name} | BackendUserID=${ApiConfig.currentBackendUserId} | API=${ApiConfig.baseUrl}',
+        );
         if (mounted) {
           setState(() {
             _activeRole = restoredRole;
@@ -275,8 +280,15 @@ class _AuthGateState extends State<AuthGate> {
           });
           return;
         }
+      } else {
+        ApiConfig.log(
+          'SESSION-INIT',
+          'ℹ️ Chưa có phiên đăng nhập lưu sẵn. Mở màn hình Đăng nhập | API=${ApiConfig.baseUrl}',
+        );
       }
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('SESSION-ERROR', 'Lỗi đọc phiên: $e');
+    }
 
     if (mounted) {
       setState(() {
@@ -287,6 +299,10 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _onRoleChanged(UserAppRole newRole) async {
+    ApiConfig.log(
+      'SESSION-LOGIN',
+      '🔐 Kích hoạt phiên làm việc vai trò: ${newRole.name} | BackendUserID=${ApiConfig.currentBackendUserId} | API=${ApiConfig.baseUrl}',
+    );
     setState(() {
       _activeRole = newRole;
       _manualDemoSignedIn = true;
@@ -295,7 +311,9 @@ class _AuthGateState extends State<AuthGate> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_logged_in', true);
       await prefs.setString('saved_user_role', newRole.name);
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('SESSION-ERROR', 'Lỗi lưu phiên: $e');
+    }
   }
 
   @override
@@ -338,6 +356,7 @@ class _AuthGateState extends State<AuthGate> {
                 firebaseUser: firebaseUser,
                 currentRole: _activeRole,
                 onSignOut: _signOut,
+                initialIndex: widget.initialStudentTabIndex,
               );
           }
         }
@@ -363,12 +382,18 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _signOut() async {
+    ApiConfig.log(
+      'SESSION-LOGOUT',
+      '🚪 Người dùng đã đăng xuất (Vai trò cũ: ${_activeRole.name}, BackendUserID=${ApiConfig.currentBackendUserId}). Đã xóa phiên trong localStorage.',
+    );
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('is_logged_in', false);
       await prefs.remove('saved_user_role');
       await prefs.remove('saved_backend_user_id');
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('SESSION-ERROR', 'Lỗi xóa phiên: $e');
+    }
 
     ApiConfig.currentBackendUserId = 1;
 
@@ -377,7 +402,9 @@ class _AuthGateState extends State<AuthGate> {
       _activeRole = UserAppRole.student;
     });
     try {
-      await GoogleSignIn.instance.signOut();
+      if (!kIsWeb) {
+        await GoogleSignIn.instance.signOut();
+      }
       await FirebaseAuth.instance.signOut();
     } catch (_) {}
   }
@@ -690,58 +717,80 @@ class _LoginScreenState extends State<LoginScreen> {
             runSpacing: 8,
             children: [
               _buildRoleChip(
-                label: '🎓 Sinh viên',
+                roleKey: 'student',
+                label: '🎓 SV 1 (Đạt)',
+                semanticLabel: 'Tài khoản mẫu Sinh viên 1 (Ngô Trường Đạt)',
                 email: 'student@fpt.edu.vn',
               ),
               _buildRoleChip(
+                roleKey: 'student2',
+                label: '🎓 SV 2 (Linh)',
+                semanticLabel: 'Tài khoản mẫu Sinh viên 2 (Lê Thùy Linh)',
+                email: 'student2@fpt.edu.vn',
+              ),
+              _buildRoleChip(
+                roleKey: 'owner',
                 label: '🍲 Chủ Quán',
+                semanticLabel: 'Tài khoản mẫu Chủ Quán',
                 email: 'coba.owner@fpt.edu.vn',
               ),
               _buildRoleChip(
+                roleKey: 'shipper',
                 label: '🛵 Shipper',
+                semanticLabel: 'Tài khoản mẫu Shipper',
                 email: 'shipper.hung@fpt.edu.vn',
               ),
               _buildRoleChip(
+                roleKey: 'admin',
                 label: '🏢 Admin BQL',
+                semanticLabel: 'Tài khoản mẫu Admin BQL',
                 email: 'admin.ktx@fpt.edu.vn',
               ),
             ],
           ),
           const SizedBox(height: 18),
-          TextField(
-            controller: _emailPhoneController,
-            decoration: InputDecoration(
-              labelText: 'Email hoặc Số điện thoại',
-              hintText: 'Nhập email hoặc SĐT của bạn',
-              prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              isDense: true,
+          Semantics(
+            identifier: 'input_login_email',
+            child: TextField(
+              controller: _emailPhoneController,
+              decoration: InputDecoration(
+                labelText: 'Email hoặc Số điện thoại',
+                hintText: 'Nhập email hoặc SĐT của bạn',
+                prefixIcon: const Icon(Icons.person_outline_rounded, size: 20),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                isDense: true,
+              ),
             ),
           ),
           const SizedBox(height: 14),
-          TextField(
-            controller: _passwordController,
-            obscureText: _obscurePassword,
-            decoration: InputDecoration(
-              labelText: 'Mật khẩu',
-              hintText: 'Nhập mật khẩu',
-              prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                  size: 20,
-                  color: Colors.grey[600],
+          Semantics(
+            identifier: 'input_login_password',
+            child: TextField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                labelText: 'Mật khẩu',
+                hintText: 'Nhập mật khẩu',
+                prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                suffixIcon: IconButton(
+                  tooltip: _obscurePassword ? 'Hiện mật khẩu' : 'Ẩn mật khẩu',
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    size: 20,
+                    color: Colors.grey[600],
+                  ),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                 ),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                isDense: true,
               ),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              isDense: true,
             ),
           ),
           const SizedBox(height: 18),
           KtxButton(
+            semanticsId: 'btn_login_submit',
             label: 'Đăng nhập ngay',
             icon: Icons.login_rounded,
             isLoading: _isLoading,
@@ -749,6 +798,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 12),
           KtxButton(
+            semanticsId: 'btn_login_google',
             label: 'Đăng nhập bằng Google (S0)',
             icon: Icons.g_mobiledata_rounded,
             variant: KtxButtonVariant.outline,
@@ -792,9 +842,17 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildRoleChip({required String label, required String email}) {
+  Widget _buildRoleChip({
+    required String roleKey,
+    required String label,
+    required String semanticLabel,
+    required String email,
+  }) {
     final isSelected = _emailPhoneController.text == email;
-    return ChoiceChip(
+    return Semantics(
+      identifier: 'chip_role_$roleKey',
+      label: semanticLabel,
+      child: ChoiceChip(
       label: Text(
         label,
         style: TextStyle(
@@ -817,6 +875,7 @@ class _LoginScreenState extends State<LoginScreen> {
           _passwordController.text = '123456';
         });
       },
+      ),
     );
   }
 
@@ -1172,12 +1231,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// Khung điều hướng chính 4 Tab (S1 Trang chủ, S12 Thông báo, S10 Đơn hàng, S13 Hồ sơ)
+/// Khung điều hướng chính 5 Tab (S1 Khám phá, S2 Đặt món, S3 Giỏ hàng, S10 Lịch sử, S13 Hồ sơ)
 class MainShellScreen extends StatefulWidget {
   final User? firebaseUser;
   final UserAppRole currentRole;
   final VoidCallback? onSwitchRole;
   final VoidCallback onSignOut;
+  final int initialIndex;
 
   const MainShellScreen({
     super.key,
@@ -1185,6 +1245,7 @@ class MainShellScreen extends StatefulWidget {
     required this.currentRole,
     this.onSwitchRole,
     required this.onSignOut,
+    this.initialIndex = 0,
   });
 
   @override
@@ -1192,11 +1253,12 @@ class MainShellScreen extends StatefulWidget {
 }
 
 class _MainShellScreenState extends State<MainShellScreen> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _setupFcmListeners();
       final user = widget.firebaseUser;

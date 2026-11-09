@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../firebase/analytics_service.dart';
 import '../firebase/remote_config_service.dart';
+import '../models/order_model.dart';
 import '../models/store_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -9,12 +10,14 @@ import '../theme/app_typography.dart';
 import '../viewmodels/auth_vm.dart';
 import '../viewmodels/cart_checkout_vm.dart';
 import '../viewmodels/home_vm.dart';
+import '../viewmodels/order_tracking_vm.dart';
 import '../viewmodels/profile_demo_vm.dart';
 import '../widgets/ktx_app_bar.dart';
 import '../widgets/ktx_empty_state.dart';
 import '../widgets/ktx_error_state.dart';
 import '../widgets/ktx_loading_state.dart';
 import '../widgets/screen_state.dart';
+import 'pickup_qr_code_screen.dart';
 import 'store_detail_screen.dart';
 
 /// Màn hình S1: Trang chủ & Tìm kiếm Quán ăn Gom đơn KTX (Figma Prototype Standard)
@@ -74,6 +77,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<HomeViewModel>().loadHomeData();
+      context.read<OrderTrackingViewModel>().loadOrderHistory();
     });
   }
 
@@ -169,6 +173,9 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildGreetingBar(greetingName),
             const SizedBox(height: AppSpacing.sm + 2),
 
+            // Banner đơn hàng đang giao / sẵn sàng nhận tại KTX
+            _buildActiveOrderBanner(),
+
             // 2. Thanh tìm kiếm & lọc quán
             _buildSearchBar(homeVm),
             const SizedBox(height: AppSpacing.md),
@@ -194,6 +201,126 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildStoreList(homeVm),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildActiveOrderBanner() {
+    final historyState = context.watch<OrderTrackingViewModel>().historyState;
+    if (historyState is! StateSuccess<List<OrderDetailModel>>) {
+      return const SizedBox.shrink();
+    }
+    final activeOrders = historyState.data.where((o) =>
+        o.status != 'DELIVERED' && o.status != 'CANCELLED').toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    if (activeOrders.isEmpty) return const SizedBox.shrink();
+
+    final activeOrder = activeOrders.first;
+    final statusText = switch (activeOrder.status) {
+      'DELIVERING' => 'Shipper đang giao tới cổng KTX',
+      'READY' => 'Đã đến cổng KTX - Sẵn sàng nhận',
+      'PREPARING' => 'Quán đang chế biến',
+      'CONFIRMED' => 'Quán đã tiếp nhận đơn',
+      _ => 'Đang chờ xử lý gom đơn',
+    };
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm + 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFFD8BF)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFF521B).withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF521B),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.qr_code_2_rounded, color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF10B981),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Đơn #${activeOrder.orderCode.replaceAll('#', '')}',
+                        style: const TextStyle(
+                          color: Color(0xFF9A3412),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  statusText,
+                  style: const TextStyle(
+                    color: Color(0xFFC2410C),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF521B),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => PickupQrCodeScreen(order: activeOrder),
+                ),
+              );
+            },
+            icon: const Icon(Icons.qr_code_rounded, size: 16),
+            label: const Text(
+              'Mã nhận',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -647,7 +774,9 @@ class _HomeScreenState extends State<HomeScreen> {
               color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: TextField(
+            child: Semantics(
+              identifier: 'input_home_search',
+              child: TextField(
               controller: _searchCtrl,
               textInputAction: TextInputAction.search,
               onSubmitted: (term) {
@@ -689,6 +818,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   vertical: 12,
                 ),
               ),
+            ),
             ),
           ),
         ),
