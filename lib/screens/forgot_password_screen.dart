@@ -162,11 +162,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       );
     }
   }
-          backgroundColor: AppColors.error,
-        ),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

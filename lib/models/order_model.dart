@@ -59,6 +59,8 @@ class OrderItemModel {
       itemTotalAmount: (json['itemTotalAmount'] as num?)?.toDouble() ?? 0.0,
     );
   }
+
+  double get subtotal => itemTotalAmount;
 }
 
 /// Món ăn trong giỏ hàng tạm (Draft Cart Item tại S2/S3/S4)
@@ -167,6 +169,8 @@ class OrderDetailModel {
     this.shipperId,
     this.isShipperArrived = false,
   });
+
+  double get totalPrice => finalAmount;
 
   factory OrderDetailModel.fromJson(Map<String, dynamic> json) {
     final rawItems = json['items'] as List<dynamic>? ?? [];
