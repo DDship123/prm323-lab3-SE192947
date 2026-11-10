@@ -256,4 +256,52 @@ class StoreService {
     } catch (_) {}
     return null;
   }
+
+  /// API Thêm mới quán ăn (POST /api/v1/stores)
+  Future<StoreModel?> createStore({
+    required String name,
+    required String address,
+    required String campusZone,
+    String? description,
+    String? phoneNumber,
+    String? avatarUrl,
+  }) async {
+    final uri = Uri.parse(ApiConfig.stores);
+    final body = jsonEncode({
+      'name': name,
+      'address': address,
+      'campusZone': campusZone,
+      'description': description ?? '',
+      'phoneNumber': phoneNumber ?? '',
+      'avatarUrl': avatarUrl ?? '',
+    });
+    try {
+      final response = await _client.post(uri, headers: ApiConfig.headers(), body: body).timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonMap = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final data = jsonMap['data'] as Map<String, dynamic>;
+        return StoreModel.fromJson(data);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Bật/Tắt trạng thái hoạt động của quán (Kích hoạt hoặc Tạm ngưng)
+  Future<bool> toggleStoreActive({
+    required StoreModel store,
+    required bool isActive,
+  }) async {
+    final res = await updateStore(
+      id: store.id,
+      name: store.name,
+      address: store.address,
+      phoneNumber: store.phoneNumber ?? '',
+      description: store.description ?? '',
+      avatarUrl: store.avatarUrl ?? '',
+      campusZone: store.campusZone,
+      isActive: isActive,
+    );
+    return res != null;
+  }
+
 }

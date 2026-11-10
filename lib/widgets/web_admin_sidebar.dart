@@ -176,6 +176,23 @@ class WebAdminSidebar extends StatelessWidget {
                   badgeColor: AppColors.success,
                 ),
                 SizedBox(height: isCollapsed ? 6 : AppSpacing.sm),
+                if (!isCollapsed) _buildSectionLabel('ĐỐI TÁC & NGƯỜI DÙNG'),
+                _buildMenuItem(
+                  index: 4,
+                  title: 'Quản Lý Người Dùng',
+                  icon: Icons.people_alt_rounded,
+                  badgeText: 'RBAC',
+                  badgeColor: Colors.blue,
+                ),
+                const SizedBox(height: 4),
+                _buildMenuItem(
+                  index: 5,
+                  title: 'Quán Ăn Đối Tác',
+                  icon: Icons.storefront_rounded,
+                  badgeText: 'KTX',
+                  badgeColor: AppColors.primary,
+                ),
+                SizedBox(height: isCollapsed ? 6 : AppSpacing.sm),
 
                 if (!isCollapsed) ...[
                   _buildSectionLabel('HỆ THỐNG & KẾT NỐI'),

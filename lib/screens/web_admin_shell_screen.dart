@@ -12,6 +12,9 @@ import 'web_admin_dashboard_screen.dart';
 import 'web_admin_dispute_screen.dart';
 import 'web_admin_orders_screen.dart';
 import 'web_admin_voucher_screen.dart';
+import 'web_admin_users_screen.dart';
+import 'web_admin_stores_screen.dart';
+import '../services/store_service.dart';
 
 /// Khung giao diện Web tổng thể dành cho Ban Quản Lý KTX (Web Admin Portal)
 /// Menu nằm ở bên trái với 1 nút đóng mở duy nhất, tối ưu 60fps mượt mà
@@ -143,6 +146,16 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
                         ),
                         const RepaintBoundary(
                           child: WebAdminVoucherScreen(),
+                        ),
+                        RepaintBoundary(
+                          child: WebAdminUsersScreen(
+                            adminService: context.read<AdminApiService>(),
+                          ),
+                        ),
+                        RepaintBoundary(
+                          child: WebAdminStoresScreen(
+                            storeService: context.read<StoreService>(),
+                          ),
                         ),
                       ],
                     ),
