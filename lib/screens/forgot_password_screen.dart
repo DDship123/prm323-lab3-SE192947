@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../services/auth_api_service.dart';
-import '../services/phone_auth_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -10,7 +9,7 @@ import '../theme/app_typography.dart';
 import '../widgets/ktx_app_bar.dart';
 import '../widgets/ktx_button.dart';
 
-/// Màn hình khôi phục mật khẩu tích hợp Google Firebase Phone Authentication
+/// Màn hình khôi phục mật khẩu tích hợp Backend Java Spring Boot OTP Terminal
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -19,13 +18,12 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  int _currentStep = 1; // 1: Input phone, 2: Enter SMS OTP & New password
+  int _currentStep = 1; // 1: Input phone, 2: Enter OTP & New password
   final _contactController = TextEditingController(text: '0968097907');
   final _otpController = TextEditingController();
   final _newPassController = TextEditingController();
   final _confirmPassController = TextEditingController();
   final _authApiService = AuthApiService();
-  final _phoneAuthService = PhoneAuthService();
 
   bool _obscurePass = true;
   bool _isLoading = false;
@@ -70,12 +68,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _errorMessage = null;
     });
 
-    final res = await _phoneAuthService.sendSmsOtp(phone);
-
-    // Đồng thời gọi backend để đồng bộ
-    try {
-      await _authApiService.sendForgotPasswordOtp(phone);
-    } catch (_) {}
+    // Gọi trực tiếp Spring Boot Backend để sinh mã OTP và in ra Terminal VPS
+    final res = await _authApiService.sendForgotPasswordOtp(phone);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -90,11 +84,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.sms_rounded, color: Colors.white, size: 20),
+              const Icon(Icons.terminal_rounded, color: Colors.white, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '📲 Đã gửi tin nhắn SMS tới ${res['e164']}! Vui lòng kiểm tra điện thoại của bạn.',
+                  '📟 Đã tạo mã OTP cho số $phone! Mã đã in ra Terminal máy chủ VPS.',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -105,68 +99,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
       );
     } else {
-      _showFirebaseErrorDialog(res['message'] ?? 'Không thể gửi tin nhắn SMS', res['code']);
+      setState(() => _errorMessage = res['message'] ?? 'Không thể gửi mã OTP');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res['message'] ?? 'Không thể gửi mã OTP'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
-  }
-
-  void _showFirebaseErrorDialog(String message, String? errorCode) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.info_outline_rounded, color: AppColors.primary),
-            SizedBox(width: 8),
-            Text(
-              'Xác thực Firebase Phone',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              message,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF334155)),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF7ED),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFFFD8BF)),
-              ),
-              child: const Text(
-                '💡 Gợi ý Chấm bài: Nếu dự án Firebase của bạn chưa bật mục Phone Authentication trên Firebase Console, bạn có thể chuyển qua chế độ thử nghiệm nhanh (Mã: 123456).',
-                style: TextStyle(fontSize: 12, color: Color(0xFF9A3412)),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Đóng'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() => _currentStep = 2);
-              _startCountdown();
-            },
-            child: const Text('Dùng mã Demo (123456)'),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> _handleResetPassword() async {
@@ -176,7 +116,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final confirmPass = _confirmPassController.text.trim();
 
     if (otp.length != 6) {
-      setState(() => _errorMessage = 'Mã xác thực SMS phải gồm đúng 6 chữ số');
+      setState(() => _errorMessage = 'Mã xác thực OTP phải gồm đúng 6 chữ số');
       return;
     }
     if (newPass.isEmpty) {
@@ -193,18 +133,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _errorMessage = null;
     });
 
-    // 1. Kiểm tra đối soát mã OTP với Google Firebase Phone Auth
-    final verifyResult = await _phoneAuthService.verifySmsOtp(otp);
-    if (verifyResult['success'] != true) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage = verifyResult['message'] ?? 'Mã xác thực không chính xác';
-      });
-      return;
-    }
-
-    // 2. Cập nhật mật khẩu mới vào cơ sở dữ liệu Backend & SharedPreferences
+    // Cập nhật mật khẩu mới trực tiếp vào Backend Java Spring Boot & MySQL
     final res = await _authApiService.resetPasswordWithOtp(
       phoneNumber: phone,
       otp: otp,
@@ -224,10 +153,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         ),
       );
     } else {
-      setState(() => _errorMessage = res['message']);
+      setState(() => _errorMessage = res['message'] ?? 'Mã xác thực không chính xác hoặc đã hết hạn');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(res['message'] ?? 'Không thể cập nhật mật khẩu mới'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
           backgroundColor: AppColors.error,
         ),
       );
@@ -240,8 +174,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       backgroundColor: AppColors.background,
       appBar: KtxAppBar(
         title: _currentStep == 1
-            ? 'Khôi phục mật khẩu (SMS OTP)'
-            : 'Xác thực SMS & Đổi mật khẩu',
+            ? 'Khôi phục mật khẩu (OTP Terminal)'
+            : 'Xác thực OTP & Đổi mật khẩu',
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -272,17 +206,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 color: AppColors.primaryLight.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.phonelink_lock_rounded, color: AppColors.primary, size: 24),
+              child: const Icon(Icons.terminal_rounded, color: AppColors.primary, size: 24),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Xác thực qua SMS di động', style: AppTypography.heading2),
+                  Text('Xác thực qua Máy chủ Backend', style: AppTypography.heading2),
                   const SizedBox(height: 2),
                   const Text(
-                    'Chuẩn bảo mật Google Firebase Phone Auth',
+                    'Cơ chế mã xác thực OTP Java Spring Boot Console',
                     style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ],
@@ -301,11 +235,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.shield_outlined, color: Color(0xFF0284C7), size: 20),
+              Icon(Icons.info_outline_rounded, color: Color(0xFF0284C7), size: 20),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Tin nhắn SMS chứa mã OTP sẽ được gửi trực tiếp đến SIM điện thoại của bạn. Người ngoài hoặc hàng xóm sẽ không thể xem hay bẻ khóa tài khoản.',
+                  'Khi bấm "Gửi mã xác thực OTP", máy chủ Backend sẽ sinh mã OTP ngẫu nhiên 6 chữ số và in trực tiếp ra Terminal / VPS Console. Bạn có thể mở Terminal VPS lấy mã hoặc dùng mã test nhanh 123456.',
                   style: TextStyle(fontSize: 12.5, color: Color(0xFF334155), height: 1.4),
                 ),
               ),
@@ -317,7 +251,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           controller: _contactController,
           keyboardType: TextInputType.phone,
           decoration: const InputDecoration(
-            labelText: 'Số điện thoại đăng ký KTX',
+            labelText: 'Số điện thoại tài khoản KTX',
             hintText: 'Ví dụ: 0968097907',
             prefixIcon: Icon(Icons.phone_android, color: AppColors.primary),
             border: OutlineInputBorder(),
@@ -327,7 +261,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         _isLoading
             ? const Center(child: CircularProgressIndicator())
             : KtxButton(
-                label: 'Gửi mã xác thực SMS thật',
+                label: 'Gửi mã xác thực OTP (Terminal)',
                 icon: Icons.send_rounded,
                 onPressed: _handleSendOtp,
               ),
@@ -337,7 +271,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Widget _buildStep2() {
     final phone = _contactController.text.trim();
-    final e164 = PhoneAuthService.formatToE164(phone);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,10 +290,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Nhập mã SMS & Mật khẩu mới', style: AppTypography.heading2),
+                  Text('Nhập mã OTP & Mật khẩu mới', style: AppTypography.heading2),
                   const SizedBox(height: 2),
                   Text(
-                    'Đã gửi mã xác thực tới $e164',
+                    'Đã in mã xác thực cho số $phone ra Terminal VPS',
                     style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -383,7 +316,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Tin nhắn chứa mã OTP 6 số đã được gửi tới SIM của bạn. Vui lòng mở ứng dụng Tin nhắn trên điện thoại để lấy mã.',
+                  'Mã xác thực OTP đã xuất hiện trên màn hình Terminal của máy chủ VPS! Hãy kiểm tra Terminal hoặc dùng mã demo 123456.',
                   style: TextStyle(
                     fontSize: 12.5,
                     color: Color(0xFF166534),
@@ -428,8 +361,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             fontWeight: FontWeight.bold,
           ),
           decoration: const InputDecoration(
-            labelText: 'Mã xác thực SMS (6 chữ số)',
-            hintText: 'Nhập mã từ tin nhắn điện thoại',
+            labelText: 'Mã xác thực OTP (6 chữ số)',
+            hintText: 'Nhập mã từ Terminal máy chủ',
             border: OutlineInputBorder(),
           ),
         ),
@@ -456,7 +389,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               TextButton(
                 onPressed: _isLoading ? null : _handleSendOtp,
                 child: const Text(
-                  'Gửi lại mã SMS',
+                  'Gửi lại mã OTP',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
                 ),
               ),
