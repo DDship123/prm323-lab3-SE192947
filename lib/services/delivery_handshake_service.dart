@@ -104,16 +104,22 @@ class DeliveryHandshakeService extends ChangeNotifier {
     }
   }
 
-  /// Tải dữ liệu lưu trữ
-  Future<void> loadSavedData() async {
+  /// Tải dữ liệu lưu trữ (chỉ phát thông báo notifyListeners khi dữ liệu thực sự thay đổi)
+  Future<bool> loadSavedData({bool notify = true}) async {
+    bool hasChanged = false;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.reload();
-      _lastArrivalTimestamp = prefs.getInt('ktx_last_shipper_arrival_time') ?? 0;
+      final newTimestamp = prefs.getInt('ktx_last_shipper_arrival_time') ?? 0;
+      if (newTimestamp != _lastArrivalTimestamp) {
+        _lastArrivalTimestamp = newTimestamp;
+        hasChanged = true;
+      }
       final savedList = prefs.getStringList('ktx_completed_handover_orders') ?? [];
       for (final idStr in savedList) {
         final id = int.tryParse(idStr);
         if (id != null) {
+          if (!_completedOrderIds.contains(id)) hasChanged = true;
           _completedOrderIds.add(id);
           _studentConfirmations[id] = true;
           _shipperConfirmations[id] = true;
@@ -123,6 +129,7 @@ class DeliveryHandshakeService extends ChangeNotifier {
       for (final idStr in savedArrived) {
         final id = int.tryParse(idStr);
         if (id != null) {
+          if (!_arrivedOrderIds.contains(id)) hasChanged = true;
           _arrivedOrderIds.add(id);
         }
       }
@@ -131,15 +138,24 @@ class DeliveryHandshakeService extends ChangeNotifier {
         try {
           final map = jsonDecode(jsonStr) as Map<String, dynamic>;
           final item = ShipperBatchItemModel.fromJson(map);
-          if (item.orderId > 0) {
+          if (item.orderId > 0 && !_completedOrderSnapshots.containsKey(item.orderId)) {
             _completedOrderSnapshots[item.orderId] = item.copyWith(status: 'DELIVERED');
             _completedOrderIds.add(item.orderId);
+            hasChanged = true;
           }
         } catch (_) {}
       }
-      _extraShipperEarnings = prefs.getDouble('ktx_extra_shipper_earnings') ?? 0.0;
+      final newEarnings = prefs.getDouble('ktx_extra_shipper_earnings') ?? 0.0;
+      if (newEarnings != _extraShipperEarnings) {
+        _extraShipperEarnings = newEarnings;
+        hasChanged = true;
+      }
     } catch (_) {}
-    notifyListeners();
+
+    if (notify && hasChanged) {
+      notifyListeners();
+    }
+    return hasChanged;
   }
 
   /// Lưu trữ
