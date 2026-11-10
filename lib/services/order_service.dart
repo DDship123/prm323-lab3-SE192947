@@ -216,4 +216,23 @@ class OrderService {
           jsonMap['message'] ?? 'Mã đối soát nhận hàng không hợp lệ');
     }
   }
+
+  /// API-023: Shipper thông báo đã đến điểm nhận hàng KTX
+  Future<OrderDetailModel?> notifyShipperArrival(int orderId) async {
+    try {
+      final response = await _client
+          .post(
+            Uri.parse('${ApiConfig.orders}/$orderId/notify-arrival'),
+            headers: ApiConfig.headers(),
+          )
+          .timeout(const Duration(seconds: 6));
+
+      if (response.statusCode == 200) {
+        final jsonMap =
+            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        return OrderDetailModel.fromJson(jsonMap['data'] as Map<String, dynamic>);
+      }
+    } catch (_) {}
+    return null;
+  }
 }

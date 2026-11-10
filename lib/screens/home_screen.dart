@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../firebase/analytics_service.dart';
 import '../firebase/remote_config_service.dart';
 import '../models/order_model.dart';
 import '../models/store_model.dart';
+import '../services/delivery_handshake_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -17,6 +19,7 @@ import '../widgets/ktx_empty_state.dart';
 import '../widgets/ktx_error_state.dart';
 import '../widgets/ktx_loading_state.dart';
 import '../widgets/screen_state.dart';
+import '../widgets/shipper_arrived_popup_dialog.dart';
 import 'pickup_qr_code_screen.dart';
 import 'store_detail_screen.dart';
 
@@ -45,6 +48,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final _searchCtrl = TextEditingController();
   final Set<int> _favoriteStoreIds = {1};
   String? _selectedCategory;
+  Timer? _arrivalCheckTimer;
+  final Set<int> _poppedOrderIds = {};
+  DeliveryHandshakeService? _handshakeService;
 
   void _toggleCategoryFilter(
       String categoryName, String keyword, HomeViewModel homeVm) {
@@ -76,13 +82,58 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       context.read<HomeViewModel>().loadHomeData();
       context.read<OrderTrackingViewModel>().loadOrderHistory();
+
+      try {
+        _handshakeService = context.read<DeliveryHandshakeService>();
+        _handshakeService?.addListener(_onHandshakeChanged);
+      } catch (_) {}
+
+      // Lắng nghe và kiểm tra định kỳ 2s tài xế đến nơi (qua Backend hoặc Handshake)
+      _arrivalCheckTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+        _checkShipperArrivalTrigger();
+      });
     });
+  }
+
+  void _onHandshakeChanged() {
+    _checkShipperArrivalTrigger();
+  }
+
+  Future<void> _checkShipperArrivalTrigger() async {
+    if (!mounted) return;
+    final orderVm = context.read<OrderTrackingViewModel>();
+
+    // Làm mới ngầm lịch sử đơn hàng để bắt sự kiện từ Shipper ở tab/máy khác
+    await orderVm.refreshOrderHistorySilently();
+
+    final historyState = orderVm.historyState;
+    if (historyState is! StateSuccess<List<OrderDetailModel>>) return;
+
+    final handshake = context.read<DeliveryHandshakeService>();
+    final activeOrders = historyState.data.where(
+      (o) => o.status != 'DELIVERED' && o.status != 'CANCELLED',
+    );
+
+    for (final order in activeOrders) {
+      final isArrived = handshake.isShipperArrived(order.id) || order.isShipperArrived;
+      if (isArrived && !_poppedOrderIds.contains(order.id)) {
+        _poppedOrderIds.add(order.id);
+        handshake.markShipperArrived(order.id);
+        if (mounted) {
+          ShipperArrivedPopupDialog.show(context, order);
+        }
+        break;
+      }
+    }
   }
 
   @override
   void dispose() {
+    _arrivalCheckTimer?.cancel();
+    _handshakeService?.removeListener(_onHandshakeChanged);
     _searchCtrl.dispose();
     super.dispose();
   }

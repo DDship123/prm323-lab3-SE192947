@@ -139,6 +139,7 @@ class OrderDetailModel {
   final String? shipperName;
   final String? shipperPhone;
   final int? shipperId;
+  final bool isShipperArrived;
 
   const OrderDetailModel({
     required this.id,
@@ -164,6 +165,7 @@ class OrderDetailModel {
     this.shipperName,
     this.shipperPhone,
     this.shipperId,
+    this.isShipperArrived = false,
   });
 
   factory OrderDetailModel.fromJson(Map<String, dynamic> json) {
@@ -200,6 +202,7 @@ class OrderDetailModel {
       shipperName: json['shipperName'] as String?,
       shipperPhone: json['shipperPhone'] as String?,
       shipperId: (json['shipperId'] as num?)?.toInt() ?? (json['shipper_id'] as num?)?.toInt(),
+      isShipperArrived: json['shipperArrived'] == true || json['isShipperArrived'] == true,
     );
   }
 
@@ -235,6 +238,7 @@ class OrderDetailModel {
     DateTime? createdAt,
     Object? shipperName = _sentinel,
     Object? shipperPhone = _sentinel,
+    bool? isShipperArrived,
   }) {
     return OrderDetailModel(
       id: id ?? this.id,
@@ -259,6 +263,7 @@ class OrderDetailModel {
       createdAt: createdAt ?? this.createdAt,
       shipperName: shipperName == _sentinel ? this.shipperName : shipperName as String?,
       shipperPhone: shipperPhone == _sentinel ? this.shipperPhone : shipperPhone as String?,
+      isShipperArrived: isShipperArrived ?? this.isShipperArrived,
     );
   }
 

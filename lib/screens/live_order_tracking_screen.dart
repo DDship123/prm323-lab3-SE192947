@@ -5,6 +5,7 @@ import '../models/order_model.dart';
 import '../services/delivery_handshake_service.dart';
 import '../viewmodels/order_tracking_vm.dart';
 import '../widgets/screen_state.dart';
+import '../widgets/shipper_arrived_popup_dialog.dart';
 import 'dispute_refund_screen.dart';
 import 'pickup_qr_code_screen.dart';
 import 'review_feedback_screen.dart';
@@ -25,6 +26,7 @@ class LiveOrderTrackingScreen extends StatefulWidget {
 
 class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
   final _currencyFmt = NumberFormat.currency(locale: 'vi_VN', symbol: 'đ', decimalDigits: 0);
+  bool _hasShownArrivalPopup = false;
 
   @override
   void initState() {
@@ -68,7 +70,16 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
   Widget build(BuildContext context) {
     final handshake = context.watch<DeliveryHandshakeService>();
     final order = _resolveCurrentOrder(context);
-    final isShipperArrived = handshake.isShipperArrived(order.id);
+    final isShipperArrived = handshake.isShipperArrived(order.id) || order.isShipperArrived;
+
+    if (isShipperArrived && !_hasShownArrivalPopup) {
+      _hasShownArrivalPopup = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ShipperArrivedPopupDialog.show(context, order);
+        }
+      });
+    }
     final orderCode = order.orderCode.isNotEmpty ? order.orderCode : '#KTX-8829B';
     final isCod = order.paymentMethod.toUpperCase() == 'COD';
     final itemsSummary = order.items.isNotEmpty

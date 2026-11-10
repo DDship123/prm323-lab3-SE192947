@@ -67,6 +67,17 @@ class OrderTrackingViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Làm mới ngầm lịch sử đơn hàng mà không gây giật màn hình (silent refresh)
+  Future<void> refreshOrderHistorySilently() async {
+    try {
+      final orders = await _orderService.fetchMyOrders();
+      if (orders.isNotEmpty) {
+        _historyState = StateSuccess(orders);
+        notifyListeners();
+      }
+    } catch (_) {}
+  }
+
   /// API-009: Sinh viên hủy đơn hàng khi trạng thái là PENDING (BR-ORD-06)
   Future<bool> cancelOrder(int orderId) async {
     _isActionLoading = true;

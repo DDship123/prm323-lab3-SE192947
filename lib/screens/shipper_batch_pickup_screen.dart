@@ -1219,6 +1219,11 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
   ) {
     handshake.markShipperArrived(order.orderId);
 
+    // Báo đến backend Spring Boot để đồng bộ qua mọi thiết bị / Vercel tabs
+    try {
+      OrderService().notifyShipperArrival(order.orderId);
+    } catch (_) {}
+
     // Kích hoạt thông báo lưu vào trung tâm thông báo của Sinh viên
     try {
       final demoVm = context.read<ProfileDemoViewModel>();
@@ -1259,6 +1264,12 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
     DeliveryHandshakeService handshake,
   ) {
     handshake.markAllShipperArrived(orders.map((o) => o.orderId));
+
+    for (final order in orders) {
+      try {
+        OrderService().notifyShipperArrival(order.orderId);
+      } catch (_) {}
+    }
 
     try {
       final demoVm = context.read<ProfileDemoViewModel>();
