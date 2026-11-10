@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../viewmodels/auth_vm.dart';
 
 enum KtxAppBarVariant {
   standard, // Trang chuẩn: Quay lại tròn 44x44 + Tiêu đề + Chuông/Giỏ hàng/Avatar tròn 44x44
@@ -28,6 +30,7 @@ class KtxAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onLocationTap;
   final List<Widget>? actions;
   final bool showBackButton;
+  final String? avatarUrl;
 
   const KtxAppBar({
     super.key,
@@ -42,6 +45,7 @@ class KtxAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.onLocationTap,
     this.actions,
     this.showBackButton = true,
+    this.avatarUrl,
   });
 
   @override
@@ -78,6 +82,13 @@ class KtxAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final canPop = Navigator.of(context).canPop();
+    String? effectiveAvatarUrl = avatarUrl;
+    if (effectiveAvatarUrl == null) {
+      try {
+        final authVm = Provider.of<AuthViewModel>(context, listen: true);
+        effectiveAvatarUrl = authVm.currentUser?.avatarUrl;
+      } catch (_) {}
+    }
 
     return Container(
       decoration: const BoxDecoration(
@@ -256,14 +267,19 @@ class KtxAppBar extends StatelessWidget implements PreferredSizeWidget {
                     _buildCircleButton(
                       onTap: onAvatarTap,
                       tooltip: 'Tài khoản / Đổi vai trò',
-                      child: const CircleAvatar(
+                      child: CircleAvatar(
                         radius: 14,
-                        backgroundColor: Color(0xFFFFEDD5),
-                        child: Icon(
-                          Icons.person_rounded,
-                          size: 18,
-                          color: AppColors.primary,
-                        ),
+                        backgroundColor: const Color(0xFFFFEDD5),
+                        backgroundImage: (effectiveAvatarUrl != null && effectiveAvatarUrl.isNotEmpty)
+                            ? NetworkImage(effectiveAvatarUrl)
+                            : null,
+                        child: (effectiveAvatarUrl == null || effectiveAvatarUrl.isEmpty)
+                            ? const Icon(
+                                Icons.person_rounded,
+                                size: 18,
+                                color: AppColors.primary,
+                              )
+                            : null,
                       ),
                     ),
                 ],

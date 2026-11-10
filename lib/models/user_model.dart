@@ -54,4 +54,34 @@ class UserModel {
         if (ktxBuilding != null) 'ktxBuilding': ktxBuilding,
         if (ktxRoom != null) 'ktxRoom': ktxRoom,
       };
+
+  UserModel copyWith({
+    int? id,
+    String? firebaseUid,
+    String? email,
+    String? displayName,
+    String? phone,
+    String? role,
+    String? avatarUrl,
+    String? ktxBuilding,
+    String? ktxRoom,
+    double? ratingAvg,
+    int? ratingCount,
+    bool? isBanned,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      firebaseUid: firebaseUid ?? this.firebaseUid,
+      email: email ?? this.email,
+      displayName: displayName ?? this.displayName,
+      phone: phone ?? this.phone,
+      role: role ?? this.role,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      ktxBuilding: ktxBuilding ?? this.ktxBuilding,
+      ktxRoom: ktxRoom ?? this.ktxRoom,
+      ratingAvg: ratingAvg ?? this.ratingAvg,
+      ratingCount: ratingCount ?? this.ratingCount,
+      isBanned: isBanned ?? this.isBanned,
+    );
+  }
 }

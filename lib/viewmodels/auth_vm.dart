@@ -8,6 +8,7 @@ class AuthViewModel extends ChangeNotifier {
 
   UserModel? _currentUser;
   bool _isSyncing = false;
+  bool _isUploadingAvatar = false;
   String? _errorMessage;
   String _pendingPhone = '';
 
@@ -16,8 +17,14 @@ class AuthViewModel extends ChangeNotifier {
 
   UserModel? get currentUser => _currentUser;
   bool get isSyncing => _isSyncing;
+  bool get isUploadingAvatar => _isUploadingAvatar;
   String? get errorMessage => _errorMessage;
   String get pendingPhone => _pendingPhone;
+
+  void setCurrentUser(UserModel? user) {
+    _currentUser = user;
+    notifyListeners();
+  }
 
   /// Đồng bộ tài khoản sau khi đăng nhập Google Sign-In
   Future<void> syncFirebaseUser({
@@ -148,6 +155,73 @@ class AuthViewModel extends ChangeNotifier {
       return false;
     } finally {
       _isSyncing = false;
+      notifyListeners();
+    }
+  }
+
+  /// Tải lên ảnh đại diện dạng nhị phân lên máy chủ
+  Future<bool> uploadAvatarFile({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    _isUploadingAvatar = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final updatedUser = await _authApiService.uploadAvatarFile(
+        bytes: bytes,
+        fileName: fileName,
+      );
+      if (_currentUser != null) {
+        _currentUser = _currentUser!.copyWith(
+          avatarUrl: updatedUser.avatarUrl,
+        );
+      } else {
+        _currentUser = updatedUser;
+      }
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isUploadingAvatar = false;
+      notifyListeners();
+    }
+  }
+
+  /// Xóa hoặc đặt lại ảnh đại diện về mặc định
+  Future<bool> removeAvatar() async {
+    _isUploadingAvatar = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final updatedUser = await _authApiService.deleteAvatar();
+      if (_currentUser != null) {
+        _currentUser = UserModel(
+          id: _currentUser!.id,
+          firebaseUid: _currentUser!.firebaseUid,
+          email: _currentUser!.email,
+          displayName: _currentUser!.displayName,
+          phone: _currentUser!.phone,
+          role: _currentUser!.role,
+          avatarUrl: null,
+          ktxBuilding: _currentUser!.ktxBuilding,
+          ktxRoom: _currentUser!.ktxRoom,
+          ratingAvg: _currentUser!.ratingAvg,
+          ratingCount: _currentUser!.ratingCount,
+          isBanned: _currentUser!.isBanned,
+        );
+      } else {
+        _currentUser = updatedUser;
+      }
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isUploadingAvatar = false;
       notifyListeners();
     }
   }

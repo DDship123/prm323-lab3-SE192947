@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'package:image_picker/image_picker.dart';
 import '../models/user_model.dart';
-import '../services/evidence_upload_service.dart';
+import '../widgets/avatar_management_sheet.dart';
 import '../firebase/analytics_service.dart';
 import '../firebase/crashlytics_service.dart';
 import '../firebase/remote_config_service.dart';
@@ -63,7 +62,7 @@ class ProfileSettingsScreen extends StatelessWidget {
             child: Row(
               children: [
                 InkWell(
-                  onTap: () => _pickAndUploadAvatar(context),
+                  onTap: () => AvatarManagementSheet.show(context),
                   borderRadius: BorderRadius.circular(34),
                   child: Stack(
                     children: [
@@ -74,10 +73,11 @@ class ProfileSettingsScreen extends StatelessWidget {
                         ),
                         backgroundImage: (profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty)
                             ? NetworkImage(profile.avatarUrl!)
-                            : (photoUrl != null && photoUrl!.isNotEmpty
+                            : (profile == null && photoUrl != null && photoUrl!.isNotEmpty
                                 ? NetworkImage(photoUrl!)
                                 : null),
-                        child: (profile?.avatarUrl == null || profile!.avatarUrl!.isEmpty) && (photoUrl == null || photoUrl!.isEmpty)
+                        child: ((profile?.avatarUrl == null || profile!.avatarUrl!.isEmpty) &&
+                                (profile != null || photoUrl == null || photoUrl!.isEmpty))
                             ? const Icon(
                                 Icons.person_rounded,
                                 size: 36,
@@ -1044,72 +1044,6 @@ class ProfileSettingsScreen extends StatelessWidget {
           duration: Duration(seconds: 4),
         ),
       );
-    }
-  }
-
-  Future<void> _pickAndUploadAvatar(BuildContext context) async {
-    final picker = ImagePicker();
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library_rounded, color: AppColors.primary),
-              title: const Text('Chọn ảnh từ Thư viện máy'),
-              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primary),
-              title: const Text('Chụp ảnh mới bằng Camera'),
-              onTap: () => Navigator.pop(ctx, ImageSource.camera),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (source == null) return;
-    final file = await picker.pickImage(source: source, imageQuality: 85);
-    if (file == null) return;
-
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đang tải ảnh đại diện lên máy chủ...')),
-      );
-    }
-
-    try {
-      final bytes = await file.readAsBytes();
-      final uploadService = EvidenceUploadService();
-      final url = await uploadService.uploadEvidence(
-        bytes: bytes,
-        fileName: file.name,
-        userId: uid,
-      );
-
-      if (context.mounted) {
-        final authVm = context.read<AuthViewModel>();
-        await authVm.updateAvatar(url);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Đã cập nhật ảnh đại diện từ máy lên thành công!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Không thể tải ảnh đại diện lên: '),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
     }
   }
 }

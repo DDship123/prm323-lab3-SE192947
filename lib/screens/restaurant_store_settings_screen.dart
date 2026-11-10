@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../models/store_model.dart';
 import '../services/evidence_upload_service.dart';
 import '../services/store_bank_service.dart';
 import '../services/store_service.dart';
@@ -38,8 +37,6 @@ class _RestaurantStoreSettingsScreenState extends State<RestaurantStoreSettingsS
 
   String _campusZone = 'KTX_KHU_B';
   bool _isOpen = true;
-  bool _serveZoneA = true;
-  bool _serveZoneB = true;
   bool _isSavingStore = false;
   bool _isUploadingAvatar = false;
   Uint8List? _avatarBytes;

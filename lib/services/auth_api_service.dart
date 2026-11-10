@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import 'api_config.dart';
+import 'evidence_upload_service.dart';
 
 /// Dịch vụ kết nối API-001, API-002, API-002b (Đồng bộ tài khoản & Hồ sơ sinh viên KTX)
 class AuthApiService {
@@ -221,9 +223,94 @@ class AuthApiService {
       email: 'student@fpt.edu.vn',
       displayName: displayName,
       phone: phone,
-      avatarUrl: avatarUrl,
+      avatarUrl: (avatarUrl != null && avatarUrl.isEmpty) ? null : avatarUrl,
       ktxBuilding: ktxBuilding,
       ktxRoom: ktxRoom,
+    );
+  }
+
+  /// Upload avatar file (Multipart) to Backend API (/users/me/avatar)
+  Future<UserModel> uploadAvatarFile({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/users/me/avatar');
+    try {
+      final request = http.MultipartRequest('POST', uri)
+        ..headers.addAll({
+          'X-User-Id': '${ApiConfig.currentBackendUserId}',
+        })
+        ..files.add(http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: fileName,
+        ));
+
+      final streamedResponse =
+          await _client.send(request).timeout(const Duration(seconds: 15));
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonMap =
+            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final data = jsonMap['data'] as Map<String, dynamic>?;
+        if (data != null) {
+          final user = UserModel.fromJson(data);
+          ApiConfig.currentBackendUserId = user.id;
+          return user;
+        }
+      }
+    } catch (e) {
+      ApiConfig.log('AVATAR-API', 'Backend upload failed, attempting fallback: $e');
+    }
+
+    // Fallback to EvidenceUploadService upload if server call fails
+    try {
+      final fallbackUrl = await EvidenceUploadService().uploadEvidence(
+        bytes: bytes,
+        fileName: fileName,
+        userId: '${ApiConfig.currentBackendUserId}',
+      );
+      return await updateMyProfile(
+        displayName: 'Sinh viên KTX',
+        phone: '0987654321',
+        ktxBuilding: 'Khu B - Tòa BA1',
+        ktxRoom: '312',
+        avatarUrl: fallbackUrl,
+      );
+    } catch (e) {
+      ApiConfig.log('AVATAR-API-FALLBACK', 'Fallback upload failed: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete/reset avatar via Backend API (/users/me/avatar)
+  Future<UserModel> deleteAvatar() async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/users/me/avatar');
+    try {
+      final response = await _client
+          .delete(uri, headers: ApiConfig.headers())
+          .timeout(const Duration(seconds: 8));
+      if (response.statusCode == 200) {
+        final jsonMap =
+            jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+        final data = jsonMap['data'] as Map<String, dynamic>?;
+        if (data != null) {
+          final user = UserModel.fromJson(data);
+          ApiConfig.currentBackendUserId = user.id;
+          return user;
+        }
+      }
+    } catch (e) {
+      ApiConfig.log('AVATAR-DELETE', 'Backend delete failed: $e');
+    }
+
+    // Fallback: update profile with empty avatarUrl
+    return await updateMyProfile(
+      displayName: 'Sinh viên KTX',
+      phone: '0987654321',
+      ktxBuilding: 'Khu B - Tòa BA1',
+      ktxRoom: '312',
+      avatarUrl: '', // explicit empty to clear
     );
   }
 

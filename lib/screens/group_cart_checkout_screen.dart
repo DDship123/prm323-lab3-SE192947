@@ -9,7 +9,6 @@ import '../services/commission_policy_service.dart';
 import '../services/voucher_service.dart';
 import '../viewmodels/cart_checkout_vm.dart';
 import '../widgets/ktx_dialog.dart';
-import '../services/commission_policy_service.dart';
 import '../services/order_service.dart';
 import 'online_payment_screen.dart';
 import 'pickup_qr_code_screen.dart';
@@ -156,13 +155,13 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
       await voucherService.recordVoucherUsage(_appliedShippingVoucher!.code);
     }
 
-    if (!mounted || created == null) return;
+    if (!mounted) return;
 
     if (_paymentMethod == 'VIETQR') {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => OnlinePaymentScreen(
-            order: created!,
+            order: created,
             onPaymentDone: (ord) {
               Navigator.of(context).pop();
               widget.onOrderCompleted(ord);
@@ -176,17 +175,17 @@ class _GroupCartCheckoutScreenState extends State<GroupCartCheckoutScreen> {
         orderCode: created.orderCode,
         onTrackOrder: () {
           Navigator.of(context).pop();
-          widget.onOrderCompleted(created!);
+          widget.onOrderCompleted(created);
         },
         onSkipToPickup: () async {
           Navigator.of(context).pop();
           try {
             await OrderService().updateOrderStatus(
-              orderId: created!.id,
+              orderId: created.id,
               newStatus: 'DELIVERING',
             );
           } catch (_) {}
-          final delivering = created!.copyWith(status: 'DELIVERING');
+          final delivering = created.copyWith(status: 'DELIVERING');
           if (mounted) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (_) => PickupQrCodeScreen(order: delivering)),

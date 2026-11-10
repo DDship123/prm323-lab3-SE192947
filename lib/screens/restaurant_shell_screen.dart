@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../theme/app_colors.dart';
 import 'restaurant_dashboard_screen.dart';
 import 'restaurant_menu_management_screen.dart';
 import 'restaurant_revenue_screen.dart';

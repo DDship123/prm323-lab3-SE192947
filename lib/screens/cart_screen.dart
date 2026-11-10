@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../models/voucher_model.dart';
 import '../services/voucher_service.dart';
 import '../theme/app_colors.dart';
 import '../viewmodels/cart_checkout_vm.dart';

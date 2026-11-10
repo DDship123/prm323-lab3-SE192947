@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/user_model.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../viewmodels/auth_vm.dart';
+import 'avatar_management_sheet.dart';
 
 /// Menu thanh bên (Left Vertical Sidebar) chuẩn Design System KTX Food (Figma Lab 2 & 3)
 /// Đồng bộ 100% với nhận diện màu Cam KTX (#FF5722), Typography và Token thiết kế
@@ -26,6 +30,11 @@ class WebAdminSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    UserModel? currentUser;
+    try {
+      currentUser = context.watch<AuthViewModel>().currentUser;
+    } catch (_) {}
+
     return RepaintBoundary(
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
@@ -232,6 +241,16 @@ class WebAdminSidebar extends StatelessWidget {
                       ),
                       itemBuilder: (ctx) => [
                         const PopupMenuItem(
+                          value: 'avatar',
+                          child: Row(
+                            children: [
+                              Icon(Icons.camera_alt_outlined, size: 16, color: AppColors.primary),
+                              SizedBox(width: 8),
+                              Text('Đổi ảnh đại diện', style: TextStyle(fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
                           value: 'logout',
                           child: Row(
                             children: [
@@ -243,25 +262,28 @@ class WebAdminSidebar extends StatelessWidget {
                         ),
                       ],
                       onSelected: (val) {
-                        if (val == 'logout') onSignOut();
+                        if (val == 'avatar') {
+                          AvatarManagementSheet.show(context);
+                        } else if (val == 'logout') {
+                          onSignOut();
+                        }
                       },
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryLight,
-                          borderRadius: AppRadius.roundedSm,
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'BQL',
-                            style: TextStyle(
-                              color: AppColors.primaryDark,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppColors.primaryLight,
+                        backgroundImage: (currentUser?.avatarUrl != null && currentUser!.avatarUrl!.isNotEmpty)
+                            ? NetworkImage(currentUser.avatarUrl!)
+                            : null,
+                        child: (currentUser?.avatarUrl == null || currentUser!.avatarUrl!.isEmpty)
+                            ? const Text(
+                                'BQL',
+                                style: TextStyle(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              )
+                            : null,
                       ),
                     ),
                   )
@@ -277,21 +299,43 @@ class WebAdminSidebar extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: AppColors.primary,
-                                borderRadius: AppRadius.roundedSm,
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  'BQL',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
+                            Tooltip(
+                              message: 'Đổi ảnh đại diện',
+                              child: InkWell(
+                                onTap: () => AvatarManagementSheet.show(context),
+                                borderRadius: BorderRadius.circular(18),
+                                child: Stack(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 18,
+                                      backgroundColor: AppColors.primary,
+                                      backgroundImage: (currentUser?.avatarUrl != null && currentUser!.avatarUrl!.isNotEmpty)
+                                          ? NetworkImage(currentUser.avatarUrl!)
+                                          : null,
+                                      child: (currentUser?.avatarUrl == null || currentUser!.avatarUrl!.isEmpty)
+                                          ? const Text(
+                                              'BQL',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            )
+                                          : null,
+                                    ),
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.primaryDark,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.camera_alt_rounded, size: 8, color: Colors.white),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -301,7 +345,7 @@ class WebAdminSidebar extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'BQL KTX ĐHQG',
+                                    currentUser?.displayName ?? 'BQL KTX ĐHQG',
                                     style: AppTypography.bodySmall.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: AppColors.textPrimary,
@@ -309,7 +353,7 @@ class WebAdminSidebar extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
-                                    'admin.ktx@fpt.edu.vn',
+                                    currentUser?.email ?? 'admin.ktx@fpt.edu.vn',
                                     style: AppTypography.caption.copyWith(
                                       color: AppColors.textSecondary,
                                       fontSize: 11,
