@@ -712,50 +712,8 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 20),
           ] else ...[
             Text('Đăng nhập tài khoản', style: AppTypography.heading3),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
           ],
-          Text(
-            'Chọn nhanh tài khoản mẫu 4 vai trò:',
-            style: TextStyle(fontSize: 12, color: Colors.grey[700], fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildRoleChip(
-                roleKey: 'student',
-                label: '🎓 SV 1 (Đạt)',
-                semanticLabel: 'Tài khoản mẫu Sinh viên 1 (Ngô Trường Đạt)',
-                email: 'student@fpt.edu.vn',
-              ),
-              _buildRoleChip(
-                roleKey: 'student2',
-                label: '🎓 SV 2 (Linh)',
-                semanticLabel: 'Tài khoản mẫu Sinh viên 2 (Lê Thùy Linh)',
-                email: 'student2@fpt.edu.vn',
-              ),
-              _buildRoleChip(
-                roleKey: 'owner',
-                label: '🍲 Chủ Quán',
-                semanticLabel: 'Tài khoản mẫu Chủ Quán',
-                email: 'coba.owner@fpt.edu.vn',
-              ),
-              _buildRoleChip(
-                roleKey: 'shipper',
-                label: '🛵 Shipper',
-                semanticLabel: 'Tài khoản mẫu Shipper',
-                email: 'shipper.hung@fpt.edu.vn',
-              ),
-              _buildRoleChip(
-                roleKey: 'admin',
-                label: '🏢 Admin BQL',
-                semanticLabel: 'Tài khoản mẫu Admin BQL',
-                email: 'admin.ktx@fpt.edu.vn',
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
           Semantics(
             identifier: 'input_login_email',
             child: TextField(
@@ -845,43 +803,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildRoleChip({
-    required String roleKey,
-    required String label,
-    required String semanticLabel,
-    required String email,
-  }) {
-    final isSelected = _emailPhoneController.text == email;
-    return Semantics(
-      identifier: 'chip_role_$roleKey',
-      label: semanticLabel,
-      child: ChoiceChip(
-      label: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? AppColors.primary : const Color(0xFF334155),
-        ),
-      ),
-      selected: isSelected,
-      selectedColor: AppColors.primaryLight,
-      backgroundColor: Colors.white,
-      side: BorderSide(
-        color: isSelected ? AppColors.primary : const Color(0xFFE2E8F0),
-        width: isSelected ? 1.5 : 1.0,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      onSelected: (_) {
-        setState(() {
-          _emailPhoneController.text = email;
-          _passwordController.text = '123456';
-        });
-      },
       ),
     );
   }
@@ -1103,55 +1024,24 @@ class _LoginScreenState extends State<LoginScreen> {
       // GIAO DIỆN WEB DESKTOP / ADMIN PORTAL SANG TRỌNG
       return Scaffold(
         backgroundColor: AppColors.background,
-        body: Stack(
+        body: Row(
           children: [
-            Row(
-              children: [
-                // Cột trái: Hero Showcase Portal
-                Expanded(
-                  flex: 5,
-                  child: _buildDesktopHeroSection(),
-                ),
-                // Cột phải: Form Đăng nhập Admin
-                Expanded(
-                  flex: 4,
-                  child: Container(
-                    color: const Color(0xFFF8FAFC),
-                    child: Center(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(32),
-                        child: _buildLoginFormCard(isWideScreen: true),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            // Cột trái: Hero Showcase Portal
+            Expanded(
+              flex: 5,
+              child: _buildDesktopHeroSection(),
             ),
-            // Nút cấu hình Server VPS ở góc trên phải
-            Positioned(
-              top: 16,
-              right: 16,
-              child: IconButton(
-                tooltip: 'Cài đặt IP Máy chủ / VPS',
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 6,
-                      )
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.settings_ethernet_rounded,
-                    color: AppColors.primary,
-                    size: 22,
+            // Cột phải: Form Đăng nhập Admin
+            Expanded(
+              flex: 4,
+              child: Container(
+                color: const Color(0xFFF8FAFC),
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(32),
+                    child: _buildLoginFormCard(isWideScreen: true),
                   ),
                 ),
-                onPressed: _openServerConfigDialog,
               ),
             ),
           ],
@@ -1163,42 +1053,14 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned(
-              top: 8,
-              right: 12,
-              child: IconButton(
-                tooltip: 'Cài đặt IP Máy chủ / VPS',
-                icon: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 4,
-                      )
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.settings_ethernet_rounded,
-                    color: AppColors.primary,
-                    size: 22,
-                  ),
-                ),
-                onPressed: _openServerConfigDialog,
-              ),
-            ),
-            Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 440),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                       Container(
                         width: 88,
                         height: 88,
@@ -1231,7 +1093,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
