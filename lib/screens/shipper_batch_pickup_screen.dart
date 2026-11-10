@@ -856,137 +856,185 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                   ),
                 ],
               ),
-              if (!isDelivering)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF334155),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ShipperPickupDetailScreen(
-                              order: order,
-                              onPickupConfirmed: () {
-                                vm.confirmPickup(
-                                  orderId: order.orderId,
-                                  shipperId: widget.shipperId,
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text('Chi tiết quán', style: TextStyle(fontSize: 12)),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF521B),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      icon: const Icon(Icons.check_circle_outline, size: 16),
-                      label: const Text('Lấy hàng', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                      onPressed: () async {
-                        await vm.confirmPickup(
-                          orderId: order.orderId,
-                          shipperId: widget.shipperId,
-                        );
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Đã nhận đơn tại quán! Bắt đầu giao KTX.')),
-                          );
-                        }
-                      },
-                    ),
-                  ],
-                )
-              else
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    Builder(
-                      builder: (ctx) {
-                        final isArrived = handshake.isShipperArrived(order.orderId);
-                        return ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isArrived ? const Color(0xFFEFF6FF) : const Color(0xFFFF521B),
-                            foregroundColor: isArrived ? const Color(0xFF2563EB) : Colors.white,
-                            side: isArrived ? const BorderSide(color: Color(0xFF3B82F6), width: 1.2) : BorderSide.none,
-                            elevation: isArrived ? 0 : 1,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                          icon: Icon(
-                            isArrived ? Icons.mark_chat_read_rounded : Icons.notifications_active_rounded,
-                            size: 14,
-                            color: isArrived ? const Color(0xFF2563EB) : Colors.white,
-                          ),
-                          label: Text(
-                            isArrived ? 'Đã báo SV ra nhận' : 'Báo đã đến nơi',
-                            style: TextStyle(
-                              color: isArrived ? const Color(0xFF2563EB) : Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          onPressed: () => _handleShipperNotifyArrival(context, order, handshake),
-                        );
-                      },
-                    ),
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFEF4444),
-                        side: const BorderSide(color: Color(0xFFEF4444)),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      icon: const Icon(Icons.report_problem_outlined, size: 14),
-                      label: const Text('Sự cố', style: TextStyle(fontSize: 11)),
-                      onPressed: () => _showReportFailureDialog(context, order, vm),
-                    ),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF10B981),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      icon: const Icon(Icons.qr_code_scanner, size: 14, color: Colors.white),
-                      label: const Text('Trao hàng QR', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                      onPressed: () async {
-                        final res = await Navigator.push<bool>(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ShipperHandoverConfirmScreen(
-                              order: order,
-                              shipperId: widget.shipperId,
-                            ),
-                          ),
-                        );
-                        if (res == true && mounted) {
-                          setState(() {
-                            _lastCompletedOrderCode = order.orderCode;
-                          });
-                        }
-                        vm.fetchBatch(shipperId: widget.shipperId);
-                      },
-                    ),
-                  ],
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: order.paymentMethod.toUpperCase() == 'COD'
+                      ? const Color(0xFFFFF7ED)
+                      : const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: order.paymentMethod.toUpperCase() == 'COD'
+                        ? const Color(0xFFFFEDD5)
+                        : const Color(0xFFA7F3D0),
+                  ),
                 ),
+                child: Text(
+                  order.paymentMethod.toUpperCase() == 'COD' ? 'Thu tiền mặt COD' : 'Đã thanh toán Online',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: order.paymentMethod.toUpperCase() == 'COD'
+                        ? const Color(0xFFC2410C)
+                        : const Color(0xFF047857),
+                  ),
+                ),
+              ),
             ],
           ),
+          const SizedBox(height: 10),
+          if (!isDelivering)
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF334155),
+                      side: const BorderSide(color: Color(0xFFE2E8F0)),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ShipperPickupDetailScreen(
+                            order: order,
+                            onPickupConfirmed: () {
+                              vm.confirmPickup(
+                                orderId: order.orderId,
+                                shipperId: widget.shipperId,
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('Chi tiết quán', style: TextStyle(fontSize: 12)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF521B),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.check_circle_outline, size: 16),
+                    label: const Text('Lấy hàng', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    onPressed: () async {
+                      await vm.confirmPickup(
+                        orderId: order.orderId,
+                        shipperId: widget.shipperId,
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Đã nhận đơn tại quán! Bắt đầu giao KTX.')),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Builder(
+                    builder: (ctx) {
+                      final isArrived = handshake.isShipperArrived(order.orderId);
+                      return ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isArrived ? const Color(0xFFEFF6FF) : const Color(0xFFFF521B),
+                          foregroundColor: isArrived ? const Color(0xFF2563EB) : Colors.white,
+                          side: isArrived ? const BorderSide(color: Color(0xFF3B82F6), width: 1.2) : BorderSide.none,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: Icon(
+                          isArrived ? Icons.mark_chat_read_rounded : Icons.notifications_active_rounded,
+                          size: 14,
+                          color: isArrived ? const Color(0xFF2563EB) : Colors.white,
+                        ),
+                        label: Text(
+                          isArrived ? 'Đã báo SV' : 'Báo đã đến nơi',
+                          style: TextStyle(
+                            color: isArrived ? const Color(0xFF2563EB) : Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onPressed: () => _handleShipperNotifyArrival(context, order, handshake),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  flex: 2,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFEF4444),
+                      side: const BorderSide(color: Color(0xFFEF4444)),
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.report_problem_outlined, size: 14),
+                    label: const Text(
+                      'Sự cố',
+                      style: TextStyle(fontSize: 11),
+                      maxLines: 1,
+                    ),
+                    onPressed: () => _showReportFailureDialog(context, order, vm),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  flex: 3,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    icon: const Icon(Icons.qr_code_scanner, size: 14, color: Colors.white),
+                    label: const Text(
+                      'Trao hàng QR',
+                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onPressed: () async {
+                      final res = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ShipperHandoverConfirmScreen(
+                            order: order,
+                            shipperId: widget.shipperId,
+                          ),
+                        ),
+                      );
+                      if (res == true && mounted) {
+                        setState(() {
+                          _lastCompletedOrderCode = order.orderCode;
+                        });
+                      }
+                      vm.fetchBatch(shipperId: widget.shipperId);
+                    },
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
