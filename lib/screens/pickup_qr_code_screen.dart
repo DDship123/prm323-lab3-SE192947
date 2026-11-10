@@ -43,8 +43,11 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
     });
   }
 
-  OrderDetailModel _resolveCurrentOrder(BuildContext context) {
-    final trackingState = context.watch<OrderTrackingViewModel>().trackingState;
+  OrderDetailModel _resolveCurrentOrder(BuildContext context, {bool listen = false}) {
+    final trackingState = (listen
+            ? context.watch<OrderTrackingViewModel>()
+            : context.read<OrderTrackingViewModel>())
+        .trackingState;
     if (trackingState is StateSuccess<OrderDetailModel>) {
       final fetched = trackingState.data;
       if (fetched.id == widget.order.id && fetched.items.isNotEmpty) {
@@ -55,7 +58,7 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
   }
 
   Future<void> _handleConfirmPickup() async {
-    final currentOrder = _resolveCurrentOrder(context);
+    final currentOrder = _resolveCurrentOrder(context, listen: false);
     final handshake = context.read<DeliveryHandshakeService>();
     handshake.confirmByStudent(currentOrder.id);
     await handshake.saveToStorage();
@@ -123,7 +126,7 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
   }
 
   void _showLiveTrackingScreen() {
-    final currentOrder = _resolveCurrentOrder(context);
+    final currentOrder = _resolveCurrentOrder(context, listen: false);
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => LiveOrderTrackingScreen(initialOrder: currentOrder),
@@ -133,7 +136,7 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentOrder = _resolveCurrentOrder(context);
+    final currentOrder = _resolveCurrentOrder(context, listen: true);
     final authVm = context.watch<AuthViewModel>();
     final studentName = authVm.currentUser?.displayName.isNotEmpty == true
         ? authVm.currentUser!.displayName
