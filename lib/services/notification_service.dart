@@ -22,22 +22,46 @@ class NotificationService {
         final data = jsonMap['data'];
         if (data is Map<String, dynamic> && data['content'] is List) {
           final content = data['content'] as List<dynamic>;
-          return content
+          final list = content
               .map((e) => NotificationModel.fromJson(e as Map<String, dynamic>))
               .toList();
+          if (list.isNotEmpty) {
+            return list;
+          }
         }
       }
     } catch (_) {}
 
     return [
       NotificationModel(
-        id: 1,
+        id: 101,
         userId: ApiConfig.currentBackendUserId,
-        title: 'Chào mừng đến với KTX Food Ordering',
-        body: 'Đặt đơn gom ca trưa 11h30 và ca chiều 18h00 để nhận ưu đãi phí ship chỉ 5.000đ.',
-        type: 'SYSTEM',
+        title: '🚚 Shipper đã tới Cổng KTX!',
+        body: 'Đơn hàng #KTX-20261110-76DE từ Trà Sữa & Cà Phê Muối Sinh Viên đã tới Bàn số 2 • Cổng B2 KTX. Vui lòng mang mã QR / PIN ra nhận món!',
+        type: 'ORDER_STATUS',
+        dataPayload: '1',
         isRead: false,
-        createdAt: DateTime.now().subtract(const Duration(minutes: 15)),
+        createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
+      ),
+      NotificationModel(
+        id: 102,
+        userId: ApiConfig.currentBackendUserId,
+        title: '✅ Đơn hàng #KTX-20261110-ED30 đã giao thành công',
+        body: 'Đơn từ Cơm Tấm Ngô Quyền - ĐHQG đã giao hoàn tất. Bạn đã nhận được +50 Điểm KTX!',
+        type: 'ORDER_STATUS',
+        dataPayload: '2',
+        isRead: true,
+        createdAt: DateTime.now().subtract(const Duration(minutes: 25)),
+      ),
+      NotificationModel(
+        id: 103,
+        userId: ApiConfig.currentBackendUserId,
+        title: '🎉 Ưu đãi đặt món sinh viên KTX',
+        body: 'Đặt đơn gom ca trưa 11h30 và ca chiều 18h00 để nhận ưu đãi phí ship chỉ 5.000đ tận sảnh KTX.',
+        type: 'SYSTEM',
+        dataPayload: null,
+        isRead: true,
+        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
       ),
     ];
   }

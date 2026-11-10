@@ -14,30 +14,7 @@ class ProfileDemoViewModel extends ChangeNotifier {
   int _unreadCount = 0;
 
   /// Danh sách thông báo FCM đã nhận được lưu trữ trong ứng dụng
-  final List<NotificationModel> _inAppFcmNotifications = [
-    NotificationModel(
-      id: 9001,
-      userId: 1,
-      title: '🚚 Shipper đã tới Trụ A1–A2 (Cổng B2 KTX)',
-      body:
-          'Đơn gom #ORD-KTX-101 từ Cơm Tấm Phúc Lộc Thọ đã sẵn sàng giao. Nhấn để mở màn hình Theo dõi đơn & Mã QR nhận món.',
-      type: 'ORDER_STATUS',
-      isRead: false,
-      dataPayload: '101',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
-    ),
-    NotificationModel(
-      id: 9002,
-      userId: 1,
-      title: '✅ Yêu cầu hoàn tiền khiếu nại đã được xử lý',
-      body:
-          'Khiếu nại thiếu món cho đơn #ORD-KTX-98 đã được duyệt hoàn 35.000đ. Nhấn để xem Lịch sử Khiếu nại.',
-      type: 'DISPUTE_UPDATE',
-      isRead: false,
-      dataPayload: '98',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 20)),
-    ),
-  ];
+  final List<NotificationModel> _inAppFcmNotifications = [];
 
   // Trạng thái Firebase Demo Area tại S13
   bool _remoteConfigFreeShipBanner = true;
@@ -86,16 +63,16 @@ class ProfileDemoViewModel extends ChangeNotifier {
     final newNoti = NotificationModel(
       id: DateTime.now().millisecondsSinceEpoch,
       userId: 1,
-      title: '[$appState] $title',
+      title: title,
       body: body,
       type: type,
       isRead: false,
-      dataPayload: dataPayload ?? '101',
+      dataPayload: dataPayload,
       createdAt: DateTime.now(),
     );
 
     _inAppFcmNotifications.insert(0, newNoti);
-    _fcmStatusMessage = '[$appState] Vừa nhận: "$title"';
+    _fcmStatusMessage = 'Vừa nhận: "$title"';
     _refreshMergedNotificationsState();
     return newNoti;
   }
@@ -112,6 +89,7 @@ class ProfileDemoViewModel extends ChangeNotifier {
         };
 
     final merged = [..._inAppFcmNotifications, ...currentRemote];
+    merged.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     _unreadCount = merged.where((n) => !n.isRead).length;
     if (merged.isEmpty) {
       _notificationsState = const StateEmpty(

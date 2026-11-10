@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../viewmodels/order_tracking_vm.dart';
 import '../viewmodels/profile_demo_vm.dart';
 import '../widgets/ktx_app_bar.dart';
 import '../widgets/ktx_empty_state.dart';
@@ -34,42 +35,56 @@ class NotificationBoardScreen extends StatefulWidget {
     }
 
     // Mặc định điều hướng sang màn hình Theo dõi đơn hàng trực tiếp S6
-    final orderId = int.tryParse(dataPayload ?? '') ?? 101;
-    final demoOrder = OrderDetailModel(
+    final orderId = int.tryParse(dataPayload ?? '') ?? 1;
+
+    OrderDetailModel? matchedOrder;
+    try {
+      final historyState = Provider.of<OrderTrackingViewModel>(context, listen: false).historyState;
+      if (historyState is StateSuccess<List<OrderDetailModel>>) {
+        final matches = historyState.data.where(
+          (o) => o.id == orderId || (dataPayload != null && o.orderCode.contains(dataPayload)),
+        );
+        if (matches.isNotEmpty) {
+          matchedOrder = matches.first;
+        }
+      }
+    } catch (_) {}
+
+    final targetOrder = matchedOrder ?? OrderDetailModel(
       id: orderId,
-      orderCode: 'ORD-KTX-$orderId',
+      orderCode: 'KTX-ORD-$orderId',
       userId: 1,
-      storeId: 101,
-      storeName: 'Cơm Tấm Phúc Lộc Thọ – KTX Khu B',
+      storeId: 1,
+      storeName: 'Cơm Tấm Cô Ba – KTX Khu B',
       slotTime: 'CA_TRUA_11H30',
       pickupLocation: 'KTX Khu B – Trụ A1–A2 (Cổng B2)',
-      subtotalAmount: 70000,
+      subtotalAmount: 45000,
       deliveryFee: 5000,
-      groupDiscountAmount: 10000,
-      finalAmount: 65000,
+      groupDiscountAmount: 0,
+      finalAmount: 50000,
       status: 'DELIVERING',
       paymentMethod: 'VIETQR',
       paymentStatus: 'PAID',
       pickupQrCode: 'KTX_QR_ORD_$orderId',
       pickupPin: '4829',
-      note: 'Giao tại cổng B2 đúng 11h30',
+      note: 'Giao tại bàn số 2 đúng 11h30',
       items: const [
         OrderItemModel(
           id: 1,
-          menuItemId: 501,
-          itemName: 'Cơm sườn bì chả đặc biệt',
-          unitPrice: 35000,
-          quantity: 2,
+          menuItemId: 1,
+          itemName: 'Cơm Sườn Nướng Mật Ong',
+          unitPrice: 45000,
+          quantity: 1,
           selectedOptions: [],
-          itemTotalAmount: 70000,
+          itemTotalAmount: 45000,
         ),
       ],
-      createdAt: DateTime.now().subtract(const Duration(minutes: 25)),
+      createdAt: DateTime.now().subtract(const Duration(minutes: 15)),
     );
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => LiveOrderTrackingScreen(initialOrder: demoOrder),
+        builder: (_) => LiveOrderTrackingScreen(initialOrder: targetOrder),
       ),
     );
   }
