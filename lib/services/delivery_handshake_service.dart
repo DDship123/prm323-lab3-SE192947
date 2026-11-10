@@ -17,6 +17,7 @@ class DeliveryHandshakeService extends ChangeNotifier {
   final Map<int, bool> _shipperConfirmations = {};
   final Set<int> _completedOrderIds = {};
   final Set<int> _arrivedOrderIds = {};
+  final Set<String> _arrivedOrderCodes = {};
   final Map<int, ShipperBatchItemModel> _completedOrderSnapshots = {};
   double _extraShipperEarnings = 0.0;
   int _lastArrivalTimestamp = 0;
@@ -33,29 +34,60 @@ class DeliveryHandshakeService extends ChangeNotifier {
   }
 
   final Set<int> _poppedDialogOrderIds = {};
+  final Set<String> _poppedDialogOrderCodes = {};
 
-  bool hasPoppedDialog(int orderId) => _poppedDialogOrderIds.contains(orderId);
-  void markDialogPopped(int orderId) {
+  bool hasPoppedDialog(int orderId, [String? orderCode]) {
+    if (_poppedDialogOrderIds.contains(orderId)) return true;
+    if (orderCode != null && orderCode.isNotEmpty) {
+      final clean = orderCode.replaceAll('#', '').trim();
+      return _poppedDialogOrderCodes.contains(clean);
+    }
+    return false;
+  }
+
+  void markDialogPopped(int orderId, [String? orderCode]) {
     _poppedDialogOrderIds.add(orderId);
+    if (orderCode != null && orderCode.isNotEmpty) {
+      _poppedDialogOrderCodes.add(orderCode.replaceAll('#', '').trim());
+    }
     saveToStorage();
   }
 
   bool isStudentConfirmed(int orderId) => _studentConfirmations[orderId] ?? false;
   bool isShipperConfirmed(int orderId) => _shipperConfirmations[orderId] ?? false;
-  bool isShipperArrived(int orderId) => _arrivedOrderIds.contains(orderId);
+
+  bool isShipperArrived(int orderId, [String? orderCode]) {
+    if (_arrivedOrderIds.contains(orderId)) return true;
+    if (orderCode != null && orderCode.isNotEmpty) {
+      final clean = orderCode.replaceAll('#', '').trim();
+      return _arrivedOrderCodes.contains(clean);
+    }
+    return false;
+  }
+
   bool isFullyDelivered(int orderId) => _completedOrderIds.contains(orderId);
 
   /// Shipper bấm nút báo đã đến điểm giao hàng KTX
-  void markShipperArrived(int orderId) {
+  void markShipperArrived(int orderId, [String? orderCode]) {
     _arrivedOrderIds.add(orderId);
+    if (orderCode != null && orderCode.isNotEmpty) {
+      _arrivedOrderCodes.add(orderCode.replaceAll('#', '').trim());
+    }
     _lastArrivalTimestamp = DateTime.now().millisecondsSinceEpoch;
     saveToStorage();
     notifyListeners();
   }
 
   /// Shipper bấm nút báo toàn bộ các đơn trong chuyến gom đã đến nơi
-  void markAllShipperArrived(Iterable<int> orderIds) {
+  void markAllShipperArrived(Iterable<int> orderIds, [Iterable<String>? orderCodes]) {
     _arrivedOrderIds.addAll(orderIds);
+    if (orderCodes != null) {
+      for (final code in orderCodes) {
+        if (code.isNotEmpty) {
+          _arrivedOrderCodes.add(code.replaceAll('#', '').trim());
+        }
+      }
+    }
     _lastArrivalTimestamp = DateTime.now().millisecondsSinceEpoch;
     saveToStorage();
     notifyListeners();
@@ -141,11 +173,25 @@ class DeliveryHandshakeService extends ChangeNotifier {
           _arrivedOrderIds.add(id);
         }
       }
+      final savedArrivedCodes = prefs.getStringList('ktx_arrived_order_codes') ?? [];
+      for (final code in savedArrivedCodes) {
+        if (code.isNotEmpty) {
+          final clean = code.replaceAll('#', '').trim();
+          if (!_arrivedOrderCodes.contains(clean)) hasChanged = true;
+          _arrivedOrderCodes.add(clean);
+        }
+      }
       final savedPopped = prefs.getStringList('ktx_popped_dialog_orders') ?? [];
       for (final idStr in savedPopped) {
         final id = int.tryParse(idStr);
         if (id != null) {
           _poppedDialogOrderIds.add(id);
+        }
+      }
+      final savedPoppedCodes = prefs.getStringList('ktx_popped_dialog_order_codes') ?? [];
+      for (final code in savedPoppedCodes) {
+        if (code.isNotEmpty) {
+          _poppedDialogOrderCodes.add(code.replaceAll('#', '').trim());
         }
       }
       final savedSnapshots = prefs.getStringList('ktx_completed_order_snapshots') ?? [];
@@ -181,8 +227,10 @@ class DeliveryHandshakeService extends ChangeNotifier {
       await prefs.setStringList('ktx_completed_handover_orders', strList);
       final arrivedList = _arrivedOrderIds.map((id) => id.toString()).toList();
       await prefs.setStringList('ktx_arrived_orders', arrivedList);
+      await prefs.setStringList('ktx_arrived_order_codes', _arrivedOrderCodes.toList());
       final poppedList = _poppedDialogOrderIds.map((id) => id.toString()).toList();
       await prefs.setStringList('ktx_popped_dialog_orders', poppedList);
+      await prefs.setStringList('ktx_popped_dialog_order_codes', _poppedDialogOrderCodes.toList());
       if (_lastArrivalTimestamp > 0) {
         await prefs.setInt('ktx_last_shipper_arrival_time', _lastArrivalTimestamp);
       }

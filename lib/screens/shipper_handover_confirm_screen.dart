@@ -316,7 +316,7 @@ class _ShipperHandoverConfirmScreenState extends State<ShipperHandoverConfirmScr
                     const Spacer(),
                     Builder(
                       builder: (ctx) {
-                        final isArrived = handshake.isShipperArrived(o.orderId);
+                        final isArrived = handshake.isShipperArrived(o.orderId, o.orderCode);
                         return OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

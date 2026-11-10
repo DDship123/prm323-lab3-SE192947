@@ -70,7 +70,7 @@ class _LiveOrderTrackingScreenState extends State<LiveOrderTrackingScreen> {
   Widget build(BuildContext context) {
     final handshake = context.watch<DeliveryHandshakeService>();
     final order = _resolveCurrentOrder(context);
-    final isShipperArrived = handshake.isShipperArrived(order.id) ||
+    final isShipperArrived = handshake.isShipperArrived(order.id, order.orderCode) ||
         order.isShipperArrived;
 
     if (isShipperArrived && !_hasShownArrivalPopup) {

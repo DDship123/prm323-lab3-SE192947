@@ -970,7 +970,7 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
                   flex: 3,
                   child: Builder(
                     builder: (ctx) {
-                      final isArrived = handshake.isShipperArrived(order.orderId);
+                      final isArrived = handshake.isShipperArrived(order.orderId, order.orderCode);
                       return ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isArrived ? const Color(0xFFEFF6FF) : const Color(0xFFFF521B),
@@ -1218,7 +1218,7 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
     ShipperBatchItemModel order,
     DeliveryHandshakeService handshake,
   ) {
-    handshake.markShipperArrived(order.orderId);
+    handshake.markShipperArrived(order.orderId, order.orderCode);
 
     // Báo đến backend Spring Boot để đồng bộ qua mọi thiết bị / Vercel tabs
     try {
@@ -1264,7 +1264,10 @@ class _ShipperBatchPickupScreenState extends State<ShipperBatchPickupScreen> {
     List<ShipperBatchItemModel> orders,
     DeliveryHandshakeService handshake,
   ) {
-    handshake.markAllShipperArrived(orders.map((o) => o.orderId));
+    handshake.markAllShipperArrived(
+      orders.map((o) => o.orderId),
+      orders.map((o) => o.orderCode),
+    );
 
     for (final order in orders) {
       try {

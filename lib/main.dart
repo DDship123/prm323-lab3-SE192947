@@ -1263,6 +1263,7 @@ class _MainShellScreenState extends State<MainShellScreen> {
   late int _selectedIndex;
   Timer? _arrivalTimer;
   bool _isCheckingArrival = false;
+  int _checkTickCounter = 0;
 
   @override
   void initState() {
@@ -1285,8 +1286,8 @@ class _MainShellScreenState extends State<MainShellScreen> {
         );
       }
 
-      // Quét định kỳ 3s sự kiện Shipper tới Cổng KTX trên TOÀN BỘ MÀN HÌNH của Sinh viên
-      _arrivalTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      // Quét định kỳ 1.5s sự kiện Shipper tới Cổng KTX trên TOÀN BỘ MÀN HÌNH của Sinh viên
+      _arrivalTimer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
         _checkGlobalShipperArrival();
       });
     });
@@ -1304,40 +1305,45 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
     try {
       final handshake = context.read<DeliveryHandshakeService>();
-      await handshake.loadSavedData(notify: false);
+      await handshake.loadSavedData(notify: true);
 
       final orderVm = context.read<OrderTrackingViewModel>();
       final historyState = orderVm.historyState;
       if (historyState is StateSuccess<List<OrderDetailModel>>) {
-        final hasActive = historyState.data.any(
+        final activeOrders = historyState.data.where(
           (o) => o.status != 'DELIVERED' && o.status != 'CANCELLED',
         );
-        if (hasActive) {
-          await orderVm.refreshOrderHistorySilently();
+
+        for (final order in activeOrders) {
+          final isArrived = handshake.isShipperArrived(order.id, order.orderCode) ||
+              order.isShipperArrived;
+
+          if (isArrived && !handshake.hasPoppedDialog(order.id, order.orderCode)) {
+            handshake.markDialogPopped(order.id, order.orderCode);
+            try {
+              final demoVm = context.read<ProfileDemoViewModel>();
+              demoVm.recordIncomingFcmMessage(
+                title: '🚚 Shipper đã tới Cổng KTX!',
+                body: 'Đơn hàng #${order.orderCode} từ ${order.storeName} đã có mặt tại điểm hẹn. Vui lòng mang mã QR / PIN ra nhận món!',
+                type: 'ORDER_STATUS',
+                appState: 'FOREGROUND',
+                dataPayload: order.id.toString(),
+              );
+            } catch (_) {}
+
+            final targetContext = rootNavigatorKey.currentContext ?? context;
+            if (mounted) {
+              ShipperArrivedPopupDialog.show(targetContext, order);
+            }
+            break;
+          }
         }
       }
 
-      final updatedState = orderVm.historyState;
-      if (updatedState is! StateSuccess<List<OrderDetailModel>>) return;
-
-      final activeOrders = updatedState.data.where(
-        (o) => o.status != 'DELIVERED' && o.status != 'CANCELLED',
-      );
-
-      if (activeOrders.isEmpty) return;
-
-      for (final order in activeOrders) {
-        final isArrived = handshake.isShipperArrived(order.id) ||
-            order.isShipperArrived;
-
-        if (isArrived && !handshake.hasPoppedDialog(order.id)) {
-          handshake.markDialogPopped(order.id);
-          final targetContext = rootNavigatorKey.currentContext ?? context;
-          if (mounted) {
-            ShipperArrivedPopupDialog.show(targetContext, order);
-          }
-          break;
-        }
+      // Làm mới ngầm lịch sử đơn hàng từ Backend định kỳ (khoảng 6-8s) để không nghẽn mạng
+      _checkTickCounter++;
+      if (_checkTickCounter % 4 == 0) {
+        orderVm.refreshOrderHistorySilently();
       }
     } catch (_) {
     } finally {

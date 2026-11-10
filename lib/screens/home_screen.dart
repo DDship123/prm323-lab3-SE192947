@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final demoVm = context.watch<ProfileDemoViewModel>();
     final remoteConfig = context.watch<RemoteConfigService>();
 
-    String greetingName = 'Linh';
+    String greetingName = ApiConfig.currentBackendUserId == 2 ? 'Linh' : 'Đạt';
     try {
       final authVm = Provider.of<AuthViewModel>(context, listen: false);
       if (authVm.currentUser != null && authVm.currentUser!.displayName.isNotEmpty) {
@@ -157,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
         subtitle: 'GIAO ĐẾN',
         title: homeVm.selectedPickupLocation,
         unreadNotificationCount:
-            homeVm.unreadNotificationCount + demoVm.unreadCount,
+            demoVm.unreadCount > 0 ? demoVm.unreadCount : homeVm.unreadNotificationCount,
         onLocationTap: () => _showPickupSelector(homeVm, cartVm),
         onNotificationTap: widget.onOpenNotifications,
         cartItemCount: cartVm.totalItemCount,
@@ -223,7 +223,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final activeOrder = activeOrders.first;
     final handshake = context.watch<DeliveryHandshakeService>();
-    final isArrived = handshake.isShipperArrived(activeOrder.id) ||
+    final isArrived = handshake.isShipperArrived(activeOrder.id, activeOrder.orderCode) ||
         activeOrder.isShipperArrived;
 
     final statusText = isArrived
