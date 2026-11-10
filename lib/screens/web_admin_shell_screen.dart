@@ -14,6 +14,7 @@ import 'web_admin_orders_screen.dart';
 import 'web_admin_voucher_screen.dart';
 import 'web_admin_users_screen.dart';
 import 'web_admin_stores_screen.dart';
+import 'web_admin_cashflow_screen.dart';
 import '../services/store_service.dart';
 
 /// Khung giao diện Web tổng thể dành cho Ban Quản Lý KTX (Web Admin Portal)
@@ -155,6 +156,11 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
                         RepaintBoundary(
                           child: WebAdminStoresScreen(
                             storeService: context.read<StoreService>(),
+                          ),
+                        ),
+                        RepaintBoundary(
+                          child: WebAdminCashflowScreen(
+                            orderService: context.read<OrderService>(),
                           ),
                         ),
                       ],

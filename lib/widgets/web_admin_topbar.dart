@@ -49,6 +49,7 @@ class WebAdminTopbar extends StatelessWidget {
       'Quản Lý Voucher & Khuyến Mãi KTX',
       'Quản Lý Tài Khoản & Người Dùng',
       'Quản Lý Quán Ăn & Đối Tác KTX',
+      'Giám Sát & Báo Cáo Dòng Tiền KTX',
     ];
     final breadcrumbs = [
       'Hệ thống / Tổng quan KPI',
@@ -57,6 +58,7 @@ class WebAdminTopbar extends StatelessWidget {
       'Cấu hình / Quản trị Voucher',
       'Đối tác & Người dùng / Quản lý Tài khoản',
       'Đối tác & Người dùng / Quán ăn Đối tác',
+      'Tài chính / Giám sát Dòng tiền',
     ];
 
     final nowStr = _formatDate(DateTime.now());

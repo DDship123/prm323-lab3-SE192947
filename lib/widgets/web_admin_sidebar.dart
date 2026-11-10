@@ -193,6 +193,15 @@ class WebAdminSidebar extends StatelessWidget {
                   badgeColor: AppColors.primary,
                 ),
                 SizedBox(height: isCollapsed ? 6 : AppSpacing.sm),
+                if (!isCollapsed) _buildSectionLabel('TÀI CHÍNH'),
+                _buildMenuItem(
+                  index: 6,
+                  title: 'Giám Sát Dòng Tiền',
+                  icon: Icons.account_balance_wallet_rounded,
+                  badgeText: 'Dòng tiền',
+                  badgeColor: AppColors.success,
+                ),
+                SizedBox(height: isCollapsed ? 6 : AppSpacing.sm),
 
                 if (!isCollapsed) ...[
                   _buildSectionLabel('HỆ THỐNG & KẾT NỐI'),
