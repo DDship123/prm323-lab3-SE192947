@@ -224,8 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final activeOrder = activeOrders.first;
     final handshake = context.watch<DeliveryHandshakeService>();
     final isArrived = handshake.isShipperArrived(activeOrder.id) ||
-        activeOrder.isShipperArrived ||
-        handshake.isAnyShipperArrivedRecently();
+        activeOrder.isShipperArrived;
 
     final statusText = isArrived
         ? '🚚 Shipper đã tới Cổng KTX! Nhấn nhận món ngay'

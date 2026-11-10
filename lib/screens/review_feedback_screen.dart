@@ -3,10 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../main.dart';
 import '../models/order_model.dart';
 import '../viewmodels/auth_vm.dart';
 import '../viewmodels/review_vm.dart';
 import '../services/evidence_upload_service.dart';
+import '../widgets/ktx_bottom_nav_bar.dart';
 import 'review_success_screen.dart';
 
 /// Màn hình S9: Đánh Giá & Phản Hồi bữa ăn KTX chuẩn 100% Figma
@@ -124,6 +126,15 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
     }
   }
 
+  void _navigateToTab(int index) {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => AuthGate(initialStudentTabIndex: index),
+      ),
+      (route) => false,
+    );
+  }
+
   void _removePhoto(int index) {
     if (index >= 0 && index < _evidencePhotos.length) {
       setState(() {
@@ -236,7 +247,13 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF1E293B)),
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              _navigateToTab(3);
+            }
+          },
         ),
         title: const Text(
           'Đánh Giá & Phản Hồi',
@@ -248,16 +265,18 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
         ),
         centerTitle: true,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: CircleAvatar(
-              radius: 14,
-              backgroundImage: const NetworkImage(
-                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+          TextButton(
+            onPressed: () => _navigateToTab(0),
+            child: const Text(
+              'Để sau',
+              style: TextStyle(
+                color: Color(0xFFFF521B),
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
               ),
-              backgroundColor: Colors.grey.shade200,
             ),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       bottomNavigationBar: _buildBottomNavBar(),
@@ -899,57 +918,9 @@ class _ReviewFeedbackScreenState extends State<ReviewFeedbackScreen> {
   }
 
   Widget _buildBottomNavBar() {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _BottomNavItem(icon: Icons.home_outlined, label: 'Khám phá', isActive: false),
-          _BottomNavItem(icon: Icons.shopping_bag_outlined, label: 'Đặt món', isActive: false),
-          _BottomNavItem(icon: Icons.receipt_long_outlined, label: 'Thanh toán', isActive: false),
-          _BottomNavItem(icon: Icons.access_time_rounded, label: 'Lịch sử', isActive: true),
-          _BottomNavItem(icon: Icons.person_outline_rounded, label: 'Tài khoản', isActive: false),
-        ],
-      ),
-    );
-  }
-}
-
-class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-
-  const _BottomNavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: isActive ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-            color: isActive ? const Color(0xFFFF521B) : const Color(0xFF94A3B8),
-          ),
-        ),
-      ],
+    return KtxBottomNavBar(
+      currentIndex: 3,
+      onTap: _navigateToTab,
     );
   }
 }

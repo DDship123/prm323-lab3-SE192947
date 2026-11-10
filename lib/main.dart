@@ -1328,12 +1328,10 @@ class _MainShellScreenState extends State<MainShellScreen> {
 
       for (final order in activeOrders) {
         final isArrived = handshake.isShipperArrived(order.id) ||
-            order.isShipperArrived ||
-            (handshake.isAnyShipperArrivedRecently() && !handshake.hasPoppedDialog(order.id));
+            order.isShipperArrived;
 
         if (isArrived && !handshake.hasPoppedDialog(order.id)) {
           handshake.markDialogPopped(order.id);
-          handshake.markShipperArrived(order.id);
           final targetContext = rootNavigatorKey.currentContext ?? context;
           if (mounted) {
             ShipperArrivedPopupDialog.show(targetContext, order);

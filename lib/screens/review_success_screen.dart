@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../main.dart';
 import '../models/order_model.dart';
 import '../theme/ktx_design_system.dart';
+import '../widgets/ktx_bottom_nav_bar.dart';
 import 'order_history_screen.dart';
 
 /// Màn hình Đánh giá thành công theo tài liệu Thông số thiết kế KTX Food
@@ -159,7 +161,7 @@ class ReviewSuccessScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
 
-            // NÚT CHÍNH DUY NHẤT: Xem lịch sử đơn hàng
+            // NÚT CHÍNH: Xem lịch sử đơn hàng
             KtxButton(
               label: 'Xem Lịch Sử Đơn Hàng',
               variant: KtxButtonVariant.primary,
@@ -167,9 +169,9 @@ class ReviewSuccessScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
-                    builder: (_) => const OrderHistoryScreen(),
+                    builder: (_) => const AuthGate(initialStudentTabIndex: 3),
                   ),
-                  (route) => route.isFirst,
+                  (route) => false,
                 );
               },
             ),
@@ -181,11 +183,27 @@ class ReviewSuccessScreen extends StatelessWidget {
               variant: KtxButtonVariant.secondary,
               icon: Icons.home_rounded,
               onPressed: () {
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => const AuthGate(initialStudentTabIndex: 0),
+                  ),
+                  (route) => false,
+                );
               },
             ),
           ],
         ),
+      ),
+      bottomNavigationBar: KtxBottomNavBar(
+        currentIndex: 3,
+        onTap: (index) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => AuthGate(initialStudentTabIndex: index),
+            ),
+            (route) => false,
+          );
+        },
       ),
     );
   }

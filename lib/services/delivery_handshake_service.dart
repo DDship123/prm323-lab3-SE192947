@@ -37,6 +37,7 @@ class DeliveryHandshakeService extends ChangeNotifier {
   bool hasPoppedDialog(int orderId) => _poppedDialogOrderIds.contains(orderId);
   void markDialogPopped(int orderId) {
     _poppedDialogOrderIds.add(orderId);
+    saveToStorage();
   }
 
   bool isStudentConfirmed(int orderId) => _studentConfirmations[orderId] ?? false;
@@ -140,6 +141,13 @@ class DeliveryHandshakeService extends ChangeNotifier {
           _arrivedOrderIds.add(id);
         }
       }
+      final savedPopped = prefs.getStringList('ktx_popped_dialog_orders') ?? [];
+      for (final idStr in savedPopped) {
+        final id = int.tryParse(idStr);
+        if (id != null) {
+          _poppedDialogOrderIds.add(id);
+        }
+      }
       final savedSnapshots = prefs.getStringList('ktx_completed_order_snapshots') ?? [];
       for (final jsonStr in savedSnapshots) {
         try {
@@ -173,6 +181,8 @@ class DeliveryHandshakeService extends ChangeNotifier {
       await prefs.setStringList('ktx_completed_handover_orders', strList);
       final arrivedList = _arrivedOrderIds.map((id) => id.toString()).toList();
       await prefs.setStringList('ktx_arrived_orders', arrivedList);
+      final poppedList = _poppedDialogOrderIds.map((id) => id.toString()).toList();
+      await prefs.setStringList('ktx_popped_dialog_orders', poppedList);
       if (_lastArrivalTimestamp > 0) {
         await prefs.setInt('ktx_last_shipper_arrival_time', _lastArrivalTimestamp);
       }
