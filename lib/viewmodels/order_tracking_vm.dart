@@ -152,16 +152,14 @@ class OrderTrackingViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Nếu đơn chưa ở trạng thái READY/DELIVERING, tự động chuyển sang DELIVERING để đối soát mượt mà khi demo
-      if (order.status != 'DELIVERING' && order.status != 'READY') {
-        for (final step in ['CONFIRMED', 'PREPARING', 'READY', 'DELIVERING']) {
-          try {
-            await _orderService.updateOrderStatus(
-              orderId: order.id,
-              newStatus: step,
-            );
-          } catch (_) {}
-        }
+      // Nếu đơn đang ở các bước chuẩn bị (chưa sẵn sàng giao), chuyển sang DELIVERING để sẵn sàng nhận hàng
+      if (order.status == 'PENDING' || order.status == 'CONFIRMED' || order.status == 'PREPARING') {
+        try {
+          await _orderService.updateOrderStatus(
+            orderId: order.id,
+            newStatus: 'DELIVERING',
+          );
+        } catch (_) {}
       }
 
       await _orderService.confirmPickup(

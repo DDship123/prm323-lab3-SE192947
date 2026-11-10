@@ -68,28 +68,24 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
         ? currentOrder.pickupPin
         : (currentOrder.pickupQrCode.isNotEmpty ? currentOrder.pickupQrCode : '8448');
 
-    // Cố gắng chuyển sang DELIVERING trước để tránh 422 nếu backend jar trên tunnel là bản cũ
-    try {
-      await OrderService().updateOrderStatus(
-        orderId: currentOrder.id,
-        newStatus: 'DELIVERING',
-      );
-    } catch (_) {}
-
-    try {
-      await vm.confirmPickupAtGate(
+    // Chỉ gọi confirmPickup nếu đơn chưa hoàn tất, tránh gọi trùng lặp gây lỗi 422
+    if (currentOrder.status != 'DELIVERED') {
+      final ok = await vm.confirmPickupAtGate(
         order: currentOrder,
         verificationMethod: 'PIN',
         code: verificationCode,
       );
-    } catch (_) {}
 
-    try {
-      await OrderService().updateOrderStatus(
-        orderId: currentOrder.id,
-        newStatus: 'DELIVERED',
-      );
-    } catch (_) {}
+      // Fallback cập nhật trạng thái nếu confirmPickup gặp sự cố mạng
+      if (!ok) {
+        try {
+          await OrderService().updateOrderStatus(
+            orderId: currentOrder.id,
+            newStatus: 'DELIVERED',
+          );
+        } catch (_) {}
+      }
+    }
 
     if (!mounted) return;
 

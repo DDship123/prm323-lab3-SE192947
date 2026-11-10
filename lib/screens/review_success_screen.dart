@@ -115,8 +115,14 @@ class ReviewSuccessScreen extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const KtxPill(
-                        label: 'ĐÃ TIẾP NHẬN',
+                      KtxPill(
+                        label: order.status == 'DELIVERED'
+                            ? 'HOÀN TẤT'
+                            : (order.status == 'CONFIRMED'
+                                ? 'ĐÃ TIẾP NHẬN'
+                                : (order.status == 'DELIVERING'
+                                    ? 'ĐANG GIAO'
+                                    : 'HOÀN TẤT')),
                         variant: KtxPillVariant.done,
                       ),
                     ],
