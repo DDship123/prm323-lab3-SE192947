@@ -1094,11 +1094,9 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
+        );
+      }
+    }
 
 /// Khung điều hướng chính 5 Tab (S1 Khám phá, S2 Đặt món, S3 Giỏ hàng, S10 Lịch sử, S13 Hồ sơ)
 class MainShellScreen extends StatefulWidget {
