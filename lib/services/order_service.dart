@@ -85,7 +85,7 @@ class OrderService {
             Uri.parse('${ApiConfig.orders}/$orderId'),
             headers: ApiConfig.headers(),
           )
-          .timeout(const Duration(seconds: 6));
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final jsonMap =
             jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
@@ -109,7 +109,7 @@ class OrderService {
       ApiConfig.log('DB-ADMIN-ORDERS', 'GET ${ApiConfig.baseUrl}/admin/orders');
       final response = await _client
           .get(Uri.parse('${ApiConfig.baseUrl}/admin/orders'), headers: ApiConfig.headers())
-          .timeout(const Duration(seconds: 6));
+          .timeout(const Duration(seconds: 18));
       if (response.statusCode == 200) {
         final jsonMap =
             jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
@@ -132,7 +132,7 @@ class OrderService {
       ApiConfig.log('DB-ORDER', 'GET ${ApiConfig.orders} (UserID=${ApiConfig.currentBackendUserId})');
       final response = await _client
           .get(Uri.parse(ApiConfig.orders), headers: ApiConfig.headers())
-          .timeout(const Duration(seconds: 6));
+          .timeout(const Duration(seconds: 18));
       if (response.statusCode == 200) {
         final jsonMap =
             jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
@@ -141,6 +141,10 @@ class OrderService {
             .map((e) => OrderDetailModel.fromJson(e as Map<String, dynamic>))
             .toList();
         ApiConfig.log('DB-ORDER', '✅ Đã tải ${list.length} đơn hàng lịch sử từ Database');
+        if (list.isNotEmpty) {
+          _localOrders.clear();
+          _localOrders.addAll(list);
+        }
         return list;
       } else {
         throw Exception('Máy chủ phản hồi mã lỗi ${response.statusCode}');
@@ -148,6 +152,7 @@ class OrderService {
     } catch (e) {
       ApiConfig.log('DB-ORDER-ERROR', '❌ Lỗi tải lịch sử đơn: $e');
       if (_localOrders.isNotEmpty) {
+        ApiConfig.log('DB-ORDER', '⚠️ Dùng ${_localOrders.length} đơn hàng từ cache bộ nhớ');
         return List<OrderDetailModel>.from(_localOrders);
       }
       throw Exception('Mất kết nối máy chủ: $e');

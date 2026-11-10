@@ -11,6 +11,7 @@ class OrderTrackingViewModel extends ChangeNotifier {
   ScreenState<List<OrderDetailModel>> _historyState = const StateLoading();
   bool _isMaxBrightness = false;
   bool _isActionLoading = false;
+  bool _isFetchingHistory = false;
   String? _actionError;
 
   OrderTrackingViewModel({required OrderService orderService})
@@ -46,9 +47,16 @@ class OrderTrackingViewModel extends ChangeNotifier {
   }
 
   /// API-008: Tải danh sách lịch sử đơn hàng của sinh viên (S10)
-  Future<void> loadOrderHistory() async {
-    _historyState = const StateLoading();
-    notifyListeners();
+  Future<void> loadOrderHistory({bool force = false}) async {
+    if (_isFetchingHistory) return;
+    _isFetchingHistory = true;
+
+    if (_historyState is! StateSuccess || force) {
+      if (_historyState is! StateSuccess) {
+        _historyState = const StateLoading();
+        notifyListeners();
+      }
+    }
 
     try {
       final orders = await _orderService.fetchMyOrders();
@@ -60,11 +68,15 @@ class OrderTrackingViewModel extends ChangeNotifier {
         _historyState = StateSuccess(orders);
       }
     } catch (e) {
-      _historyState = StateError(
-        'Không thể tải lịch sử đơn hàng: ${e.toString()}',
-      );
+      if (_historyState is! StateSuccess) {
+        _historyState = StateError(
+          'Không thể tải lịch sử đơn hàng: ${e.toString()}',
+        );
+      }
+    } finally {
+      _isFetchingHistory = false;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   /// Làm mới ngầm lịch sử đơn hàng mà không gây giật màn hình (silent refresh)
