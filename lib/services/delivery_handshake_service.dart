@@ -32,6 +32,13 @@ class DeliveryHandshakeService extends ChangeNotifier {
     return (now - _lastArrivalTimestamp) < (withinSeconds * 1000);
   }
 
+  final Set<int> _poppedDialogOrderIds = {};
+
+  bool hasPoppedDialog(int orderId) => _poppedDialogOrderIds.contains(orderId);
+  void markDialogPopped(int orderId) {
+    _poppedDialogOrderIds.add(orderId);
+  }
+
   bool isStudentConfirmed(int orderId) => _studentConfirmations[orderId] ?? false;
   bool isShipperConfirmed(int orderId) => _shipperConfirmations[orderId] ?? false;
   bool isShipperArrived(int orderId) => _arrivedOrderIds.contains(orderId);

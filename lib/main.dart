@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -46,6 +47,9 @@ import 'services/shipper_api_service.dart';
 import 'services/store_service.dart';
 import 'services/voucher_service.dart';
 import 'services/delivery_handshake_service.dart';
+import 'viewmodels/order_tracking_vm.dart';
+import 'widgets/screen_state.dart';
+import 'widgets/shipper_arrived_popup_dialog.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_spacing.dart';
 import 'theme/app_typography.dart';
@@ -214,12 +218,15 @@ class AppBootstrap extends StatelessWidget {
   }
 }
 
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: rootNavigatorKey,
       title: 'KTX Food Ordering',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -1254,6 +1261,8 @@ class MainShellScreen extends StatefulWidget {
 
 class _MainShellScreenState extends State<MainShellScreen> {
   late int _selectedIndex;
+  Timer? _arrivalTimer;
+  bool _isCheckingArrival = false;
 
   @override
   void initState() {
@@ -1275,7 +1284,67 @@ class _MainShellScreenState extends State<MainShellScreen> {
           currentScreen: 'S1_Home',
         );
       }
+
+      // Quét định kỳ 3s sự kiện Shipper tới Cổng KTX trên TOÀN BỘ MÀN HÌNH của Sinh viên
+      _arrivalTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+        _checkGlobalShipperArrival();
+      });
     });
+  }
+
+  @override
+  void dispose() {
+    _arrivalTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkGlobalShipperArrival() async {
+    if (!mounted || _isCheckingArrival) return;
+    _isCheckingArrival = true;
+
+    try {
+      final handshake = context.read<DeliveryHandshakeService>();
+      await handshake.loadSavedData(notify: false);
+
+      final orderVm = context.read<OrderTrackingViewModel>();
+      final historyState = orderVm.historyState;
+      if (historyState is StateSuccess<List<OrderDetailModel>>) {
+        final hasActive = historyState.data.any(
+          (o) => o.status != 'DELIVERED' && o.status != 'CANCELLED',
+        );
+        if (hasActive) {
+          await orderVm.refreshOrderHistorySilently();
+        }
+      }
+
+      final updatedState = orderVm.historyState;
+      if (updatedState is! StateSuccess<List<OrderDetailModel>>) return;
+
+      final activeOrders = updatedState.data.where(
+        (o) => o.status != 'DELIVERED' && o.status != 'CANCELLED',
+      );
+
+      if (activeOrders.isEmpty) return;
+
+      for (final order in activeOrders) {
+        final isArrived = handshake.isShipperArrived(order.id) ||
+            order.isShipperArrived ||
+            (handshake.isAnyShipperArrivedRecently() && !handshake.hasPoppedDialog(order.id));
+
+        if (isArrived && !handshake.hasPoppedDialog(order.id)) {
+          handshake.markDialogPopped(order.id);
+          handshake.markShipperArrived(order.id);
+          final targetContext = rootNavigatorKey.currentContext ?? context;
+          if (mounted) {
+            ShipperArrivedPopupDialog.show(targetContext, order);
+          }
+          break;
+        }
+      }
+    } catch (_) {
+    } finally {
+      _isCheckingArrival = false;
+    }
   }
 
   Future<void> _setupFcmListeners() async {

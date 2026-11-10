@@ -49,9 +49,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final _searchCtrl = TextEditingController();
   final Set<int> _favoriteStoreIds = {1};
   String? _selectedCategory;
-  Timer? _arrivalCheckTimer;
-  final Set<int> _poppedOrderIds = {};
-  bool _isCheckingArrival = false;
 
   void _toggleCategoryFilter(
       String categoryName, String keyword, HomeViewModel homeVm) {
@@ -86,68 +83,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted) return;
       context.read<HomeViewModel>().loadHomeData();
       context.read<OrderTrackingViewModel>().loadOrderHistory();
-
-      // Kiểm tra định kỳ nhẹ nhàng mỗi 4 giây (chỉ chạy ngầm khi có đơn active)
-      _arrivalCheckTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
-        _checkShipperArrivalTrigger();
-      });
     });
-  }
-
-  Future<void> _checkShipperArrivalTrigger() async {
-    if (!mounted || _isCheckingArrival) return;
-    _isCheckingArrival = true;
-
-    try {
-      final orderVm = context.read<OrderTrackingViewModel>();
-      final handshake = context.read<DeliveryHandshakeService>();
-
-      // 1. Đồng bộ nhẹ từ SharedPreferences/localStorage (không phát notifyListeners gây giật)
-      await handshake.loadSavedData(notify: false);
-
-      // 2. Chỉ làm mới lịch sử đơn khi có đơn hàng chưa hoàn tất
-      final historyState = orderVm.historyState;
-      if (historyState is StateSuccess<List<OrderDetailModel>>) {
-        final hasActive = historyState.data.any(
-          (o) => o.status != 'DELIVERED' && o.status != 'CANCELLED',
-        );
-        if (hasActive) {
-          await orderVm.refreshOrderHistorySilently();
-        }
-      }
-
-      final updatedState = orderVm.historyState;
-      if (updatedState is! StateSuccess<List<OrderDetailModel>>) return;
-
-      final activeOrders = updatedState.data.where(
-        (o) => o.status != 'DELIVERED' && o.status != 'CANCELLED',
-      );
-
-      if (activeOrders.isEmpty) return;
-
-      for (final order in activeOrders) {
-        final isArrived = handshake.isShipperArrived(order.id) ||
-            order.isShipperArrived ||
-            (handshake.isAnyShipperArrivedRecently() && !_poppedOrderIds.contains(order.id));
-
-        if (isArrived && !_poppedOrderIds.contains(order.id)) {
-          _poppedOrderIds.add(order.id);
-          handshake.markShipperArrived(order.id);
-          if (mounted) {
-            ShipperArrivedPopupDialog.show(context, order);
-          }
-          break;
-        }
-      }
-    } catch (_) {
-    } finally {
-      _isCheckingArrival = false;
-    }
   }
 
   @override
   void dispose() {
-    _arrivalCheckTimer?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
