@@ -9,6 +9,7 @@ import 'pickup_qr_code_screen.dart';
 import 'notification_board_screen.dart';
 import 'group_cart_checkout_screen.dart';
 import 'review_feedback_screen.dart';
+import 'dispute_refund_screen.dart';
 
 /// Màn hình Lịch Sử Đơn Hàng chuẩn 100% Figma
 class OrderHistoryScreen extends StatefulWidget {
@@ -890,21 +891,53 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     foregroundColor: const Color(0xFF475569),
                     side: const BorderSide(color: Color(0xFFCBD5E1)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
                   ),
                   onPressed: () => _openQrScreenForOrder(order),
-                  icon: const Icon(Icons.receipt_outlined, size: 14),
-                  label: const Text('Hóa đơn & Món', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  icon: const Icon(Icons.receipt_outlined, size: 13),
+                  label: const Text(
+                    'Hóa đơn & Món',
+                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFF1F2),
+                    foregroundColor: const Color(0xFFE11D48),
+                    side: const BorderSide(color: Color(0xFFFFCCD5)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => DisputeRefundScreen(order: order),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.warning_amber_rounded, size: 13, color: Color(0xFFE11D48)),
+                  label: const Text(
+                    'Báo cáo',
+                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFE11D48)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
               Expanded(
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFFF521B),
                     side: const BorderSide(color: Color(0xFFFFCCBC)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
                   ),
                   onPressed: () {
                     Navigator.push(
@@ -914,8 +947,13 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.star_outline_rounded, size: 14),
-                  label: const Text('Đánh giá món', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  icon: const Icon(Icons.star_outline_rounded, size: 13),
+                  label: const Text(
+                    'Đánh giá món',
+                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
             ],

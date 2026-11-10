@@ -6,11 +6,13 @@ import 'dispute_history_screen.dart';
 
 /// Màn hình S8: Khiếu Nại & Hoàn Tiền KTX chuẩn 100% Figma
 class DisputeRefundScreen extends StatefulWidget {
+  final OrderDetailModel? order;
   final OrderSummaryModel? initialOrder;
   final int? orderId;
 
   const DisputeRefundScreen({
     super.key,
+    this.order,
     this.initialOrder,
     this.orderId,
   });
@@ -29,6 +31,16 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
   );
 
   bool _hasEvidenceImage = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.order != null && widget.order!.items.isNotEmpty) {
+      _selectedDishIndices.clear();
+      _selectedDishIndices.add(0);
+      _descCtrl.text = 'Sau khi nhận hàng mở ra kiểm tra thì món ăn gặp sự cố, đề nghị hoàn tiền theo quy định KTX.';
+    }
+  }
 
   final List<Map<String, dynamic>> _reasons = [
     {
@@ -70,6 +82,16 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
   }
 
   double get _calculatedRefundAmount {
+    if (widget.order != null && widget.order!.items.isNotEmpty) {
+      final items = widget.order!.items;
+      double total = 0;
+      for (final idx in _selectedDishIndices) {
+        if (idx >= 0 && idx < items.length) {
+          total += items[idx].subtotal;
+        }
+      }
+      return total > 0 ? total : widget.order!.totalPrice;
+    }
     double total = 0;
     if (_selectedDishIndices.contains(0)) total += 35000;
     if (_selectedDishIndices.contains(1)) total += 10000;
@@ -213,7 +235,7 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
           ),
           const SizedBox(height: 14),
 
-          // 2. Card Đơn hàng gặp sự cố (#KTX-8829B)
+          // 2. Card Đơn hàng gặp sự cố
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -233,51 +255,66 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
                         color: const Color(0xFFFFF7ED),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Text(
-                        '#KTX-8829B',
-                        style: TextStyle(
+                      child: Text(
+                        widget.order != null && widget.order!.orderCode.isNotEmpty
+                            ? (widget.order!.orderCode.startsWith('#') ? widget.order!.orderCode : '#${widget.order!.orderCode}')
+                            : '#KTX-8829B',
+                        style: const TextStyle(
                           color: Color(0xFFFF521B),
                           fontWeight: FontWeight.w800,
                           fontSize: 11,
                         ),
                       ),
                     ),
-                    const Text(
-                      'Ca Trưa 11:30 – 12:00',
-                      style: TextStyle(fontSize: 11, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
+                    Text(
+                      widget.order?.slotTime.isNotEmpty == true
+                          ? widget.order!.slotTime
+                          : 'Ca Trưa 11:30 – 12:00',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFFD97706), fontWeight: FontWeight.w600),
                     ),
                     const Text(
-                      'Đã nhận 11:42',
+                      'Đã nhận',
                       style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Quán Cơm Tấm Cô Ba – ĐHQG',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                Text(
+                  widget.order?.storeName.isNotEmpty == true
+                      ? widget.order!.storeName
+                      : 'Quán Cơm Tấm Cô Ba – ĐHQG',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  '📍 Bàn số 2 • Cổng KTX Khu B',
-                  style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                Text(
+                  widget.order?.pickupLocation.isNotEmpty == true
+                      ? '📍 ${widget.order!.pickupLocation}'
+                      : '📍 Bàn số 2 • Cổng KTX Khu B',
+                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 ),
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
                   child: Divider(height: 1, color: Color(0xFFF1F5F9)),
                 ),
-                _buildOrderDishRow('1x Cơm Tấm Sườn Bì Chả Đặc Biệt', '35.000đ'),
-                _buildOrderDishRow('1x Trà Đào Cam Sả Tươi (500ml)', '10.000đ', isHighlighted: true),
+                if (widget.order != null && widget.order!.items.isNotEmpty)
+                  ...widget.order!.items.map((i) => _buildOrderDishRow(
+                        '${i.quantity}x ${i.itemName}',
+                        _formatCurrency(i.subtotal),
+                      ))
+                else ...[
+                  _buildOrderDishRow('1x Cơm Tấm Sườn Bì Chả Đặc Biệt', '35.000đ'),
+                  _buildOrderDishRow('1x Trà Đào Cam Sả Tươi (500ml)', '10.000đ', isHighlighted: true),
+                ],
                 const SizedBox(height: 6),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Tổng đã trả (VietQR):',
-                      style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                    Text(
+                      'Tổng đã trả (${widget.order?.paymentMethod.isNotEmpty == true ? widget.order!.paymentMethod : "VietQR"}):',
+                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
                     ),
                     Text(
-                      '45.000đ',
+                      widget.order != null ? _formatCurrency(widget.order!.totalPrice) : '45.000đ',
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w900,
@@ -391,10 +428,13 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
               InkWell(
                 onTap: () {
                   setState(() {
-                    if (_selectedDishIndices.length == 2) {
+                    final count = widget.order != null && widget.order!.items.isNotEmpty
+                        ? widget.order!.items.length
+                        : 2;
+                    if (_selectedDishIndices.length == count) {
                       _selectedDishIndices.clear();
                     } else {
-                      _selectedDishIndices.addAll([0, 1]);
+                      _selectedDishIndices.addAll(List.generate(count, (i) => i));
                     }
                   });
                 },
@@ -407,24 +447,43 @@ class _DisputeRefundScreenState extends State<DisputeRefundScreen> {
           ),
           const SizedBox(height: 10),
 
-          // Checkbox Món 1: Cơm Tấm Sườn Bì Chả Đặc Biệt
-          _buildDishCheckboxCard(
-            index: 0,
-            name: 'Cơm Tấm Sườn Bì Chả Đặc Biệt',
-            price: '35.000đ',
-            subtitle: 'Hộp nguyên vẹn',
-            warningText: null,
-          ),
-          const SizedBox(height: 8),
+          if (widget.order != null && widget.order!.items.isNotEmpty)
+            ...widget.order!.items.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final item = entry.value;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _buildDishCheckboxCard(
+                  index: idx,
+                  name: '${item.quantity}x ${item.itemName}',
+                  price: _formatCurrency(item.subtotal),
+                  subtitle: item.selectedOptions.isNotEmpty
+                      ? item.selectedOptions.map((o) => o.choice).join(', ')
+                      : null,
+                  warningText: _selectedDishIndices.contains(idx) ? 'Món gặp sự cố cần hoàn tiền' : null,
+                ),
+              );
+            })
+          else ...[
+            // Checkbox Món 1: Cơm Tấm Sườn Bì Chả Đặc Biệt
+            _buildDishCheckboxCard(
+              index: 0,
+              name: 'Cơm Tấm Sườn Bì Chả Đặc Biệt',
+              price: '35.000đ',
+              subtitle: 'Hộp nguyên vẹn',
+              warningText: null,
+            ),
+            const SizedBox(height: 8),
 
-          // Checkbox Món 2: Trà Đào Cam Sả Tươi (500ml)
-          _buildDishCheckboxCard(
-            index: 1,
-            name: 'Trà Đào Cam Sả Tươi (500ml)',
-            price: '10.000đ',
-            subtitle: null,
-            warningText: 'Quán quên không kèm vào túi',
-          ),
+            // Checkbox Món 2: Trà Đào Cam Sả Tươi (500ml)
+            _buildDishCheckboxCard(
+              index: 1,
+              name: 'Trà Đào Cam Sả Tươi (500ml)',
+              price: '10.000đ',
+              subtitle: null,
+              warningText: 'Quán quên không kèm vào túi',
+            ),
+          ],
           const SizedBox(height: 10),
 
           // Box Số tiền đề xuất hoàn tự động

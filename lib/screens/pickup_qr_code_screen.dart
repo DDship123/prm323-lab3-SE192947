@@ -114,9 +114,10 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
   }
 
   void _showDisputeScreen() {
+    final currentOrder = _resolveCurrentOrder(context, listen: false);
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const DisputeRefundScreen(),
+        builder: (_) => DisputeRefundScreen(order: currentOrder),
       ),
     );
   }
@@ -250,26 +251,52 @@ class _PickupQrCodeScreenState extends State<PickupQrCodeScreen> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF521B),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                if (currentOrder.status == 'DELIVERED')
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFECFDF5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFA7F3D0)),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'Đơn hàng đã nhận thành công',
+                          style: TextStyle(
+                            color: Color(0xFF065F46),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF521B),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: _handleConfirmPickup,
+                      icon: const Icon(Icons.check_rounded, size: 20),
+                      label: const Text(
+                        'Xác nhận đã nhận hàng',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     ),
-                    onPressed: _handleConfirmPickup,
-                    icon: const Icon(Icons.check_rounded, size: 20),
-                    label: const Text(
-                      'Xác nhận đã nhận hàng',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
                   ),
-                ),
               ],
             ),
           ),
