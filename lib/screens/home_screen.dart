@@ -20,6 +20,7 @@ import '../widgets/ktx_error_state.dart';
 import '../widgets/ktx_loading_state.dart';
 import '../widgets/screen_state.dart';
 import '../widgets/shipper_arrived_popup_dialog.dart';
+import 'live_order_tracking_screen.dart';
 import 'pickup_qr_code_screen.dart';
 import 'store_detail_screen.dart';
 
@@ -91,8 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
         _handshakeService?.addListener(_onHandshakeChanged);
       } catch (_) {}
 
-      // Lắng nghe và kiểm tra định kỳ 2s tài xế đến nơi (qua Backend hoặc Handshake)
-      _arrivalCheckTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      // Lắng nghe và kiểm tra định kỳ 1s tài xế đến nơi (qua Backend hoặc Handshake đa tab)
+      _arrivalCheckTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         _checkShipperArrivalTrigger();
       });
     });
@@ -106,19 +107,27 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
     final orderVm = context.read<OrderTrackingViewModel>();
 
-    // Làm mới ngầm lịch sử đơn hàng để bắt sự kiện từ Shipper ở tab/máy khác
+    // 1. Đồng bộ tức thì localStorage đa tab / đa trình duyệt
+    final handshake = context.read<DeliveryHandshakeService>();
+    await handshake.loadSavedData();
+
+    // 2. Làm mới ngầm lịch sử đơn hàng để bắt sự kiện từ Shipper ở tab/máy khác
     await orderVm.refreshOrderHistorySilently();
 
     final historyState = orderVm.historyState;
     if (historyState is! StateSuccess<List<OrderDetailModel>>) return;
 
-    final handshake = context.read<DeliveryHandshakeService>();
     final activeOrders = historyState.data.where(
       (o) => o.status != 'DELIVERED' && o.status != 'CANCELLED',
     );
 
+    if (activeOrders.isEmpty) return;
+
     for (final order in activeOrders) {
-      final isArrived = handshake.isShipperArrived(order.id) || order.isShipperArrived;
+      final isArrived = handshake.isShipperArrived(order.id) ||
+          order.isShipperArrived ||
+          (handshake.isAnyShipperArrivedRecently() && !_poppedOrderIds.contains(order.id));
+
       if (isArrived && !_poppedOrderIds.contains(order.id)) {
         _poppedOrderIds.add(order.id);
         handshake.markShipperArrived(order.id);
@@ -268,110 +277,147 @@ class _HomeScreenState extends State<HomeScreen> {
     if (activeOrders.isEmpty) return const SizedBox.shrink();
 
     final activeOrder = activeOrders.first;
-    final statusText = switch (activeOrder.status) {
-      'DELIVERING' => 'Shipper đang giao tới cổng KTX',
-      'READY' => 'Đã đến cổng KTX - Sẵn sàng nhận',
-      'PREPARING' => 'Quán đang chế biến',
-      'CONFIRMED' => 'Quán đã tiếp nhận đơn',
-      _ => 'Đang chờ xử lý gom đơn',
-    };
+    final handshake = context.watch<DeliveryHandshakeService>();
+    final isArrived = handshake.isShipperArrived(activeOrder.id) ||
+        activeOrder.isShipperArrived ||
+        handshake.isAnyShipperArrivedRecently();
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm + 4),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFF7ED), Color(0xFFFFEDD5)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    final statusText = isArrived
+        ? '🚚 Shipper đã tới Cổng KTX! Nhấn nhận món ngay'
+        : switch (activeOrder.status) {
+            'DELIVERING' => 'Shipper đang giao tới cổng KTX',
+            'READY' => 'Đã đến cổng KTX - Sẵn sàng nhận',
+            'PREPARING' => 'Quán đang chế biến',
+            'CONFIRMED' => 'Quán đã tiếp nhận đơn',
+            _ => 'Đang chờ xử lý gom đơn',
+          };
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () {
+        if (isArrived) {
+          ShipperArrivedPopupDialog.show(context, activeOrder);
+        } else {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => LiveOrderTrackingScreen(initialOrder: activeOrder),
+            ),
+          );
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.sm + 4),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isArrived
+                ? [const Color(0xFFFEF2F2), const Color(0xFFFFEDD5)]
+                : [const Color(0xFFFFF7ED), const Color(0xFFFFEDD5)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isArrived ? const Color(0xFFFF521B) : const Color(0xFFFFD8BF),
+            width: isArrived ? 1.5 : 1.0,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF521B).withOpacity(isArrived ? 0.18 : 0.08),
+              blurRadius: isArrived ? 12 : 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFFD8BF)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF521B).withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFF521B),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.qr_code_2_rounded, color: Colors.white, size: 24),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Đơn #${activeOrder.orderCode.replaceAll('#', '')}',
-                        style: const TextStyle(
-                          color: Color(0xFF9A3412),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  statusText,
-                  style: const TextStyle(
-                    color: Color(0xFFC2410C),
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF521B),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              shape: RoundedRectangleBorder(
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF521B),
                 borderRadius: BorderRadius.circular(10),
               ),
+              child: Icon(
+                isArrived ? Icons.delivery_dining_rounded : Icons.qr_code_2_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
             ),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => PickupQrCodeScreen(order: activeOrder),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: isArrived ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Đơn #${activeOrder.orderCode.replaceAll('#', '')}',
+                          style: const TextStyle(
+                            color: Color(0xFF9A3412),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    statusText,
+                    style: TextStyle(
+                      color: isArrived ? const Color(0xFFDC2626) : const Color(0xFFC2410C),
+                      fontSize: 11.5,
+                      fontWeight: isArrived ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF521B),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              );
-            },
-            icon: const Icon(Icons.qr_code_rounded, size: 16),
-            label: const Text(
-              'Mã nhận',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+              onPressed: () {
+                if (isArrived) {
+                  ShipperArrivedPopupDialog.show(context, activeOrder);
+                } else {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => PickupQrCodeScreen(order: activeOrder),
+                    ),
+                  );
+                }
+              },
+              icon: Icon(
+                isArrived ? Icons.notifications_active_rounded : Icons.qr_code_rounded,
+                size: 16,
+              ),
+              label: Text(
+                isArrived ? 'Nhận ngay' : 'Mã nhận',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

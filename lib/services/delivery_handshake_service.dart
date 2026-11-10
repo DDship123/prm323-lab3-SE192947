@@ -19,10 +19,18 @@ class DeliveryHandshakeService extends ChangeNotifier {
   final Set<int> _arrivedOrderIds = {};
   final Map<int, ShipperBatchItemModel> _completedOrderSnapshots = {};
   double _extraShipperEarnings = 0.0;
+  int _lastArrivalTimestamp = 0;
 
   double get extraShipperEarnings => _extraShipperEarnings;
   List<ShipperBatchItemModel> get completedOrderSnapshots =>
       _completedOrderSnapshots.values.toList();
+  int get lastArrivalTimestamp => _lastArrivalTimestamp;
+
+  bool isAnyShipperArrivedRecently({int withinSeconds = 300}) {
+    if (_lastArrivalTimestamp <= 0) return false;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    return (now - _lastArrivalTimestamp) < (withinSeconds * 1000);
+  }
 
   bool isStudentConfirmed(int orderId) => _studentConfirmations[orderId] ?? false;
   bool isShipperConfirmed(int orderId) => _shipperConfirmations[orderId] ?? false;
@@ -32,6 +40,7 @@ class DeliveryHandshakeService extends ChangeNotifier {
   /// Shipper bấm nút báo đã đến điểm giao hàng KTX
   void markShipperArrived(int orderId) {
     _arrivedOrderIds.add(orderId);
+    _lastArrivalTimestamp = DateTime.now().millisecondsSinceEpoch;
     saveToStorage();
     notifyListeners();
   }
@@ -39,6 +48,7 @@ class DeliveryHandshakeService extends ChangeNotifier {
   /// Shipper bấm nút báo toàn bộ các đơn trong chuyến gom đã đến nơi
   void markAllShipperArrived(Iterable<int> orderIds) {
     _arrivedOrderIds.addAll(orderIds);
+    _lastArrivalTimestamp = DateTime.now().millisecondsSinceEpoch;
     saveToStorage();
     notifyListeners();
   }
@@ -98,6 +108,8 @@ class DeliveryHandshakeService extends ChangeNotifier {
   Future<void> loadSavedData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      _lastArrivalTimestamp = prefs.getInt('ktx_last_shipper_arrival_time') ?? 0;
       final savedList = prefs.getStringList('ktx_completed_handover_orders') ?? [];
       for (final idStr in savedList) {
         final id = int.tryParse(idStr);
@@ -138,6 +150,9 @@ class DeliveryHandshakeService extends ChangeNotifier {
       await prefs.setStringList('ktx_completed_handover_orders', strList);
       final arrivedList = _arrivedOrderIds.map((id) => id.toString()).toList();
       await prefs.setStringList('ktx_arrived_orders', arrivedList);
+      if (_lastArrivalTimestamp > 0) {
+        await prefs.setInt('ktx_last_shipper_arrival_time', _lastArrivalTimestamp);
+      }
       final snapList = _completedOrderSnapshots.values
           .map((item) => jsonEncode(item.toJson()))
           .toList();
