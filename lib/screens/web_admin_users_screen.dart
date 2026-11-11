@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/user_model.dart';
@@ -549,15 +550,24 @@ class _WebAdminUsersScreenState extends State<WebAdminUsersScreen> {
   }
 
   Widget _buildUserTable(List<UserModel> users) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.roundedMd,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: ClipRRect(
-        borderRadius: AppRadius.roundedMd,
-        child: DataTable(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppRadius.roundedMd,
+            border: Border.all(color: AppColors.border),
+          ),
+          child: ClipRRect(
+            borderRadius: AppRadius.roundedMd,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: math.max(constraints.maxWidth, 950.0),
+                ),
+                child: DataTable(
           headingRowColor: WidgetStateProperty.all(AppColors.surfaceVariant),
           columnSpacing: 24,
           columns: const [
@@ -675,8 +685,12 @@ class _WebAdminUsersScreenState extends State<WebAdminUsersScreen> {
           }).toList(),
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+},
+);
+}
 
   Widget _buildUserCardList(List<UserModel> users) {
     return ListView.separated(

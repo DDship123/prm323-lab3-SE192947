@@ -234,7 +234,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Khi bấm "Gửi mã xác thực OTP", máy chủ Backend sẽ sinh mã OTP ngẫu nhiên 6 chữ số và in trực tiếp ra Terminal / VPS Console. Bạn có thể mở Terminal VPS lấy mã hoặc dùng mã test nhanh 123456.',
+                  'Khi bấm "Gửi mã xác thực OTP", máy chủ Backend sẽ sinh mã OTP ngẫu nhiên 6 chữ số và in trực tiếp ra Terminal Server Console. Bạn có thể mở Terminal lấy mã hoặc dùng mã test nhanh 123456.',
                   style: TextStyle(fontSize: 12.5, color: Color(0xFF334155), height: 1.4),
                 ),
               ),

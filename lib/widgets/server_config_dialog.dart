@@ -115,7 +115,7 @@ class _ServerConfigDialogState extends State<ServerConfigDialog> {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Chọn nhanh môi trường hoặc nhập IP VPS/Cloudflare để chấm bài trên thiết bị thật:',
+              'Chọn nhanh môi trường hoặc nhập IP máy chủ để chấm bài trên thiết bị thật:',
               style: AppTypography.bodySmall,
             ),
             const SizedBox(height: AppSpacing.md),
@@ -143,7 +143,7 @@ class _ServerConfigDialogState extends State<ServerConfigDialog> {
             KtxTextField(
               label: 'Base URL Endpoint Backend',
               controller: _urlController,
-              hintText: 'http://103.179.189.120:8080/api/v1',
+              hintText: 'http://127.0.0.1:8088/api/v1',
               prefixIcon: Icons.link_rounded,
             ),
             const SizedBox(height: AppSpacing.sm),

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import '../services/api_config.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 
 /// Thanh Header trên cùng của Dashboard Admin (Web Top Bar) chuẩn Design System KTX Food
-/// Tích hợp tìm kiếm nhanh, hiển thị ngày an toàn và trạng thái VPS
+/// Tích hợp tìm kiếm nhanh, hiển thị ngày an toàn
 class WebAdminTopbar extends StatelessWidget {
   final int activeTabIndex;
   final VoidCallback onRefresh;
@@ -166,39 +165,6 @@ class WebAdminTopbar extends StatelessWidget {
             ),
 
             const SizedBox(width: AppSpacing.md),
-
-            // Trạng thái kết nối Máy chủ VPS
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.successLight,
-                borderRadius: AppRadius.roundedFull,
-                border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: AppColors.success,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'VPS Online: ${ApiConfig.baseUrl.replaceAll('/api/v1', '')}',
-                    style: const TextStyle(
-                      color: AppColors.success,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(width: AppSpacing.sm),
 
             // Ngày hiện tại (An toàn, không bị LocaleDataException)
             Container(

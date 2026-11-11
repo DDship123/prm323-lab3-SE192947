@@ -18,37 +18,15 @@ class AdminDashboardStatsModel {
     this.recentActivities = const [],
   });
 
-  factory AdminDashboardStatsModel.mockData() {
+  factory AdminDashboardStatsModel.empty() {
     return const AdminDashboardStatsModel(
-      totalRevenue: 28540000,
-      totalOrders: 642,
-      activeOrders: 18,
-      pendingDisputes: 3,
-      totalUsers: 1250,
-      disputeResolutionRate: 94.5,
-      recentActivities: [
-        AdminRecentActivityItem(
-          id: 'ACT-01',
-          title: 'Khiếu nại món hỏng mới',
-          description: 'Sinh viên Ngô Trường Đạt gửi ảnh món bún bò bị đổ tại KTX Khu B',
-          timeAgo: '5 phút trước',
-          type: AdminActivityType.dispute,
-        ),
-        AdminRecentActivityItem(
-          id: 'ACT-02',
-          title: 'Gom đơn Ca trưa hoàn tất',
-          description: 'Shipper Nguyễn Hùng đã giao 12 đơn thành công tại Tòa BA1',
-          timeAgo: '20 phút trước',
-          type: AdminActivityType.delivery,
-        ),
-        AdminRecentActivityItem(
-          id: 'ACT-03',
-          title: 'Quán ăn mới đăng ký',
-          description: 'Cơm Tấm Cô Ba vừa hoàn tất xác minh mở bán Ca tối',
-          timeAgo: '1 giờ trước',
-          type: AdminActivityType.store,
-        ),
-      ],
+      totalRevenue: 0,
+      totalOrders: 0,
+      activeOrders: 0,
+      pendingDisputes: 0,
+      totalUsers: 0,
+      disputeResolutionRate: 0,
+      recentActivities: [],
     );
   }
 
