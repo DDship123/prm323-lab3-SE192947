@@ -88,7 +88,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '📟 Đã tạo mã OTP cho số $phone! Mã đã in ra Terminal máy chủ VPS.',
+                  '📟 Đã tạo mã OTP cho số $phone! Mã đã in ra Terminal máy chủ.',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -234,7 +234,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Khi bấm "Gửi mã xác thực OTP", máy chủ Backend sẽ sinh mã OTP ngẫu nhiên 6 chữ số và in trực tiếp ra Terminal / VPS Console. Bạn có thể mở Terminal VPS lấy mã hoặc dùng mã test nhanh 123456.',
+                  'Khi bấm "Gửi mã xác thực OTP", máy chủ Backend sẽ sinh mã OTP ngẫu nhiên 6 chữ số và in trực tiếp ra Terminal Server Console. Bạn có thể mở Terminal lấy mã hoặc dùng mã test nhanh 123456.',
                   style: TextStyle(fontSize: 12.5, color: Color(0xFF334155), height: 1.4),
                 ),
               ),
@@ -288,7 +288,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   Text('Nhập mã OTP & Mật khẩu mới', style: AppTypography.heading2),
                   const SizedBox(height: 2),
                   Text(
-                    'Đã in mã xác thực cho số $phone ra Terminal VPS',
+                    'Đã in mã xác thực cho số $phone ra Terminal máy chủ',
                     style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -311,7 +311,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Mã xác thực OTP đã xuất hiện trên màn hình Terminal của máy chủ VPS! Hãy kiểm tra Terminal hoặc dùng mã demo 123456.',
+                  'Mã xác thực OTP đã xuất hiện trên màn hình Terminal của máy chủ! Hãy kiểm tra Terminal hoặc dùng mã demo 123456.',
                   style: TextStyle(
                     fontSize: 12.5,
                     color: Color(0xFF166534),

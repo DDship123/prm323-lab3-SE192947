@@ -47,71 +47,18 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
       final list = await widget.storeService.fetchStores(onlyActive: false);
       if (mounted) {
         setState(() {
-          _stores = list.isNotEmpty ? list : _getFallbackStores();
+          _stores = list;
           _isLoading = false;
         });
       }
     } catch (_) {
       if (mounted) {
         setState(() {
-          _stores = _getFallbackStores();
+          _stores = [];
           _isLoading = false;
         });
       }
     }
-  }
-
-  List<StoreModel> _getFallbackStores() {
-    return const [
-      StoreModel(
-        id: 1,
-        name: 'Cơm Tấm Sườn Ba Chỉ B2',
-        address: 'Cổng B2 KTX Khu B ĐHQG',
-        campusZone: 'KTX_KHU_B',
-        phoneNumber: '0987123456',
-        description: 'Cơm tấm nóng sốt sườn bì chả nướng thơm lừng, phục vụ ca trưa & chiều',
-        isActive: true,
-        ratingAvg: 4.8,
-        ratingCount: 56,
-        avatarUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&auto=format&fit=crop&q=60',
-      ),
-      StoreModel(
-        id: 2,
-        name: 'Bún Đậu Mắm Tôm Phố Cổ Khu A',
-        address: 'Sảnh A1 KTX Khu A ĐHQG',
-        campusZone: 'KTX_KHU_A',
-        phoneNumber: '0912345678',
-        description: 'Bún đậu tá lả chả cốm nóng giòn, nem chua rán đậm đà chuẩn vị Hà Nội',
-        isActive: true,
-        ratingAvg: 4.9,
-        ratingCount: 88,
-        avatarUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=500&auto=format&fit=crop&q=60',
-      ),
-      StoreModel(
-        id: 3,
-        name: 'Trà Sữa & Ăn Vặt Bé Mập KTX B',
-        address: 'Đường Vành Đai ĐHQG, gần Tòa BA2',
-        campusZone: 'KTX_KHU_B',
-        phoneNumber: '0978901234',
-        description: 'Trà sữa trân châu hoàng kim, bánh tráng trộn, cá viên chiên giòn',
-        isActive: true,
-        ratingAvg: 4.7,
-        ratingCount: 120,
-        avatarUrl: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=500&auto=format&fit=crop&q=60',
-      ),
-      StoreModel(
-        id: 4,
-        name: 'Phở Bò Gia Truyền Cổng Vòm A',
-        address: 'Cổng Vòm KTX Khu A',
-        campusZone: 'KTX_KHU_A',
-        phoneNumber: '0933445566',
-        description: 'Nước dùng hầm xương 12 tiếng thơm ngọt, bánh phở tươi tráng thủ công',
-        isActive: false,
-        ratingAvg: 4.5,
-        ratingCount: 30,
-        avatarUrl: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=500&auto=format&fit=crop&q=60',
-      ),
-    ];
   }
 
   Future<void> _handleToggleStoreActive(StoreModel store) async {
@@ -156,7 +103,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
     );
 
     if (confirmed == true) {
-      final success = await widget.storeService.toggleStoreActive(
+      await widget.storeService.toggleStoreActive(
         store: store,
         isActive: willActive,
       );
@@ -749,7 +696,7 @@ class _WebAdminStoresScreenState extends State<WebAdminStoresScreen> {
                       ? Image.network(
                           store.avatarUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildStorePlaceholder(),
+                          errorBuilder: (_, _, _) => _buildStorePlaceholder(),
                         )
                       : _buildStorePlaceholder(),
                 ),

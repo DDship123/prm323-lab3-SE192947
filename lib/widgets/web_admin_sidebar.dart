@@ -17,6 +17,9 @@ class WebAdminSidebar extends StatelessWidget {
   final ValueChanged<int> onTabSelected;
   final VoidCallback onSignOut;
   final VoidCallback? onSwitchRole;
+  final int pendingDisputes;
+  final int totalOrders;
+  final int totalUsers;
 
   const WebAdminSidebar({
     super.key,
@@ -26,6 +29,9 @@ class WebAdminSidebar extends StatelessWidget {
     required this.onTabSelected,
     required this.onSignOut,
     this.onSwitchRole,
+    this.pendingDisputes = 0,
+    this.totalOrders = 0,
+    this.totalUsers = 0,
   });
 
   @override
@@ -156,7 +162,7 @@ class WebAdminSidebar extends StatelessWidget {
                   index: 1,
                   title: 'Xử Lý Khiếu Nại',
                   icon: Icons.assignment_late_rounded,
-                  badgeText: '3 chờ',
+                  badgeText: pendingDisputes > 0 ? '$pendingDisputes chờ' : null,
                   badgeColor: AppColors.error,
                 ),
                 const SizedBox(height: 4),
@@ -164,7 +170,7 @@ class WebAdminSidebar extends StatelessWidget {
                   index: 2,
                   title: 'Giám Sát Đơn Hàng',
                   icon: Icons.receipt_long_rounded,
-                  badgeText: 'Ca trưa',
+                  badgeText: totalOrders > 0 ? '$totalOrders đơn' : null,
                   badgeColor: AppColors.primary,
                 ),
                 const SizedBox(height: 4),
@@ -181,7 +187,7 @@ class WebAdminSidebar extends StatelessWidget {
                   index: 4,
                   title: 'Quản Lý Người Dùng',
                   icon: Icons.people_alt_rounded,
-                  badgeText: 'RBAC',
+                  badgeText: totalUsers > 0 ? '$totalUsers' : 'RBAC',
                   badgeColor: Colors.blue,
                 ),
                 const SizedBox(height: 4),
@@ -201,45 +207,6 @@ class WebAdminSidebar extends StatelessWidget {
                   badgeText: 'Dòng tiền',
                   badgeColor: AppColors.success,
                 ),
-                SizedBox(height: isCollapsed ? 6 : AppSpacing.sm),
-
-                if (!isCollapsed) ...[
-                  _buildSectionLabel('HỆ THỐNG & KẾT NỐI'),
-                  _buildStaticMenuItem(
-                    title: 'Máy Chủ VPS TP.HCM',
-                    subtitle: '103.179.189.120',
-                    icon: Icons.dns_rounded,
-                    statusColor: AppColors.success,
-                    statusText: 'Online',
-                  ),
-                  const SizedBox(height: 4),
-                  _buildStaticMenuItem(
-                    title: 'Firebase Crashlytics',
-                    subtitle: 'Giám sát lỗi di động',
-                    icon: Icons.bug_report_rounded,
-                    statusColor: AppColors.info,
-                    statusText: 'Active',
-                  ),
-                ] else ...[
-                  Tooltip(
-                    message: 'VPS Online: 103.179.189.120',
-                    child: Center(
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceVariant,
-                          borderRadius: AppRadius.roundedSm,
-                        ),
-                        child: const Icon(
-                          Icons.dns_rounded,
-                          color: AppColors.success,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
@@ -556,69 +523,6 @@ class WebAdminSidebar extends StatelessWidget {
             ],
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildStaticMenuItem({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color statusColor,
-    required String statusText,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceVariant.withValues(alpha: 0.6),
-        borderRadius: AppRadius.roundedSm,
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: AppColors.textSecondary, size: 16),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  subtitle,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textSecondary,
-                    fontSize: 10,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.15),
-              borderRadius: AppRadius.roundedFull,
-            ),
-            child: Text(
-              statusText,
-              style: TextStyle(
-                color: statusColor,
-                fontSize: 9,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

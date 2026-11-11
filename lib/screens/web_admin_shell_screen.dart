@@ -84,6 +84,9 @@ class _WebAdminShellScreenState extends State<WebAdminShellScreen> {
       isCollapsed: isMobile ? false : _isSidebarCollapsed,
       onToggleCollapse: _toggleSidebar,
       selectedIndex: _currentTabIndex,
+      pendingDisputes: _stats.pendingDisputes,
+      totalOrders: _stats.totalOrders,
+      totalUsers: _stats.totalUsers,
       onTabSelected: (idx) {
         setState(() => _currentTabIndex = idx);
         if (isMobile && _scaffoldKey.currentState?.isDrawerOpen == true) {

@@ -122,8 +122,9 @@ class AdminApiService {
           .patch(url, headers: headers)
           .timeout(const Duration(seconds: 4));
       return response.statusCode == 200;
-    } catch (_) {
-      return true; // Fallback mock success
+    } catch (e) {
+      ApiConfig.log('DB-ADMIN-ERROR', '❌ Lỗi khóa/mở khóa tài khoản: $e');
+      return false;
     }
   }
 
@@ -154,7 +155,7 @@ class AdminApiService {
       throw Exception('Lỗi máy chủ: ${response.statusCode}');
     } catch (e) {
       ApiConfig.log('DB-ADMIN-ERROR', '❌ Lỗi tải danh sách người dùng: $e');
-      return _getFallbackUsers();
+      return [];
     }
   }
 
@@ -176,78 +177,9 @@ class AdminApiService {
     try {
       final response = await _client.patch(url, headers: headers).timeout(const Duration(seconds: 4));
       return response.statusCode == 200;
-    } catch (_) {
-      return true; // Fallback mock
+    } catch (e) {
+      ApiConfig.log('DB-ADMIN-ERROR', '❌ Lỗi cập nhật vai trò: $e');
+      return false;
     }
-  }
-
-  List<UserModel> _getFallbackUsers() {
-    return const [
-      UserModel(
-        id: 1,
-        firebaseUid: 'mock_uid_1',
-        email: 'truongdat@sv.vn',
-        displayName: 'Trương Đạt (K18)',
-        phone: '0901234567',
-        role: 'STUDENT',
-        ktxBuilding: 'Tòa BA1',
-        ktxRoom: 'Phòng 402',
-        ratingAvg: 4.9,
-        ratingCount: 18,
-        isBanned: false,
-      ),
-      UserModel(
-        id: 2,
-        firebaseUid: 'mock_uid_2',
-        email: 'owner.b2@ktx.vn',
-        displayName: 'Cơm Tấm Sườn Ba Chỉ B2',
-        phone: '0912345678',
-        role: 'STORE_OWNER',
-        ktxBuilding: 'Cổng B2',
-        ktxRoom: 'Khu KTX B',
-        ratingAvg: 4.8,
-        ratingCount: 42,
-        isBanned: false,
-      ),
-      UserModel(
-        id: 3,
-        firebaseUid: 'mock_uid_3',
-        email: 'shipper.nam@ktx.vn',
-        displayName: 'Nguyễn Văn Nam (Shipper Ca Trưa)',
-        phone: '0988776655',
-        role: 'SHIPPER',
-        ktxBuilding: 'Tòa BA2',
-        ktxRoom: 'Phòng 105',
-        ratingAvg: 5.0,
-        ratingCount: 65,
-        isBanned: false,
-      ),
-      UserModel(
-        id: 4,
-        firebaseUid: 'mock_uid_4',
-        email: 'admin.bql@ktx.vn',
-        displayName: 'Ban Quản Lý KTX ĐHQG',
-        phone: '0977889900',
-        role: 'ADMIN',
-        ktxBuilding: 'Văn Phòng BQL',
-        ktxRoom: 'Phòng 101',
-        ratingAvg: 5.0,
-        ratingCount: 10,
-        isBanned: false,
-      ),
-      UserModel(
-        id: 5,
-        firebaseUid: 'mock_uid_5',
-        email: 'hoangminh.spammer@sv.vn',
-        displayName: 'Lê Hoàng Minh',
-        phone: '0933221100',
-        role: 'STUDENT',
-        ktxBuilding: 'Tòa BB',
-        ktxRoom: 'Phòng 204',
-        ratingAvg: 2.1,
-        ratingCount: 5,
-        isBanned: true,
-      ),
-    ];
   }
 }

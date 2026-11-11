@@ -7,50 +7,8 @@ import 'api_config.dart';
 class ReviewService {
   final http.Client _client;
 
-  // Cache cục bộ hỗ trợ trải nghiệm tức thì và mock offline
-  static final List<ReviewModel> _localReviewsCache = [
-    ReviewModel(
-      id: 101,
-      orderId: 1002,
-      orderCode: '#KTX-ORD-1002',
-      storeId: 1,
-      storeName: 'Cơm Tấm Cô Ba - KTX Khu B',
-      shipperId: 3,
-      shipperName: 'Nguyễn Hùng (Shipper Đội Gom KTX)',
-      userId: 1,
-      userDisplayName: 'Ngô Trường Đạt (Sinh viên)',
-      userAvatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-      storeRating: 5,
-      shipperRating: 5,
-      comment: 'Cơm sườn nướng mật ong rất ngon, sườn mềm đậm vị, canh nóng hổi. Rất ưng ý!',
-      shipperComment: 'Shipper Nguyễn Hùng đến cổng B2 rất đúng giờ, thái độ nhiệt tình lễ phép.',
-      images: const [
-        'https://images.unsplash.com/photo-1544025162-d76694265947',
-        'https://images.unsplash.com/photo-1555396273-367ea4eb4db5',
-      ],
-      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-    ),
-    ReviewModel(
-      id: 102,
-      orderId: 998,
-      orderCode: '#KTX-8829B',
-      storeId: 1,
-      storeName: 'Cơm Tấm Cô Ba - KTX Khu B',
-      shipperId: 3,
-      shipperName: 'Nguyễn Hùng (Shipper Đội Gom KTX)',
-      userId: 2,
-      userDisplayName: 'Lê Thùy Linh',
-      userAvatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
-      storeRating: 5,
-      shipperRating: 5,
-      comment: 'Đồ ăn giao nóng hổi, chả trứng siêu béo mềm. Sẽ tiếp tục ủng hộ quán!',
-      shipperComment: 'Anh shipper gọi trước khi tới cổng 5 phút, tiện ra lấy không phải chờ.',
-      images: const [
-        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c',
-      ],
-      createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-    ),
-  ];
+  // Cache cục bộ lưu các đánh giá vừa gửi trong phiên hiện tại
+  static final List<ReviewModel> _localReviewsCache = [];
 
   ReviewService({http.Client? client}) : _client = client ?? http.Client();
 
@@ -150,10 +108,8 @@ class ReviewService {
       }
     } catch (_) {}
 
-    // Fallback trả về từ bộ nhớ cache theo storeId
-    final matched = _localReviewsCache.where((r) => r.storeId == storeId).toList();
-    if (matched.isNotEmpty) return matched;
-    return _localReviewsCache;
+    // Fallback trả về từ bộ nhớ cache theo storeId nếu có
+    return _localReviewsCache.where((r) => r.storeId == storeId).toList();
   }
 
   /// Lấy danh sách đánh giá của Shipper kèm avt, username, ảnh
@@ -179,10 +135,8 @@ class ReviewService {
       }
     } catch (_) {}
 
-    // Fallback danh sách đánh giá cho shipper
-    final matched = _localReviewsCache.where((r) => r.shipperId == shipperId).toList();
-    if (matched.isNotEmpty) return matched;
-    return _localReviewsCache;
+    // Fallback danh sách đánh giá cho shipper nếu có
+    return _localReviewsCache.where((r) => r.shipperId == shipperId).toList();
   }
 
   /// API-018b: Xem đánh giá của một đơn hàng cụ thể

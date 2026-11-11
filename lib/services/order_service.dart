@@ -107,8 +107,12 @@ class OrderService {
   Future<List<OrderDetailModel>> fetchAllOrdersForAdmin() async {
     try {
       ApiConfig.log('DB-ADMIN-ORDERS', 'GET ${ApiConfig.baseUrl}/admin/orders');
+      final headers = {
+        ...ApiConfig.headers(userId: '4'),
+        'X-User-Role': 'ADMIN',
+      };
       final response = await _client
-          .get(Uri.parse('${ApiConfig.baseUrl}/admin/orders'), headers: ApiConfig.headers())
+          .get(Uri.parse('${ApiConfig.baseUrl}/admin/orders'), headers: headers)
           .timeout(const Duration(seconds: 18));
       if (response.statusCode == 200) {
         final jsonMap =

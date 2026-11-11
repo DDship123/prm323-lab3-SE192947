@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/order_model.dart';
@@ -56,124 +57,18 @@ class _WebAdminCashflowScreenState extends State<WebAdminCashflowScreen> {
       final list = await widget.orderService.fetchAllOrdersForAdmin();
       if (mounted) {
         setState(() {
-          _orders = list.isNotEmpty ? list : _getFallbackCashflowOrders();
+          _orders = list;
           _isLoading = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() {
-          _orders = _getFallbackCashflowOrders();
+          _orders = [];
           _isLoading = false;
         });
       }
     }
-  }
-
-  List<OrderDetailModel> _getFallbackCashflowOrders() {
-    final now = DateTime.now();
-    return [
-      OrderDetailModel(
-        id: 101,
-        orderCode: 'ORD-KTX-9821',
-        userId: 1,
-        storeId: 1,
-        storeName: 'Cơm Tấm Sườn Ba Chỉ B2',
-        slotTime: 'CA_TRUA_11H30',
-        pickupLocation: 'Sảnh Tòa BA1 KTX Khu B',
-        subtotalAmount: 45000,
-        deliveryFee: 5000,
-        groupDiscountAmount: 5000,
-        finalAmount: 45000,
-        status: 'DELIVERED',
-        paymentMethod: 'VIETQR',
-        paymentStatus: 'PAID',
-        pickupQrCode: 'QR_101',
-        pickupPin: '4821',
-        createdAt: now.subtract(const Duration(minutes: 45)),
-        items: const [],
-      ),
-      OrderDetailModel(
-        id: 102,
-        orderCode: 'ORD-KTX-9822',
-        userId: 2,
-        storeId: 2,
-        storeName: 'Bún Đậu Mắm Tôm Phố Cổ Khu A',
-        slotTime: 'CA_TRUA_11H30',
-        pickupLocation: 'Sảnh Tòa A1 KTX Khu A',
-        subtotalAmount: 65000,
-        deliveryFee: 5000,
-        groupDiscountAmount: 0,
-        finalAmount: 70000,
-        status: 'DELIVERED',
-        paymentMethod: 'CASH_ON_DELIVERY',
-        paymentStatus: 'PAID',
-        pickupQrCode: 'QR_102',
-        pickupPin: '5922',
-        createdAt: now.subtract(const Duration(hours: 1, minutes: 15)),
-        items: const [],
-      ),
-      OrderDetailModel(
-        id: 103,
-        orderCode: 'ORD-KTX-9823',
-        userId: 3,
-        storeId: 3,
-        storeName: 'Trà Sữa & Ăn Vặt Bé Mập KTX B',
-        slotTime: 'CA_TRUA_11H30',
-        pickupLocation: 'Sảnh Tòa BA2 KTX Khu B',
-        subtotalAmount: 55000,
-        deliveryFee: 5000,
-        groupDiscountAmount: 10000,
-        finalAmount: 50000,
-        status: 'DELIVERING',
-        paymentMethod: 'VIETQR',
-        paymentStatus: 'PAID',
-        pickupQrCode: 'QR_103',
-        pickupPin: '3123',
-        createdAt: now.subtract(const Duration(minutes: 25)),
-        items: const [],
-      ),
-      OrderDetailModel(
-        id: 104,
-        orderCode: 'ORD-KTX-9824',
-        userId: 4,
-        storeId: 1,
-        storeName: 'Cơm Tấm Sườn Ba Chỉ B2',
-        slotTime: 'CA_TOI_17H30',
-        pickupLocation: 'Sảnh Tòa C1 KTX Khu B',
-        subtotalAmount: 40000,
-        deliveryFee: 5000,
-        groupDiscountAmount: 0,
-        finalAmount: 45000,
-        status: 'PREPARING',
-        paymentMethod: 'CASH_ON_DELIVERY',
-        paymentStatus: 'PENDING',
-        pickupQrCode: 'QR_104',
-        pickupPin: '8224',
-        createdAt: now.subtract(const Duration(minutes: 10)),
-        items: const [],
-      ),
-      OrderDetailModel(
-        id: 105,
-        orderCode: 'ORD-KTX-9825',
-        userId: 5,
-        storeId: 2,
-        storeName: 'Bún Đậu Mắm Tôm Phố Cổ Khu A',
-        slotTime: 'CA_TRUA_11H30',
-        pickupLocation: 'Sảnh Tòa A3 KTX Khu A',
-        subtotalAmount: 60000,
-        deliveryFee: 5000,
-        groupDiscountAmount: 0,
-        finalAmount: 65000,
-        status: 'CANCELLED',
-        paymentMethod: 'VIETQR',
-        paymentStatus: 'REFUNDED',
-        pickupQrCode: 'QR_105',
-        pickupPin: '9025',
-        createdAt: now.subtract(const Duration(hours: 2)),
-        items: const [],
-      ),
-    ];
   }
 
   List<OrderDetailModel> get _filteredOrders {
@@ -621,101 +516,218 @@ class _WebAdminCashflowScreenState extends State<WebAdminCashflowScreen> {
   }
 
   Widget _buildCashflowTable(List<OrderDetailModel> orders) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.roundedMd,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: ClipRRect(
-        borderRadius: AppRadius.roundedMd,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(AppColors.surfaceVariant),
-          columnSpacing: 20,
-          columns: const [
-            DataColumn(label: Text('Mã Đơn', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Thời Gian', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Quán Ăn & Sảnh KTX', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Hình Thức', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Dòng Tiền Thu', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Phí Sàn (+)', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Trả Quán (-)', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Trả Ship (-)', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Trạng Thái', style: TextStyle(fontWeight: FontWeight.bold))),
-          ],
-          rows: orders.map((order) {
-            final isVietQr = order.paymentMethod == 'VIETQR';
-            final commFee = order.subtotalAmount * (_commissionRate / 100.0);
-            final storePayable = order.subtotalAmount - commFee;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final tableWidth = math.max(constraints.maxWidth, 1100.0);
 
-            return DataRow(
-              cells: [
-                DataCell(
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(order.orderCode, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary)),
-                      Text(order.slotTime.contains('TRUA') ? 'Ca trưa 11h30' : 'Ca tối 17h30', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                    ],
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppRadius.roundedMd,
+            border: Border.all(color: AppColors.border),
+          ),
+          child: ClipRRect(
+            borderRadius: AppRadius.roundedMd,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: tableWidth,
+                child: Table(
+                  columnWidths: const {
+                    0: FlexColumnWidth(1.2), // Mã Đơn & Ca gom
+                    1: FlexColumnWidth(1.0), // Thời Gian
+                    2: FlexColumnWidth(2.3), // Quán Ăn & Sảnh KTX
+                    3: FlexColumnWidth(0.9), // Hình Thức
+                    4: FlexColumnWidth(1.1), // Dòng Tiền Thu
+                    5: FlexColumnWidth(1.0), // Phí Sàn (+)
+                    6: FlexColumnWidth(1.1), // Trả Quán (-)
+                    7: FlexColumnWidth(0.9), // Trả Ship (-)
+                    8: FlexColumnWidth(1.1), // Trạng Thái
+                  },
+                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                  border: TableBorder(
+                    horizontalInside: BorderSide(
+                      color: AppColors.border.withValues(alpha: 0.5),
+                      width: 1,
+                    ),
                   ),
+                  children: [
+                    TableRow(
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceVariant,
+                      ),
+                      children: [
+                        _buildTableHeaderCell('Mã Đơn'),
+                        _buildTableHeaderCell('Thời Gian'),
+                        _buildTableHeaderCell('Quán Ăn & Sảnh KTX'),
+                        _buildTableHeaderCell('Hình Thức'),
+                        _buildTableHeaderCell('Dòng Tiền Thu'),
+                        _buildTableHeaderCell('Phí Sàn (+)'),
+                        _buildTableHeaderCell('Trả Quán (-)'),
+                        _buildTableHeaderCell('Trả Ship (-)'),
+                        _buildTableHeaderCell('Trạng Thái'),
+                      ],
+                    ),
+                    for (final order in orders)
+                      _buildCashflowTableRow(order),
+                  ],
                 ),
-                DataCell(
-                  Text(
-                    DateFormat('HH:mm • dd/MM').format(order.createdAt),
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ),
-                DataCell(
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(order.storeName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12), maxLines: 1),
-                      Text(order.pickupLocation, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary), maxLines: 1),
-                    ],
-                  ),
-                ),
-                DataCell(
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(isVietQr ? Icons.qr_code_2_rounded : Icons.payments_rounded, size: 16, color: isVietQr ? Colors.indigo : Colors.teal),
-                      const SizedBox(width: 4),
-                      Text(isVietQr ? 'VietQR' : 'COD', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isVietQr ? Colors.indigo : Colors.teal)),
-                    ],
-                  ),
-                ),
-                DataCell(
-                  Text(
-                    currencyFormatter.format(order.finalAmount),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.success),
-                  ),
-                ),
-                DataCell(
-                  Text(
-                    '+${currencyFormatter.format(commFee)}',
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: AppColors.primary),
-                  ),
-                ),
-                DataCell(
-                  Text(
-                    '-${currencyFormatter.format(storePayable)}',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Colors.orange.shade800),
-                  ),
-                ),
-                DataCell(
-                  Text(
-                    '-${currencyFormatter.format(order.deliveryFee)}',
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Colors.purple),
-                  ),
-                ),
-                DataCell(_buildPaymentStatusBadge(order.paymentStatus)),
-              ],
-            );
-          }).toList(),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTableHeaderCell(String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          color: AppColors.textPrimary,
         ),
       ),
+    );
+  }
+
+  TableRow _buildCashflowTableRow(OrderDetailModel order) {
+    final isVietQr = order.paymentMethod == 'VIETQR';
+    final commFee = order.subtotalAmount * (_commissionRate / 100.0);
+    final storePayable = order.subtotalAmount - commFee;
+
+    return TableRow(
+      children: [
+        // 0. Mã Đơn & Ca gom
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                order.orderCode,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                order.slotTime.contains('TRUA') ? 'Ca trưa 11h30' : 'Ca tối 17h30',
+                style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+
+        // 1. Thời Gian
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Text(
+            DateFormat('HH:mm • dd/MM').format(order.createdAt),
+            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          ),
+        ),
+
+        // 2. Quán Ăn & Sảnh KTX
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                order.storeName,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.textPrimary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                order.pickupLocation,
+                style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+
+        // 3. Hình Thức
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isVietQr ? Icons.qr_code_2_rounded : Icons.payments_rounded,
+                size: 16,
+                color: isVietQr ? Colors.indigo : Colors.teal,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                isVietQr ? 'VietQR' : 'COD',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isVietQr ? Colors.indigo : Colors.teal,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // 4. Dòng Tiền Thu
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Text(
+            currencyFormatter.format(order.finalAmount),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.success),
+          ),
+        ),
+
+        // 5. Phí Sàn (+)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Text(
+            '+${currencyFormatter.format(commFee)}',
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: AppColors.primary),
+          ),
+        ),
+
+        // 6. Trả Quán (-)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Text(
+            '-${currencyFormatter.format(storePayable)}',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Colors.orange.shade800),
+          ),
+        ),
+
+        // 7. Trả Ship (-)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Text(
+            '-${currencyFormatter.format(order.deliveryFee)}',
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: Colors.purple),
+          ),
+        ),
+
+        // 8. Trạng Thái
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: _buildPaymentStatusBadge(order.paymentStatus),
+          ),
+        ),
+      ],
     );
   }
 
@@ -724,7 +736,7 @@ class _WebAdminCashflowScreenState extends State<WebAdminCashflowScreen> {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: orders.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, idx) {
         final order = orders[idx];
         final isVietQr = order.paymentMethod == 'VIETQR';

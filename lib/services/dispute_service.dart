@@ -47,20 +47,7 @@ class DisputeService {
       final errorMsg = jsonMap['message'] ?? 'Gửi khiếu nại thất bại (${response.statusCode})';
       throw Exception(errorMsg);
     } catch (e) {
-      // Nếu kết nối backend bị gián đoạn, giả lập tạo đối tượng khiếu nại thành công để test UI
-      if (e.toString().contains('SocketException') || e.toString().contains('TimeoutException')) {
-        return DisputeModel(
-          id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-          orderId: dto.orderId,
-          storeName: 'Cơm tấm KTX Khu B (Offline/Demo)',
-          reason: dto.reason,
-          description: dto.description,
-          evidenceImageUrl: dto.evidenceImageUrl,
-          requestedRefundAmount: dto.requestedRefundAmount,
-          status: DisputeStatus.pending,
-          createdAt: DateTime.now(),
-        );
-      }
+      ApiConfig.log('DISPUTE-ERROR', '❌ Lỗi gửi khiếu nại: $e');
       rethrow;
     }
   }
@@ -79,7 +66,9 @@ class DisputeService {
         final rawList = (jsonMap['data'] as List?) ?? [];
         return rawList.map((e) => DisputeModel.fromJson(e as Map<String, dynamic>)).toList();
       }
-    } catch (_) {}
+    } catch (e) {
+      ApiConfig.log('DISPUTE-ERROR', '❌ Lỗi tải khiếu nại Admin: $e');
+    }
     return fetchMyDisputes(idToken: null, userId: '4');
   }
 
@@ -88,32 +77,32 @@ class DisputeService {
     int disputeId, {
     required bool isApproved,
     String? adminNotes,
+    double approvedRefundAmount = 0.0,
   }) async {
     final url = Uri.parse('${ApiConfig.disputes}/$disputeId/resolve');
     try {
-      await _client.patch(
+      final response = await _client.patch(
         url,
         headers: ApiConfig.headers(userId: '4'),
         body: jsonEncode({
           'status': isApproved ? 'APPROVED' : 'REJECTED',
           'resolutionNote': adminNotes ?? '',
+          'refundApprovedAmount': approvedRefundAmount,
         }),
-      );
-    } catch (_) {}
+      ).timeout(const Duration(seconds: 8));
 
-    return DisputeModel(
-      id: disputeId,
-      orderId: 101,
-      storeName: 'Cơm tấm Đêm Sài Gòn - KTX Khu B',
-      reason: 'Món ăn có dị vật / Hỏng vị',
-      description: 'Thức ăn bị chua và thiếu canh rong biển đi kèm.',
-      evidenceImageUrl: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600',
-      requestedRefundAmount: 45000,
-      approvedRefundAmount: isApproved ? 45000 : 0,
-      status: isApproved ? DisputeStatus.approved : DisputeStatus.rejected,
-      adminNote: adminNotes,
-      createdAt: DateTime.now(),
-    );
+      if (response.statusCode == 200) {
+        final utf8Body = utf8.decode(response.bodyBytes);
+        final jsonMap = jsonDecode(utf8Body) as Map<String, dynamic>;
+        final data = jsonMap['data'] as Map<String, dynamic>?;
+        if (data != null) {
+          return DisputeModel.fromJson(data);
+        }
+      }
+    } catch (e) {
+      ApiConfig.log('DISPUTE-ERROR', '❌ Lỗi phân xử khiếu nại: $e');
+    }
+    throw Exception('Không thể cập nhật kết quả phân xử khiếu nại lên máy chủ');
   }
 
   /// Lấy danh sách lịch sử khiếu nại của sinh viên
