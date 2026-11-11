@@ -88,7 +88,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '📟 Đã tạo mã OTP cho số $phone! Mã đã in ra Terminal máy chủ.',
+                  '📲 Đã gửi mã OTP tới thiết bị của số $phone!',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -288,7 +288,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   Text('Nhập mã OTP & Mật khẩu mới', style: AppTypography.heading2),
                   const SizedBox(height: 2),
                   Text(
-                    'Đã in mã xác thực cho số $phone ra Terminal máy chủ',
+                    'Đã gửi mã xác thực tới số $phone',
                     style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -311,7 +311,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Mã xác thực OTP đã xuất hiện trên màn hình Terminal của máy chủ! Hãy kiểm tra Terminal hoặc dùng mã demo 123456.',
+                  'Đã gửi mã OTP tới thiết bị của bạn.',
                   style: TextStyle(
                     fontSize: 12.5,
                     color: Color(0xFF166534),
